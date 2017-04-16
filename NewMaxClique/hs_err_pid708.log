@@ -1,0 +1,191 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x000000000813fdcc, pid=708, tid=4808
+#
+# JRE version: 7.0_02-b13
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (22.0-b10 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# C  [nvcuda.dll+0xffdcc]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.sun.com/bugreport/crash.jsp
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000000000231b000):  JavaThread "main" [_thread_in_native, id=4808, stack(0x00000000024e0000,0x00000000025e0000)]
+
+siginfo: ExceptionCode=0xc0000005, reading address 0x0000000000000008
+
+Registers:
+RAX=0x0000000009e513e0, RBX=0x0000000009f7a310, RCX=0x0000000009e5d860, RDX=0x0000000000000000
+RSP=0x00000000025df000, RBP=0x0000000000000078, RSI=0x0000000000000048, RDI=0x0000000000000000
+R8 =0x0000000005200400, R9 =0x0000000000000028, R10=0x0000000105200428, R11=0x00000000025deef0
+R12=0x0000000000000003, R13=0x0000000000000000, R14=0x0000000007fbafd0, R15=0x0000000007e8fd50
+RIP=0x000000000813fdcc, EFLAGS=0x0000000000010293
+
+Top of Stack: (sp=0x00000000025df000)
+0x00000000025df000:   0000000009f79000 0000000000000000
+0x00000000025df010:   0000000000000001 0000000007fbafd0
+0x00000000025df020:   0000000007fb1f88 0000000077873488
+0x00000000025df030:   0000000009e5d860 00000000000013e8
+0x00000000025df040:   0000000105060015 0000000007e40470
+0x00000000025df050:   0000000007fb02d8 0000000007e40080
+0x00000000025df060:   0000000000000000 0000000007e40270
+0x00000000025df070:   0000000007e404a0 0000000007e40470
+0x00000000025df080:   0000000009f79000 0000000000000090
+0x00000000025df090:   0000000007fb0318 0000000077873488
+0x00000000025df0a0:   0000000077935410 0000000000000000
+0x00000000025df0b0:   0000000000000010 0000000007fb0000
+0x00000000025df0c0:   0000000007e8fdd8 0000000000000000
+0x00000000025df0d0:   0000000009f7a310 0000000000000001
+0x00000000025df0e0:   0000000009f6ac30 0000000000000058
+0x00000000025df0f0:   0000000077957c50 0000000000000000 
+
+Instructions: (pc=0x000000000813fdcc)
+0x000000000813fdac:   90 0f ff ff 85 c0 8b f8 74 38 45 33 e4 e9 bb fa
+0x000000000813fdbc:   ff ff 48 8b 83 c8 00 00 00 48 8b 0c 06 48 8b 11
+0x000000000813fdcc:   8b 42 08 83 f8 08 74 05 83 f8 0a 75 15 48 8b 4b
+0x000000000813fddc:   40 41 b8 01 00 00 00 e8 58 0f ff ff 85 c0 8b f8 
+
+
+Register to memory mapping:
+
+RAX=0x0000000009e513e0 is an unknown value
+RBX=0x0000000009f7a310 is an unknown value
+RCX=0x0000000009e5d860 is an unknown value
+RDX=0x0000000000000000 is an unknown value
+RSP=0x00000000025df000 is pointing into the stack for thread: 0x000000000231b000
+RBP=0x0000000000000078 is an unknown value
+RSI=0x0000000000000048 is an unknown value
+RDI=0x0000000000000000 is an unknown value
+R8 =0x0000000005200400 is an unknown value
+R9 =0x0000000000000028 is an unknown value
+R10=0x0000000105200428 is an unknown value
+R11=0x00000000025deef0 is pointing into the stack for thread: 0x000000000231b000
+R12=0x0000000000000003 is an unknown value
+R13=0x0000000000000000 is an unknown value
+R14=0x0000000007fbafd0 is an unknown value
+R15=0x0000000007e8fd50 is an unknown value
+
+
+Stack: [0x00000000024e0000,0x00000000025e0000],  sp=0x00000000025df000,  free space=1020k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [nvcuda.dll+0xffdcc]  clGetExtensionFunctionAddress+0x293c
+
+[error occurred during error reporting (printing native stack), id 0xc0000005]
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  org.jocl.CL.clEnqueueNDRangeKernelNative(Lorg/jocl/cl_command_queue;Lorg/jocl/cl_kernel;I[J[J[JI[Lorg/jocl/cl_event;Lorg/jocl/cl_event;)I+0
+j  org.jocl.CL.clEnqueueNDRangeKernel(Lorg/jocl/cl_command_queue;Lorg/jocl/cl_kernel;I[J[J[JI[Lorg/jocl/cl_event;Lorg/jocl/cl_event;)I+14
+j  Clique.JOCLSample.main([Ljava/lang/String;)V+844
+v  ~StubRoutines::call_stub
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x0000000006b64000 JavaThread "Service Thread" daemon [_thread_blocked, id=4152, stack(0x0000000007b80000,0x0000000007c80000)]
+  0x0000000006b5e000 JavaThread "C2 CompilerThread1" daemon [_thread_blocked, id=5004, stack(0x00000000079d0000,0x0000000007ad0000)]
+  0x0000000006b4b800 JavaThread "C2 CompilerThread0" daemon [_thread_blocked, id=3756, stack(0x00000000077b0000,0x00000000078b0000)]
+  0x0000000006b4a000 JavaThread "Attach Listener" daemon [_thread_blocked, id=1116, stack(0x00000000075d0000,0x00000000076d0000)]
+  0x0000000006b49800 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=2448, stack(0x0000000006ee0000,0x0000000006fe0000)]
+  0x0000000006ac1000 JavaThread "Finalizer" daemon [_thread_blocked, id=1784, stack(0x0000000007350000,0x0000000007450000)]
+  0x0000000006ab4800 JavaThread "Reference Handler" daemon [_thread_blocked, id=488, stack(0x0000000007200000,0x0000000007300000)]
+=>0x000000000231b000 JavaThread "main" [_thread_in_native, id=4808, stack(0x00000000024e0000,0x00000000025e0000)]
+
+Other Threads:
+  0x0000000006aaf000 VMThread [stack: 0x0000000007050000,0x0000000007150000] [id=4968]
+  0x0000000006b76800 WatcherThread [stack: 0x00000000078c0000,0x00000000079c0000] [id=3468]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+Heap
+ PSYoungGen      total 38208K, used 1310K [0x00000007d5600000, 0x00000007d80a0000, 0x0000000800000000)
+  eden space 32768K, 4% used [0x00000007d5600000,0x00000007d5747ba0,0x00000007d7600000)
+  from space 5440K, 0% used [0x00000007d7b50000,0x00000007d7b50000,0x00000007d80a0000)
+  to   space 5440K, 0% used [0x00000007d7600000,0x00000007d7600000,0x00000007d7b50000)
+ PSOldGen        total 87296K, used 0K [0x0000000780200000, 0x0000000785740000, 0x00000007d5600000)
+  object space 87296K, 0% used [0x0000000780200000,0x0000000780200000,0x0000000785740000)
+ PSPermGen       total 21248K, used 2986K [0x000000077b000000, 0x000000077c4c0000, 0x0000000780200000)
+  object space 21248K, 14% used [0x000000077b000000,0x000000077b2ea910,0x000000077c4c0000)
+
+Code Cache  [0x00000000025e0000, 0x0000000002850000, 0x00000000055e0000)
+ total_blobs=197 nmethods=0 adapters=164 free_code_cache=48757Kb largest_free_block=49927680
+
+Dynamic libraries:
+0x000000013f490000 - 0x000000013f4c3000 	C:\Program Files\Java\jre7\bin\javaw.exe
+0x0000000077820000 - 0x00000000779c9000 	C:\Windows\SYSTEM32\ntdll.dll
+0x00000000773a0000 - 0x00000000774bf000 	C:\Windows\system32\kernel32.dll
+0x000007fefdfe0000 - 0x000007fefe04c000 	C:\Windows\system32\KERNELBASE.dll
+0x000007feff9f0000 - 0x000007feffacb000 	C:\Windows\system32\ADVAPI32.dll
+0x000007fefe160000 - 0x000007fefe1ff000 	C:\Windows\system32\msvcrt.dll
+0x000007fefe4d0000 - 0x000007fefe4ef000 	C:\Windows\SYSTEM32\sechost.dll
+0x000007feff8c0000 - 0x000007feff9ed000 	C:\Windows\system32\RPCRT4.dll
+0x0000000077140000 - 0x000000007723a000 	C:\Windows\system32\USER32.dll
+0x000007feff5e0000 - 0x000007feff647000 	C:\Windows\system32\GDI32.dll
+0x000007fefe2e0000 - 0x000007fefe2ee000 	C:\Windows\system32\LPK.dll
+0x000007feff770000 - 0x000007feff839000 	C:\Windows\system32\USP10.dll
+0x000007fefc6c0000 - 0x000007fefc8b4000 	C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.7601.17514_none_fa396087175ac9ac\COMCTL32.dll
+0x000007feff840000 - 0x000007feff8b1000 	C:\Windows\system32\SHLWAPI.dll
+0x000007fefe4f0000 - 0x000007fefe51e000 	C:\Windows\system32\IMM32.DLL
+0x000007fefe050000 - 0x000007fefe159000 	C:\Windows\system32\MSCTF.dll
+0x0000000073e10000 - 0x0000000073ee1000 	C:\Program Files\Java\jre7\bin\msvcr100.dll
+0x0000000073240000 - 0x000000007391a000 	C:\Program Files\Java\jre7\bin\server\jvm.dll
+0x000007fef3a10000 - 0x000007fef3a19000 	C:\Windows\system32\WSOCK32.dll
+0x000007feff4c0000 - 0x000007feff50d000 	C:\Windows\system32\WS2_32.dll
+0x000007feff510000 - 0x000007feff518000 	C:\Windows\system32\NSI.dll
+0x000007fefad60000 - 0x000007fefad9b000 	C:\Windows\system32\WINMM.dll
+0x00000000779f0000 - 0x00000000779f7000 	C:\Windows\system32\PSAPI.DLL
+0x0000000074010000 - 0x000000007401f000 	C:\Program Files\Java\jre7\bin\verify.dll
+0x0000000073fe0000 - 0x0000000074008000 	C:\Program Files\Java\jre7\bin\java.dll
+0x0000000073fa0000 - 0x0000000073fb5000 	C:\Program Files\Java\jre7\bin\zip.dll
+0x000007fef35b0000 - 0x000007fef35fa000 	C:\Users\John\AppData\Local\Temp\JOCL_0_1_7-windows-x86_64.dll
+0x0000000180000000 - 0x0000000180014000 	C:\Windows\system32\OpenCL.dll
+0x0000000008040000 - 0x00000000087c1000 	C:\Windows\system32\nvcuda.dll
+0x000007fefe2f0000 - 0x000007fefe4c7000 	C:\Windows\system32\SETUPAPI.dll
+0x000007fefddf0000 - 0x000007fefde26000 	C:\Windows\system32\CFGMGR32.dll
+0x000007fefe200000 - 0x000007fefe2d7000 	C:\Windows\system32\OLEAUT32.dll
+0x000007feff2b0000 - 0x000007feff4b3000 	C:\Windows\system32\ole32.dll
+0x000007fefdd30000 - 0x000007fefdd4a000 	C:\Windows\system32\DEVOBJ.dll
+0x000007fefe520000 - 0x000007feff2a8000 	C:\Windows\system32\SHELL32.dll
+0x000007fefa6c0000 - 0x000007fefa992000 	C:\Windows\system32\nvapi64.dll
+0x000007fefcd50000 - 0x000007fefcd5c000 	C:\Windows\system32\VERSION.dll
+0x000007fefde30000 - 0x000007fefde6a000 	C:\Windows\system32\WINTRUST.dll
+0x000007fefde70000 - 0x000007fefdfd7000 	C:\Windows\system32\CRYPT32.dll
+0x000007fefdd20000 - 0x000007fefdd2f000 	C:\Windows\system32\MSASN1.dll
+0x000000000a920000 - 0x000000000c0d3000 	C:\Windows\system32\nvcompiler.dll
+0x000007fef9ab0000 - 0x000007fef9bd5000 	C:\Windows\system32\dbghelp.dll
+
+VM Arguments:
+jvm_args: -Dfile.encoding=Cp1252 
+java_command: Clique.JOCLSample
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+PATH=D:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.0\bin\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;D:\Program Files\NVIDIA Corporation\NVIDIA GPU Computing SDK 4.0\C\common\bin
+USERNAME=John
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=AMD64 Family 16 Model 10 Stepping 0, AuthenticAMD
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 7 , 64 bit Build 7601 Service Pack 1
+
+CPU:total 6 (6 cores per cpu, 1 threads per core) family 16 model 10 stepping 0, cmov, cx8, fxsr, mmx, sse, sse2, sse3, popcnt, mmxext, 3dnowpref, lzcnt, sse4a
+
+Memory: 4k page, physical 8380168k(5749272k free), swap 16758488k(13367496k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (22.0-b10) for windows-amd64 JRE (1.7.0_02-b13), built on Nov 17 2011 13:51:15 by "java_re" with unknown MS VC++:1600
+
+time: Thu Jan 05 18:25:31 2012
+elapsed time: 0 seconds
+

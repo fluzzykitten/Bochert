@@ -1,0 +1,72 @@
+c File  p_hat300_1.clq
+c
+c Source: P. Soriano and M. Gendreau at  patrick@crt.umontreal.ca
+c
+c Reference: p-hat graphs are generated with the p-hat generator
+c 	      which is a generalisation of the classical uniform
+c 	      random graph generator.
+c 	      Graphs generated with p-hat have wider node degree spread
+c 	      and larger cliques than uniform graphs.
+c
+c NOTE: September 23, 1993 Corrected corrupted file at DIMACS.
+c
+c
+c Generation parameters: 
+c 	n =    300 a =  0.00  b =  0.50  Expected density =  0.25
+c	Seed =       8713       Real density =  0.244
+c
+p edge  300     10933	
+e 5 4
+e 6 5
+e 7 3
+e 7 4
+e 7 6
+e 8 4
+e 9 1
+e 9 3
+e 9 5
+e 10 6
+e 11 5
+e 12 4
+e 13 2
+e 13 3
+e 14 5
+e 14 13
+e 15 14
+e 16 1
+e 16 2
+e 16 5
+e 17 9
+e 17 15
+e 18 8
+e 18 15
+e 18 17
+e 19 6
+e 19 7
+e 19 13
+e 19 14
+e 19 16
+e 19 18
+e 20 5
+e 20 11
+e 20 17
+e 20 18
+e 21 3
+e 21 4
+e 21 5
+e 21 9
+e 21 10
+e 21 11
+e 21 12
+e 21 19
+e 22 4
+e 22 20
+e 23 5
+e 23 20
+e 24 11
+e 24 15
+e 24 17
+e 24 19
+e 24 21
+e 24 22
+e 24 23
