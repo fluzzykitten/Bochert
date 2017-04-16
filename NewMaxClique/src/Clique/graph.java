@@ -46,30 +46,34 @@ public class graph {
 
 
 
-	private boolean is_there_another(final node2 nodes_a, final node2 nodes_b, int node, node2 result){
+	private boolean is_there_another(final node2 check_set, final node2 nodes_to_consider, final node2 dont_consider_connected, node2 result, boolean display){
 
-		//int[] check_set = this.Bochert_neighbor(node, all_nodes, internal_connected);
-		Bochert_neighbor(result,node,nodes_a, nodes_b, internal_connected);
+		//		Bochert_neighbor(result,node,nodes_a, nodes_b, internal_connected);
 
-//		System.out.println("Is there another, result A: "+result.print_list());
-		
-		if(result.get_length() == 0)
+		if(check_set.get_length() == 0)
 			return false;
 
-		node2 check_set = result.copy_double_mem();
-		Bochert_neighbor(result,check_set.get_last(),nodes_a, nodes_b, internal_connected);
+		//		node2 check_set = memory_element;
+		if(display)
+			System.out.println("about to start and look at "+check_set.get_last()+" which is index "+check_set.get_length()+" out of: "+result.get_length());
 
-//		System.out.println("Is there another, result B: "+result.print_list());
+		Bochert_neighbor(result,check_set.get_last(),nodes_to_consider, dont_consider_connected, internal_connected);
 
-		
-		if(result.get_length() <= 1)
+		if(display)
+			System.out.println("looking at "+check_set.get_last()+" which is index "+check_set.get_length()+" out of: "+result.get_length());
+
+
+		if(result.get_length() <= 0)
 			return false;
 
-
+		//		
 		for(int i = check_set.get_length()-2; i>=0; i--){
 			Bochert_neighbor(result,check_set.get_full_array()[i],empty_node, result, internal_connected);
-//			System.out.println("Is there another, result C: "+result.print_list());
-			if(result.get_length() <= 1){
+
+			if(display)
+				System.out.println("looking at "+check_set.get_full_array()[i]+" which is index "+i+" out of: "+result.get_length());
+
+			if(result.get_length() <= 0){
 				return false;
 			}
 
@@ -121,26 +125,176 @@ public class graph {
 
 		}
 
+
 		return true;
 	}
 
+	private int check_extra_nodes(node2 base, node2 next, boolean display, int deep){
+		//return 1 - delete base
+		//return 2 - do nothing
+		//return 3 - delete next
+		
+		
+		//		putty.set_length(0);
+
+		node2 base_uniq = new node2(base.get_length());
+		node2 next_uniq = new node2(next.get_length());
+
+		base.similar_differences(next, base_uniq, next_uniq);
+
+		//		System.out.println(" turns out that base has the extra nodes: "+base_uniq.print_list()+" and next has the extra nodes: "+next_uniq.print_list());
+
+		int index_base = 0;
+		int index_next = 0;
+		int recursion = 0;
+		
+		node2 result = new node2(nodes);
+
+		node2 replacement = new node2(nodes);
+
+		boolean delete_next = true;
+		boolean delete_base = true;
+
+//		int numnum = 0;
+
+		node2 base_temp = new node2(nodes);
+		node2 next_temp = new node2(nodes);
+
+		node2 base_temp_uniq = new node2(nodes);
+		node2 next_temp_uniq = new node2(nodes);
+
+		if(next_uniq.get_length()==0){
+			delete_base = false;
+		}
+		else if(base_uniq.get_length() == 0){
+			delete_next = false;
+		}
+
+		if(display){
+			this.insert_spaces_for_iteration("B");
+			System.out.println(deep+"in check_extra_nodes");
+			System.out.println(deep+"base uniq("+base_uniq.get_length()+"): "+base_uniq.print_list()+"next uniq("+next_uniq.get_length()+"): "+next_uniq.print_list());
+		}		
+
+	//	while (numnum != next_uniq.get_length()){
+	for(int n = 0; n < next_uniq.get_length(); n++){
+		
+			this.Bochert_neighbor(next_temp, next_uniq.get_full_array()[n], empty_node, next, internal_connected);
+
+			for(int i = 0; i<base_uniq.get_length(); i++){
+
+				this.Bochert_neighbor(base_temp, base_uniq.get_full_array()[i], empty_node, base, internal_connected);
+
+				base_temp.similar_differences(next_temp, base_temp_uniq, next_temp_uniq);
+
+				if(next_temp_uniq.get_length() == 0){
+					next.delete(next_uniq.get_full_array()[n]);
+					next_uniq.delete(next_uniq.get_full_array()[n]);
+					n--;
+					i=base_uniq.get_length();
+				}
+				else if(base_temp_uniq.get_length() == 0){
+					base.delete(base_uniq.get_full_array()[i]);
+					base_uniq.delete(base_uniq.get_full_array()[i]);
+					i--;
+//					i=base_uniq.get_length();
+				}
+				else if((base_temp_uniq.get_length() == 1)&&(next_temp_uniq.get_length() == 1)){
+
+					recursion = check_extra_nodes(base_temp, next_temp, display,deep+1);
+					
+					if(recursion == 3){
+						next.delete(next_uniq.get_full_array()[n]);
+						next_uniq.delete(next_uniq.get_full_array()[n]);
+						n--;
+						i=base_uniq.get_length();
+					}
+					else if(recursion == 1){
+						base.delete(base_uniq.get_full_array()[i]);
+						base_uniq.delete(base_uniq.get_full_array()[i]);
+						i--;
+	//					i=base_uniq.get_length();
+					}
+
+				}
+//				else if(i==(base_uniq.get_length()-1)){//tricky tricky, so if it was on the last one and the other ifs didn't match, it'll hit this, but iff they didn't fall to either of the previous conditions
+//					 delete_next = false;					 
+//				 }
 
 
-	public int[] pre_New_Bochert(){
+			}
+
+		}
+
+	if(next_uniq.get_length() == 0){
+		delete_next = true;
+	}
+	else
+		delete_next = false;
+
+	
+	if(base_uniq.get_length() == 0){
+		delete_base = true;
+	}
+	else
+		delete_base = false;
+
+	
+	
+if(delete_next)
+	return 3;
+if(delete_base)
+	return 1;
+return 2;
+
+
+
+		/*		for(int i = 0; i < next_uniq.get_length(); i++){
+
+			Bochert_neighbor(result,next_uniq.get_full_array()[i],empty_node, next, internal_connected);
+
+			if(this.is_there_another(result, base, empty_node, replacement,false)){
+
+			}
+			else{
+				return false;
+			}
+
+		}
+return true;
+		 */			
+
+	}
+
+	private int[] translate(int[] pre){
+
+		int[] post = new int[pre.length];
+
+		for(int i = 0; i<pre.length; i++){
+			post[i] = index_ordered_nodes[pre[i]-1]+1;
+		}
+
+		//		System.out.println(array2string(post));
+		System.out.println(is_star(post,true));
+
+		return post;
+
+	}
+
+	public int[] pre_New_Bochert(boolean display){
 
 
 		int[] all_nodes = all_neighbors(-1);
 
+
+//		return New_Bochert(new node2(all_nodes), 0, new node2(),false).get_array_min_size();
+
 		sort_nodes();
 		reorganize_nodes();
 
-		//		System.out.println("displaying ordered list of nodes:");
-		//		for(int i = 0; i<nodes_ordered_increasing.length; i++){
-		//			System.out.print(nodes_ordered_increasing[nodes_ordered_increasing.length-i-1]+" ");
-		//		}
+		return merge_sort(unreorganize_nodes(New_Bochert(new node2(all_nodes), 0, new node2(),display)), all_nodes);
+		
 
-
-		return unreorganize_nodes(New_Bochert(new node2(all_nodes), 0, new node2()));
 	}
 
 
@@ -148,7 +302,7 @@ public class graph {
 
 	private void sort_nodes(){
 
-		nodes_ordered_increasing = merge_sort(this.all_neighbors(-1));
+		nodes_ordered_increasing = merge_sort(this.all_neighbors(-1),node_edge_count);
 
 		index_ordered_nodes = new int[nodes];
 
@@ -189,7 +343,7 @@ public class graph {
 		return real_result;
 	}
 
-	private int[] merge_sort(int[] list)
+	private int[] merge_sort(int[] list, int[] weight)
 	{
 		if (list.length <= 1)
 			return list;
@@ -201,9 +355,9 @@ public class graph {
 		System.arraycopy(list, 0, left, 0, middle);
 		System.arraycopy(list, middle, right, 0, list.length - middle);
 
-		left = merge_sort(left);
-		right = merge_sort(right);
-		result = merge(left, right);
+		left = merge_sort(left, weight);
+		right = merge_sort(right, weight);
+		result = merge(left, right, weight);
 
 		return result;
 
@@ -213,7 +367,7 @@ public class graph {
 
 
 
-	private int[] merge(int[] left,int [] right)
+	private int[] merge(int[] left,int [] right, int[] weight)
 	{
 
 		int lefti = 0, righti = 0, resulti = 0;
@@ -223,7 +377,7 @@ public class graph {
 
 
 		while ((lefti < leftl) && (righti < rightl)){
-			if (node_edge_count[left[lefti]-1] >= node_edge_count[right[righti]-1]){ 
+			if (weight[left[lefti]-1] <= weight[right[righti]-1]){ 
 				result[resulti] = left[lefti];
 				resulti++;
 				lefti++;
@@ -248,8 +402,7 @@ public class graph {
 		return result;
 	}
 
-
-	private node2 New_Bochert(node2 nodes, int current_max, node2 current_max_star){
+	private node2 New_Bochert(node2 nodes, int current_max, node2 current_max_star, boolean display){
 
 		//not original Bochert
 
@@ -258,274 +411,294 @@ public class graph {
 			return current_max_star;
 
 
+		node2 head_max_star;
+		if (current_max_star == null){
+			head_max_star = new node2();
+		}
+		else{
+			head_max_star = current_max_star;
+		}
 
-
-		//MEMORIES memories
-		node2 TOP_checked_nodes = new node2();
-		node2 TOP_memory_element_P = new node2();
-		node2 TOP_dont_consider_connected = new node2();
-		node2 TOP_nodes_to_consider = new node2();
-
-
-		//turned into indicies
-		TOP_checked_nodes.set_memory_next(new node2());
-		TOP_memory_element_P.set_memory_next(new node2(nodes.get_length()+current_max_star.get_length()));
-		TOP_dont_consider_connected.set_memory_next(current_max_star);
-		TOP_nodes_to_consider.set_memory_next(nodes);
-
-
-		node2 checked_nodes = TOP_checked_nodes;
-		node2 memory_element = TOP_memory_element_P;
-		node2 dont_consider_connected = TOP_dont_consider_connected;
-		node2 nodes_to_consider = TOP_nodes_to_consider;
-
-		checked_nodes.get_memory_next().set_memory_previous(TOP_checked_nodes);
-		memory_element.get_memory_next().set_memory_previous(TOP_memory_element_P);
-		dont_consider_connected.get_memory_next().set_memory_previous(TOP_dont_consider_connected);
-		nodes_to_consider.get_memory_next().set_memory_previous(TOP_nodes_to_consider);
-
-		//		int temp_current_max = current_max;
-		//int current_node;
-		//int node_that_found_max_star = -1;
+		node2 temp_max = new node2();
+		int temp_current_max = current_max;
+		int current_node;
+		int node_that_found_max_star = -1;
 
 
 		B_calls++;
 		B_iteration_deep++;
 
 
+		node2 nodes_to_consider = nodes;
 
 
+		node2 memory_element = new node2(new int[nodes.get_length()+current_max_star.get_length()]); //will not be passed and will not be corrupted
+		node2 temp_connected_nodes_N = null; //will be passed down the chain and thus might be corrupted
+		node2 temp_connected_star_N= new node2(new int[nodes.get_length()+current_max_star.get_length()]); //will be passed down the chain but won't be corrupted
 
-		//no memory needed
-		node2 temp_element_P = new node2(nodes.get_length()+current_max_star.get_length()); //will be protected
-		node2 temp_connected_nodes = null; //will be passed down the chain and thus might be corrupted
-		node2 temp_connected_star= new node2(nodes.get_length()+current_max_star.get_length()); //will be passed down the chain but won't be corrupted
-		node2 temp_max = new node2(nodes.get_length());
-		node2 head_max_star = current_max_star;
+		node2 temp_element_P = new node2(new int[nodes.get_length()+current_max_star.get_length()]); //will be protected
+		//int[] temp_connected_star_temp = null;
+
+		node2 dont_consider_connected = current_max_star.copy();
+
+		//		if (dont_consider_connected == null)
+		//			dont_consider_connected = new node2(new int[0]);
+
+		//		int[] super_star = {108,20,73,18,93,178,90,94,142,135,186,87,81,150,92,39,68,102,85,136,134};
+		//		int[] super_star = {1,2,4,5,10,11,15,18,24,30,33,36,39,42,45,48,51,54,57,60,63,66,67,71,74,78,80,84,87,90,93,96,97,102,104,108,111,114,117,120,123,126,129,132,135,138,140,144,147,150,153,156,159,162,165,168,171,174,177,180,183,185,189,191,195,198,201,204,205,210,212,216,219,222,225,228,231,234,237,240,243,246,249,252,255,258,261,264,267,270,273,276,279,282,285,288,291,292,297,298,303,306,309,312,314,318,321,324,327,330,333,336,339,342,345,348,351,354,357,360,363,366,367,372,375,376};
+		//		int[] super_star = {378,30,32,34,37,40,43,46,49,52,55,58,61,65,68,70,74,77,79,82,85,88,93,94,97,100,103,106,109,112,115,118,121,124,127,130,133,136,140,142,145,148,151,154,157,160,163,166,169,172,176,178,181,184,187,190,193,196,199,202,205,208,211,214,217,220,224,226,230,232,237,238,241,244,247,250,253,256,261,262,267,268,272,274,277,280,283,286,289,292,295,298,301,304,307,310,313,316,319,322,325,328,331,334,337,340,343,346,349,352,355,358,363,364,368,370,373,4,10,13,17,18,23,24,26,27};
+		//		int[] super_star = {7,17,21,28,42,46,55,86,97,117,138,143,149,154,162,167,171,176,179,187,199};
+		//		int[] super_star = {187,176,185,196,194,192,184,180,172,171,165,162,7,17,21,28,42,46,55,86,97,117,138,143,149,154,167,179,199};
+		//		int[] super_star = {4,26,32,48,58,62,79,83,103,108,116,122,131,138,144,145,176,179,185,190};
+		//		56 85 191
+		int[] super_star = {200,199,173,190,183,175,178,133,168,157,137,148,136,93,47,66,76,91,186,195};
+
+		//insert 185,196,194,192,184,180,172,165
 
 		boolean another = false;
-		boolean checked = false;
+//		boolean checked = false;
+		boolean disp = false;
+		//		node2 result_from_others = new node2();
 
+//		node2 checked_nodes = new node2();
 
+		/*		System.out.println("before reduction, length ntc: "+nodes_to_consider.get_length());
 
-		while (TOP_nodes_to_consider.get_memory_next().get_length() > 0){
+		for(int i = nodes_to_consider.get_length()-1; i >= 0; i--){
+			if(is_there_another(nodes_to_consider,dont_consider_connected, nodes_to_consider.get_full_array()[i],temp_element_P)){
+				System.out.println("deleting "+nodes_to_consider.get_full_array()[i]+" because node exists: "+temp_element_P.print_list());
+				nodes_to_consider.delete(nodes_to_consider.get_full_array()[i]);
+			}
+		}
 
+		System.out.println("after reduction, length ntc: "+nodes_to_consider.get_length());
+		pause();
+		 */		
+
+		
+		Bochert_neighbor(memory_element, nodes_to_consider.get_full_array()[0], dont_consider_connected, nodes_to_consider,internal_connected);
+		Bochert_neighbor(temp_element_P, nodes_to_consider.get_full_array()[0], dont_consider_connected, nodes_to_consider, internal_not_connected);
+		temp_element_P.add(nodes_to_consider.get_full_array()[0]);
+//		if(nodes_to_consider.get_length() > temp_element_P.get_length()){
+			dont_consider_connected = memory_element.copy();
+			nodes_to_consider = temp_element_P.copy();
+
+			if(display){
+			this.insert_spaces_for_iteration("B");
+				System.out.println(" NEW ntc("+nodes_to_consider.get_length()+" NEW dcc("+dont_consider_connected.get_length()+" ntc is: "+nodes_to_consider.print_list());
+			}
+
+//		}
+
+			int numnum;
+			int result;
 			
-			if(temp_max.get_length() < B_iteration_deep)
-				System.out.println(temp_max.get_full_array()[-1]);
-
+			node2 run_me = new node2(nodes.get_length()+current_max_star.get_length());
 			
+		do{
 
-			Bochert_neighbor(memory_element.get_memory_next(), nodes_to_consider.get_memory_next().get_last(), dont_consider_connected.get_memory_next(), nodes_to_consider.get_memory_next(),internal_connected);
+			current_node = nodes_to_consider.get_full_array()[0];
+			nodes_to_consider.delete(current_node);
 
-			another = is_there_another(nodes_to_consider.get_memory_next(),dont_consider_connected.get_memory_next(), nodes_to_consider.get_memory_next().get_last(),temp_element_P);
-
-			if(!another)
-				checked = this.already_checked_with_out_memory(checked_nodes.get_memory_next(), memory_element.get_memory_next(),temp_element_P);
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("------------------");
-			this.insert_spaces_for_iteration("B");
-			System.out.println("current node: "+nodes_to_consider.get_memory_next().get_last());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("ntc("+nodes_to_consider.get_memory_next().get_length()+"): "+nodes_to_consider.get_memory_next().print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("dnc("+dont_consider_connected.get_memory_next().get_length()+"): "+dont_consider_connected.get_memory_next().print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("memory_element("+memory_element.get_memory_next().get_length()+"): "+memory_element.get_memory_next().print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("temp_max: "+temp_max.print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("checked nodes("+checked_nodes.get_memory_next().get_length()+"): "+checked_nodes.get_memory_next().print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("head_max_star("+head_max_star.get_length()+"): "+head_max_star.print_list());
-			this.insert_spaces_for_iteration("B");
-			System.out.println("another: "+another+" checked: "+checked);
-
+			Bochert_neighbor(memory_element, current_node, dont_consider_connected, nodes_to_consider,internal_connected);
 			
-			if((another||(!another && checked))||((memory_element.get_memory_next().get_length()+B_iteration_deep)<head_max_star.get_length())){
+			another = false;
 
-				nodes_to_consider.get_memory_next().delete_last();
+			if(display){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("Current_node: "+current_node+" length: "+memory_element.get_length());
+			}
+			
+//			another = is_there_another(memory_element, nodes_to_consider, dont_consider_connected, temp_element_P, false);
 
-				while(nodes_to_consider.get_memory_next().get_length() == 0){
+			numnum = 0;
+			while(numnum < nodes_to_consider.get_length()){
+				//for(int i = 0; i<nodes_to_consider.get_length(); i++){
 
+				Bochert_neighbor(temp_element_P, nodes_to_consider.get_full_array()[numnum], dont_consider_connected, nodes_to_consider,internal_connected);							
 
+				if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("In NewBochert, current_node is: "+current_node+" looking at ntc node of: "+nodes_to_consider.get_full_array()[numnum]);
+				}
+				
+				result = check_extra_nodes(memory_element, temp_element_P,false,0);
+				if(result == 3){
+					if(graph[current_node-1][nodes_to_consider.get_full_array()[numnum]-1] == 0){
+						if(display){
+							this.insert_spaces_for_iteration("B");
+							System.out.println(current_node+"**deleting from ntc: "+nodes_to_consider.get_full_array()[numnum]+" ntc length was: "+nodes_to_consider.get_length());
+						}
+						nodes_to_consider.delete(nodes_to_consider.get_full_array()[numnum]);
+					}
+					else{
+						if(display){
+							this.insert_spaces_for_iteration("B");
+							System.out.println(current_node+"**moving from ntc to dcc: "+nodes_to_consider.get_full_array()[numnum]);
+						}
+						dont_consider_connected.add(nodes_to_consider.get_full_array()[numnum]);
+						nodes_to_consider.delete(nodes_to_consider.get_full_array()[numnum]);
+					}
+				}
+				else if (result == 1){
+					if(display){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("deleting base ("+current_node+") because it was beat out by: "+nodes_to_consider.get_full_array()[numnum]);
+					}
 					
-						if(nodes_to_consider == TOP_nodes_to_consider)
-							break;
+					current_node = nodes_to_consider.get_full_array()[numnum];
+					nodes_to_consider.delete(nodes_to_consider.get_full_array()[numnum]);
+					numnum = 0;
+					
+					Bochert_neighbor(memory_element, current_node, dont_consider_connected, nodes_to_consider,internal_connected);
+					Bochert_neighbor(temp_element_P, current_node, dont_consider_connected, nodes_to_consider, internal_not_connected);
+					if(nodes_to_consider.get_length() > temp_element_P.get_length()){
+						dont_consider_connected = memory_element.copy();
+						nodes_to_consider = temp_element_P.copy();
 
-						checked_nodes = checked_nodes.get_memory_previous();
-						memory_element = memory_element.get_memory_previous();
-						dont_consider_connected = dont_consider_connected.get_memory_previous();
-						nodes_to_consider = nodes_to_consider.get_memory_previous();
-
+						if(display){
 						this.insert_spaces_for_iteration("B");
-						System.out.println("****Returning A****");
-						this.insert_spaces_for_iteration("B");
-						System.out.println("ntc("+nodes_to_consider.get_memory_next().get_length()+"): "+nodes_to_consider.get_memory_next().print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("dnc("+dont_consider_connected.get_memory_next().get_length()+"): "+dont_consider_connected.get_memory_next().print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("memory_element("+memory_element.get_memory_next().get_length()+"): "+memory_element.get_memory_next().print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("temp_max: "+temp_max.print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("checked nodes("+checked_nodes.get_memory_next().get_length()+"): "+checked_nodes.get_memory_next().print_list());
-
-						
-						temp_max.delete(temp_max.get_first());//.delete(nodes_to_consider.get_memory_next().get_last());
-//						nodes_to_consider.get_memory_next().delete_last();
-						B_iteration_deep--;
-						temp_max.negcheck();						
+							System.out.println(" NEW ntc("+nodes_to_consider.get_length()+" NEW dcc("+dont_consider_connected.get_length()+" ntc is: "+nodes_to_consider.print_list());
+						}
 					}
 
+					
+					//another = true;
+					//break;
 				}
-			else{
+				else{
+					//							System.out.println("nope, node "+nodes_to_consider.get_full_array()[numnum]+" has to stay in ntc");
+					numnum++;
+				}
 
-				checked_nodes.get_memory_next().add(nodes_to_consider.get_memory_next().get_last());
-				temp_max.add(nodes_to_consider.get_memory_next().get_last());
-				nodes_to_consider.get_memory_next().delete_last();
+			}
 
-				temp_max.negcheck();
-				temp_max.dupceck();
 
-				
+
+			
+
+			//				if(!another)
+			//					checked = this.already_checked_with_out_memory(checked_nodes, memory_element,temp_element_P);
+
+
+			if(!another){
+
+
+
+//				checked_nodes.add(current_node);
+
 				/////////////////////////////////////////////////////////////////////////
 				//                 RUN THIS NODE
 				/////////////////////////////////////////////////////////////////////////
 
-				
-				Bochert_neighbor(temp_element_P, temp_max.get_first(), nodes_to_consider.get_memory_next(), dont_consider_connected.get_memory_next(),internal_not_connected);				
-				if(nodes_to_consider.get_memory_next().get_length() > temp_element_P.get_length()){
-					temp_element_P.set_memory_previous(nodes_to_consider.get_memory_next().get_memory_previous());							
-					nodes_to_consider.set_memory_next(temp_element_P.copy_double_mem());
 
-					temp_element_P.set_memory_previous(dont_consider_connected.get_memory_next().get_memory_previous());
-					dont_consider_connected.set_memory_next(memory_element.get_memory_next().copy_double_mem());
-					dont_consider_connected.get_memory_next().set_memory_previous(temp_element_P.get_memory_previous());
+				////////////////////////////////////////////////////
+				//new crazy check since ind set thing didn't work
+				///////////////////////////////////////////////////
+
+
+
+
+
+				if (((1+nodes_to_consider.get_length()+dont_consider_connected.get_length()+head_max_star.get_length()) <= current_max)){
+
+
+
+					if (node_that_found_max_star == -1){
+						B_iteration_deep--;		
+						return head_max_star;
+					}
+
+
+					head_max_star.add(node_that_found_max_star);
+
+					B_iteration_deep--;
+
+					return head_max_star;
+
 				}
 
-				
 
-				temp_connected_nodes = memory_element.get_memory_next().copy_double_mem();
+				if(display){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("INSIDE real function of "+current_node+" ntc ("+nodes_to_consider.get_length()+"): and dcc ("+dont_consider_connected.get_length());
+				}
 
-				temp_connected_star.pull_out_intersection(temp_connected_nodes, head_max_star);
-				temp_connected_nodes.delete(temp_connected_star);
+				if(display){
+					if(B_calls > 15)
+						pause();
+				}
+
+				temp_connected_nodes_N = memory_element.copy();
+				Bochert_neighbor(temp_connected_star_N, current_node, empty_node, head_max_star, internal_connected);
+
+				temp_connected_nodes_N.delete(temp_connected_star_N);
 
 
+
+				//					if(B_iteration_deep <= display_level){
+				//					if(this.run_this_star(memory_element, current_node, super_star)){								
+				//if(((display)&&(super_star[B_iteration_deep] == current_node))||(((B_iteration_deep == 0)&&(super_star[B_iteration_deep] == current_node)))){
+
+				if(B_iteration_deep <= display_level){
+					this.insert_spaces_for_iteration("B");
+					System.out.println(current_node+" "+B_calls+" total connected: "+memory_element.get_length()+" ntc: "+nodes_to_consider.get_length()+" dc: "+dont_consider_connected.get_length()+" tcs: "+temp_connected_star_N.get_length()+" tcn: "+temp_connected_nodes_N.get_length());
+				}
 
 
 				/////////////////////////////////////////////////////////////
-				//      done?
+				//      pass it down the chain?
 				////////////////////////////////////////////////////////////
 
 
-				if (temp_connected_nodes.get_length() <= 1){
+				if ((temp_connected_nodes_N.get_length()+temp_connected_star_N.get_length())== 0 && temp_current_max == 0 && node_that_found_max_star == -1){
+					node_that_found_max_star = current_node;
+					temp_current_max = 1;
+					//head_max_star = new node2(new int[0]);
+				}
+				else if (((temp_connected_nodes_N.get_length()+temp_connected_star_N.get_length()) >= temp_current_max) && ((temp_connected_nodes_N.get_length()+temp_connected_star_N.get_length()) != 0)) {
 
-					if(temp_connected_nodes.get_length() == 1){
-						Bochert_neighbor(temp_connected_star,temp_connected_nodes.get_full_array()[0], empty_node,temp_connected_star,internal_connected);
-						temp_connected_star.add(temp_connected_nodes.get_full_array()[0]);							
-					}
-
-
-					if(temp_connected_star.get_length()+temp_max.get_length() > head_max_star.get_length()){
-
-						temp_max.negcheck();
-
-						temp_max.add(temp_connected_star);						
-
-						head_max_star = temp_max.copy_double_mem();
-
-						temp_max.delete(temp_connected_star);
-						temp_max.delete(temp_max.get_first());//.delete(nodes_to_consider.get_memory_next().get_last());
-
-						temp_max.negcheck();
-
-
-
+					if ((temp_connected_nodes_N.get_length()) == 1) {
+						Bochert_neighbor(temp_element_P,temp_connected_nodes_N.get_full_array()[0], empty_node,temp_connected_star_N,internal_connected);
+						temp_max = temp_element_P.copy();
+						temp_max.add(temp_connected_nodes_N.get_full_array()[0]);
 					}
 					else{
-						temp_max.delete_last();//.delete(nodes_to_consider.get_memory_next().get_last());
-						//nodes_to_consider.get_memory_next().delete_last();						
-					}
-
-					while(nodes_to_consider.get_memory_next().get_length() == 0){
-
-							if(nodes_to_consider == TOP_nodes_to_consider)
-								break;
-
-							checked_nodes = checked_nodes.get_memory_previous();
-							memory_element = memory_element.get_memory_previous();
-							dont_consider_connected = dont_consider_connected.get_memory_previous();
-							nodes_to_consider = nodes_to_consider.get_memory_previous();
-
-							this.insert_spaces_for_iteration("B");
-							System.out.println("****Returning A****");
-							this.insert_spaces_for_iteration("B");
-							System.out.println("ntc("+nodes_to_consider.get_memory_next().get_length()+"): "+nodes_to_consider.get_memory_next().print_list());
-							this.insert_spaces_for_iteration("B");
-							System.out.println("dnc("+dont_consider_connected.get_memory_next().get_length()+"): "+dont_consider_connected.get_memory_next().print_list());
-							this.insert_spaces_for_iteration("B");
-							System.out.println("memory_element("+memory_element.get_memory_next().get_length()+"): "+memory_element.get_memory_next().print_list());
-							this.insert_spaces_for_iteration("B");
-							System.out.println("temp_max: "+temp_max.print_list());
-							this.insert_spaces_for_iteration("B");
-							System.out.println("checked nodes("+checked_nodes.get_memory_next().get_length()+"): "+checked_nodes.get_memory_next().print_list());
-
-							
-							temp_max.delete(temp_max.get_first());//.delete(nodes_to_consider.get_memory_next().get_last());
-//							nodes_to_consider.get_memory_next().delete_last();
-							B_iteration_deep--;
-							temp_max.negcheck();
-							
+						if(display){
+							//							if(display && super_star[B_iteration_deep] == current_node){
+							disp = true;
 						}
+						else
+							disp = false;
+
+
+						if (temp_current_max == 0){
+							temp_max = New_Bochert(temp_connected_nodes_N, temp_current_max, temp_connected_star_N,disp);
+						}
+						else{
+							temp_max = New_Bochert(temp_connected_nodes_N, temp_current_max-1, temp_connected_star_N, disp);
+						}
+						//}
+
 					}
-				else{
+
+					//***********************************************************//
+					//           check for max clique
+					//***********************************************************//
 
 
-					
-/*					this.insert_spaces_for_iteration("B");
-					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-					this.insert_spaces_for_iteration("B");
-					System.out.println("current node: "+nodes_to_consider.get_memory_next().get_last());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("ntc("+nodes_to_consider.get_memory_next().get_length()+"): "+nodes_to_consider.get_memory_next().print_list());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("dnc("+dont_consider_connected.get_memory_next().get_length()+"): "+dont_consider_connected.get_memory_next().print_list());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("memory_element("+memory_element.get_memory_next().get_length()+"): "+memory_element.get_memory_next().print_list());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("checked nodes("+checked_nodes.get_memory_next().get_length()+"): "+checked_nodes.get_memory_next().print_list());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("tcn("+temp_connected_nodes.get_length()+"): "+temp_connected_nodes.print_list());
-					this.insert_spaces_for_iteration("B");
-					System.out.println("tcs("+temp_connected_star.get_length()+"): "+temp_connected_star.print_list());
-					
-					if(B_calls > 40){
-						System.out.println("paused");
-						pause();
+
+					if ((temp_max != null) && (temp_max.get_length() >= temp_current_max)){
+
+						head_max_star = temp_max;												
+
+
+						node_that_found_max_star = current_node;
+
+						temp_current_max = head_max_star.get_length()+1;
+
+
 					}
-*/
-					checked_nodes.get_memory_next().set_memory_next(new node2());
-					checked_nodes.get_memory_next().get_memory_next().set_memory_previous(checked_nodes.get_memory_next());
-					checked_nodes = checked_nodes.get_memory_next();
-
-					memory_element.get_memory_next().set_memory_next(new node2(temp_connected_nodes.get_length()+temp_connected_star.get_length()));
-					memory_element.get_memory_next().get_memory_next().set_memory_previous(memory_element.get_memory_next());
-					memory_element = memory_element.get_memory_next();
-
-					dont_consider_connected.get_memory_next().set_memory_next(temp_connected_star.copy_double_mem());
-					dont_consider_connected.get_memory_next().get_memory_next().set_memory_previous(dont_consider_connected.get_memory_next());
-					dont_consider_connected = dont_consider_connected.get_memory_next();
-
-					nodes_to_consider.get_memory_next().set_memory_next(temp_connected_nodes.copy_double_mem());
-					nodes_to_consider.get_memory_next().get_memory_next().set_memory_previous(nodes_to_consider.get_memory_next());
-					nodes_to_consider = nodes_to_consider.get_memory_next();
-
-
-					B_calls++;
-					B_iteration_deep++;
-
 
 
 
@@ -534,29 +707,45 @@ public class graph {
 
 
 			}
+
+			//nodes_to_consider.delete(current_node);
+
+
+
+
+		}while (nodes_to_consider.get_length() > 0);
+
+
+		if((false)&&(super_star[B_iteration_deep] == current_node)){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("returning from OUTSIDE the while loop");
+			this.insert_spaces_for_iteration("B");
+			System.out.println("ntc.l: "+nodes_to_consider.get_length()+" dcc.l: "+dont_consider_connected.get_length()+"hms.l"+head_max_star.get_length()+" ntfms: "+node_that_found_max_star);
 		}
 
 
 
+		if (node_that_found_max_star == -1){
 
-		B_iteration_deep--;		
+
+			B_iteration_deep--;		
+			return head_max_star;
+		}
+
+
+		//		int[] temp_finder = {node_that_found_max_star};
+		//		node finder = new node2(temp_finder);
+
+		head_max_star.add(node_that_found_max_star);
+
+
+
+		B_iteration_deep--;
+
 		return head_max_star;
 
-
 	}
 
-
-	private void display_down(node2 disp){
-		node2 index = disp;
-
-		System.out.println("displaying down");
-
-		while(index != null){
-			System.out.println(index.print_list());
-			index = index.get_memory_next();
-		}
-
-	}
 
 
 	/*	private int[] Bochert_neighbor(int n, int[] nodes, int connection){
@@ -582,6 +771,77 @@ public class graph {
 	}
 	 */
 
+	private boolean run_this_star(node2 connections, int current_node, int[] pre_star){
+
+		/*		int[] super_star = new int[pre_star.length];
+
+		for(int i = 0; i<super_star.length; i++){
+			super_star[i] = index_ordered_nodes[pre_star[i]-1]+1;			
+		}
+
+		super_star = merge_sort(super_star,all_neighbors(-1));
+		System.out.println("is star? "+this.is_star(super_star,true));
+		System.out.println("star is: "+array2string(super_star));
+		 */
+		int[] super_star = {7,17,21,28,42,46,55,86,97,117,138,143,149,154,162,167,171,176,179,187,199};
+		node2 next = new node2(super_star);
+
+		node2 base_uniq = new node2(nodes);
+		node2 next_uniq = new node2(nodes);
+
+		int first_num = -1;
+		for(int i = 0; i<super_star.length; i++){
+			if(current_node == super_star[i]){
+				first_num = i;
+				break;
+			}
+		}
+		if(first_num < 0)
+			return false;
+
+
+		connections.similar_differences(next, base_uniq, next_uniq);
+
+		//		System.out.println("similarities: "+(next.get_length()-next_uniq.get_length()));
+
+		if((next.get_length()-next_uniq.get_length())+B_iteration_deep+1 == super_star.length){
+			//			System.out.println("returning true");
+			return true;
+		}
+		else{
+			//			System.out.println((next.get_length()-next_uniq.get_length())+B_iteration_deep+1);
+			//			System.out.println(super_star.length);
+			return false;
+		}
+
+
+		/*int index_connections=0;
+
+		for(int i = first_num+1; i<super_star.length; i++){
+			while((index_connections < connections.get_length())&&(connections.get_full_array()[index_connections] < super_star[first_num])){
+				index_connections++;
+			}
+			if(index_connections >= connections.get_length()){
+				System.out.println("connnections were: "+index_connections);
+				return false;
+			}
+			if(connections.get_full_array()[index_connections]>super_star[i]){
+				System.out.println("connnections were: "+index_connections);
+				return false;
+			}
+
+
+		}
+
+
+		System.out.println("current_node: "+nodes_ordered_increasing[current_node-1]+" first was: "+first_num);
+		return true;
+		 */		
+
+
+	}
+
+
 	private void Bochert_neighbor(node2 result, int n, node2 array, node2 node_array, int connection){
 
 
@@ -594,29 +854,29 @@ public class graph {
 		}
 
 		int nodes_index = 0;
-		int nodes_array_index = 0;
+		int nodes2_index = 0;
 
-		while((nodes_index < length_array)||(nodes_array_index < length_node_array)){
+		while((nodes_index < length_array)||(nodes2_index < length_node_array)){
 
-			if((nodes_index < length_array)&&((nodes_array_index >= length_node_array)||(array.get_full_array()[nodes_index] < node_array.get_full_array()[nodes_array_index]))){
-				if (((n-1) != (array.get_full_array()[nodes_index]-1)) && (graph[n-1][array.get_full_array()[nodes_index]-1] == connection)){
+			if((nodes_index < length_array)&&((nodes2_index >= length_node_array)||(array.get_full_array()[nodes_index] < node_array.get_full_array()[nodes2_index]))){
+				if (((n-1) != (array.get_full_array()[nodes_index ]-1)) && (graph[n-1][array.get_full_array()[nodes_index ]-1] == connection)){
 					result.add_to_end(array.get_full_array()[nodes_index]);
 				}
 				nodes_index++;
 			}
-			else if((nodes_array_index < length_node_array)&&((nodes_index >= length_array)||(array.get_full_array()[nodes_index] > node_array.get_full_array()[nodes_array_index]))){
+			else if((nodes2_index < length_node_array)&&((nodes_index >= length_array)||(array.get_full_array()[nodes_index] > node_array.get_full_array()[nodes2_index]))){
 
-				if (((n-1) != (node_array.get_full_array()[nodes_array_index]-1)) && (graph[n-1][node_array.get_full_array()[nodes_array_index]-1] == connection)){
-					result.add_to_end(node_array.get_full_array()[nodes_array_index]);
+				if (((n-1) != (node_array.get_full_array()[nodes2_index]-1)) && (graph[n-1][node_array.get_full_array()[nodes2_index]-1] == connection)){
+					result.add_to_end(node_array.get_full_array()[nodes2_index]);
 				}
-				nodes_array_index++;
+				nodes2_index++;
 			}
 
-			else if((nodes_array_index < length_node_array)&&((nodes_index >= length_array)||(array.get_full_array()[nodes_index] == node_array.get_full_array()[nodes_array_index]))){
-				if (((n-1) != (node_array.get_full_array()[nodes_array_index]-1)) && (graph[n-1][node_array.get_full_array()[nodes_array_index]-1] == connection)){
-					result.add_to_end(node_array.get_full_array()[nodes_array_index]);
+			else if((nodes2_index < length_node_array)&&((nodes_index >= length_array)||(array.get_full_array()[nodes_index] == node_array.get_full_array()[nodes2_index]))){
+				if (((n-1) != (node_array.get_full_array()[nodes2_index]-1)) && (graph[n-1][node_array.get_full_array()[nodes2_index]-1] == connection)){
+					result.add_to_end(node_array.get_full_array()[nodes2_index]);
 				}
-				nodes_array_index++;
+				nodes2_index++;
 				nodes_index++;
 			}
 
@@ -1138,6 +1398,16 @@ public class graph {
 				{1,0,1,1,1,1,1,1,0,1},
 				{0,1,1,1,1,1,1,1,1,0}};
 
+		int[][] testie4={
+				{1,0,1,0,1,0,1,1,1},
+				{0,1,0,1,0,1,1,1,1},
+				{1,0,1,0,1,0,1,1,1},
+				{0,1,0,1,0,1,1,1,1},
+				{1,0,1,0,1,0,1,1,1},
+				{0,1,0,1,0,1,1,1,1},
+				{1,1,1,1,1,1,0,1,1},
+				{1,1,1,1,1,1,1,0,1},
+				{1,1,1,1,1,1,1,1,0}};
 
 
 		graph g = new graph(testie3);
@@ -1184,24 +1454,34 @@ public class graph {
 		s[32] = "MANN_a45.clq";
 		s[33] = "MANN_a81.clq";
 
-
-		/*		int[] a = {1,3,5,6};
-		int[] b = {0,3,5,7};
+		/*
+		int[] a = new int[0];
+		int[] b = {0,1,6,7};
 		node2 na = new node2(a);
 		node2 nb = new node2(b);
-		node2 nc = new node2(10);
-		nc.pull_out_intersection(na, nb);
-		System.out.println(nc.print_list());
+		node2 uniqa = new node2(10);
+		node2 uniqb = new node2(10);
+
+		na.similar_differences(nb, uniqa, uniqb);
+
+		System.out.println("uniqa: "+uniqa.print_list());
+		System.out.println("uniqb: "+uniqb.print_list());
 
 		g.pause();
-		 */			
+		 */		
+
 		for(int i = 0; i<s.length; i++){
 
-			if ((i == 11) && (i != 18) && (i != 19)){
+			if ((i == 31) || (i == -32)){// && (i != 18) && (i != 19)){
 				System.out.println("***********************************************************************************************************");
 				System.out.println(i+" "+s[i]);
 				g = new graph(s[i]);
-				g.display_level = -7;
+				//g = new graph(testie4);
+
+				if ((i >= 31))
+					g.display_level = 8;
+				else
+					g.display_level = 0;
 
 
 
@@ -1214,8 +1494,9 @@ public class graph {
 				g.start_showing_crap = false;
 
 				start = System.currentTimeMillis();
+				System.out.println("started at: 4:36 cst");
 				g.B_calls = 0;
-				temp = g.pre_New_Bochert();
+				temp = g.pre_New_Bochert(true);
 
 				elapsedTimeMillis = System.currentTimeMillis()-start;
 
@@ -1226,7 +1507,16 @@ public class graph {
 
 				System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
 
-			}
+
+				/*				node2 ntemp = new node2(temp);
+				for(int a = 1; a<=g.nodes; a++){
+					ntemp.add(a);
+					if(g.is_star(ntemp.get_array_min_size(), true)){
+						System.out.println(a+" was a succex");
+					}
+					ntemp.delete(a);
+				}
+				 */			}
 		}
 
 
