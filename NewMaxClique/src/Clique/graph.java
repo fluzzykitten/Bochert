@@ -1,11 +1,37 @@
 package Clique;
 
 import java.io.*;
-import java.util.Scanner;
+import java.util.*;
+import java.text.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Random;
+
+import java.security.MessageDigest;
+import java.util.Arrays;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+ 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.ByteBuffer;
+
+//import org.hyperic.sigar.Mem;
+//import org.hyperic.sigar.Cpu;
+//import org.hyperic.sigar.CpuInfo;
+//import org.hyperic.sigar.Sigar;
+//import org.hyperic.sigar.SigarException;
+//import org.hyperic.sigar.ProcCpu;
 
 //import Clique2.graph;
 
-//import OldClique.node;
+//import OldClique.node; 
 
 
 public class graph {
@@ -18,6 +44,7 @@ public class graph {
 	private long BK_calls = 0; // calls to BronKerbosch
 	private int B_iteration_deep = -1; //iterations deep into Bochert
 	private long B_calls = 0; // calls to Bochert
+	private long B_calls_TOP = 0; // TOP calls to Bochert
 	private long B_calls_background = 0; // calls to Bochert
 	private boolean verboseBK = false; // Verbosity of output... verbosity should be a word... it sounds cool
 	private int edges = 0; // total edges in graph
@@ -33,7 +60,8 @@ public class graph {
 	private node3 empty_node;
 	private int previous_depth = 0;
 	private int count_down = 20;
-//	private gpu graphics_card;
+
+	//private gpu graphics_card;
 	private node3[] results_array;
 	private int results_array_length;
 	private node3 deleted_nodes;
@@ -49,7 +77,33 @@ public class graph {
 	private long hotswap_trigger = -1;
 	private boolean level_0_display = false;
 	private boolean priority_threading = false;
-	private int min_new_thread_size = 10;
+	private int min_new_bthread_size = 10;
+	private int min_new_midthread_size = 10;
+	private int lowest_backtrack = 0; //by setting to "nodes", threads will do a depth first search, this helps in tracking progress, but it's not as efficient
+	private Date dNow = new Date( );
+	private SimpleDateFormat ft = new SimpleDateFormat ("HH:mm:ss");
+	semaphore semasema = new semaphore("semasema");
+	semaphore mid_semasema = new semaphore("mid_semasema");
+	semaphore semaMax = new semaphore("semaMax");
+	semaphore semasematext = new semaphore("semasematext");
+	int max_thread_scaling_factor = 3; //used to decide how much larger the pool of threads can grow, keeping the max number of active threads the same
+	ThreadMXBean thMxB = ManagementFactory.getThreadMXBean();
+	long[] time_analysis = new long[10];
+	int exit_loop = 15000;
+	int middle_loop_run = 0;
+	boolean show_me_intermitent_maxes = false;
+	Random generator = new Random();
+	int randseed = -1;
+	
+	String IV = "AAAAAAAAAAAAAAAA";
+	String plaintext = "test text 123\0\0\0"; /*Note null padding*/
+	String encryptionKey = "0123456789abcdef";
+	int current_byte = 4;
+	byte[] cipher = new byte[32];
+
+
+
+
 
 	private void hotswap(){
 
@@ -365,57 +419,65 @@ public class graph {
 		graph3 = new node3[nodes];
 		for(int i = 0; i<nodes; i++){
 			graph3[i] = new node3(graph[i],nodes,true);
-			//				System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
+			//							System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
 		}
 
 		level_0_display = display;
 
 		node3 send = reduction(new node3(this.all_neighbors(-1),nodes),null,null);
 
-
 		if(num_threads <= 0){
 			return merge_sort(unreorganize_nodes(Newer_Bochert(send,0,nodes,display,0)), all_neighbors(-1));
+			//return Newer_Bochert(send,0,nodes,display,0).to_int();
 		}
 		else{
-			node3[] reach_back1 = new node3[num_threads];
-			node3[] previous_nodes = new node3[num_threads];
+			node3[] reach_back1 = new node3[max_thread_scaling_factor*num_threads];
+			node3[] previous_nodes = new node3[max_thread_scaling_factor*num_threads];
 
-			for(int i = 0; i<num_threads; i++){
+			for(int i = 0; i<max_thread_scaling_factor*num_threads; i++){
 				reach_back1[i] = new node3(nodes);
 				previous_nodes[i] = new node3(nodes);
 			}
 
 			//node3 find1 = new node3(this.all_neighbors(-1),nodes);
 			long[] reach_back_B_calls1 = new long[1];
-			int[] status = new int[num_threads];
+			long[] reach_back_B_calls_TOP1 = new long[1];
+			int[] status = new int[max_thread_scaling_factor*num_threads];
 			status[0] = 1;
-			semaphore semasema = new semaphore();
 			semaphore stillrunning = new semaphore();
-			semaphore semaMax = new semaphore();
-			
+
+
 			int[] thread_count = new int[1];
 			thread_count[0] = 1;
+			int[] exit_loop1 = new int[1];
+			exit_loop1[0] = exit_loop;
 
-			semaphore mid_semasema = new semaphore();
-			int[] mid_status = new int[mid_num_threads]; 
+			int[] mid_status = new int[max_thread_scaling_factor*mid_num_threads]; 
 			int[] mid_thread_count = new int[1];
 			mid_thread_count[0] = 1;			
-			
-			node3[] mid_reach_back = new node3[mid_num_threads];
-			node3[] mid_previous_nodes = new node3[mid_num_threads];
-			for(int i = 0; i<mid_num_threads; i++){
+
+			node3[] mid_reach_back = new node3[max_thread_scaling_factor*mid_num_threads];
+			node3[] mid_previous_nodes = new node3[max_thread_scaling_factor*mid_num_threads];
+			for(int i = 0; i<max_thread_scaling_factor*mid_num_threads; i++){
 				mid_reach_back[i] = new node3(nodes);
 				mid_previous_nodes[i] = new node3(nodes);
 			}
-			
-			semaphore semasematext = new semaphore();
 
-			
-			
+			int[] reach_back_middle_loop_run = new int[1];
+			reach_back_middle_loop_run[0] = 0;
+
+
 			try{stillrunning.take();} catch(InterruptedException e){}
 
+
 			//			bthread(node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int thread_count1){
-			Runnable task = new bthread(semasematext, reach_back1, num_threads, graph3, graph, send, display, nodes, reach_back_B_calls1, display_level, empty_node, degressive_display,0,status,previous_nodes,0,semasema,stillrunning,-1,0,semaMax,0,priority_threading,new int[1], thread_count, mid_semasema, mid_thread_count, mid_num_threads, mid_status, mid_reach_back,mid_previous_nodes,min_new_thread_size);	
+			Runnable task = new bthread(semasematext, reach_back1, num_threads, graph3, graph, send, display, nodes, reach_back_B_calls1, display_level, empty_node, degressive_display,0,status,previous_nodes,0,semasema,stillrunning,-1,0,semaMax,0,priority_threading,new int[1], thread_count, mid_semasema, mid_thread_count, mid_num_threads, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP1,max_thread_scaling_factor*num_threads,max_thread_scaling_factor*mid_num_threads,time_analysis,exit_loop1,reach_back_middle_loop_run,show_me_intermitent_maxes);	
+
+
+			//bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, 	node3[] mid_previous_nodes1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1){
+			//bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1, semaphore semaMax1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, node3[] mid_previous_nodes1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1){
+
+
 			Thread worker = new Thread(task);
 			worker.setName("TOP_Thread");
 			if(priority_threading){
@@ -431,8 +493,11 @@ public class graph {
 			//			}
 
 			B_calls = reach_back_B_calls1[0];
-			
-			return merge_sort(unreorganize_nodes(reach_back1[0]), all_neighbors(-1));
+			B_calls_TOP = reach_back_B_calls_TOP1[0];
+			middle_loop_run = reach_back_middle_loop_run[0];
+
+						return merge_sort(unreorganize_nodes(reach_back1[0]), all_neighbors(-1));
+			//return(reach_back1[0].to_int());
 		}
 
 		/*		else{
@@ -603,6 +668,8 @@ public class graph {
 
 	private node3 Newer_Bochert(node3 all_nodes, int current_max, int sought_max, boolean show, int where_from){
 
+		long start = System.currentTimeMillis();
+
 		B_iteration_deep++;
 		B_calls++;
 
@@ -615,8 +682,6 @@ public class graph {
 
 
 		boolean display = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
-
-
 
 		if((all_nodes.get_length() == 0)||(all_nodes.get_length() == 1)){
 			if(display){
@@ -692,8 +757,10 @@ public class graph {
 
 
 
-		this.Bochert_neighbor(result, toptop, all_nodes);
-
+		this.Bochert_neighbor(result, toptop, all_nodes);		
+		
+		time_analysis[0] = time_analysis[0] + (System.currentTimeMillis() - start);
+		start = System.currentTimeMillis();
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		//  NO WHILE
@@ -748,6 +815,8 @@ public class graph {
 		}
 
 
+		time_analysis[1] = time_analysis[1] + (System.currentTimeMillis() - start);
+		start = System.currentTimeMillis();
 
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -756,13 +825,14 @@ public class graph {
 		if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
 			this.insert_spaces_for_iteration("B");
 			if(display)
-				System.out.println(" TOP WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC of: "+DCC[0].print_list()+" with no comp_set but current max of: "+max_star.meta_data);
+				System.out.println(" TOP WHILE time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC of: "+DCC[0].print_list()+" with no comp_set but current max of: "+max_star.meta_data);
 			else
-				System.out.println(" TOP WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC size of: "+DCC[0].get_length()+" with no comp_set but current max of: "+max_star.meta_data);
+				System.out.println(" TOP WHILE time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC size of: "+DCC[0].get_length()+" with no comp_set but current max of: "+max_star.meta_data);
 		}
 
 
 		if(max_star.meta_data <= DCC[0].get_length()){//or equal because if DCC[0].meta_data + DCC[0].get_length() are the nodes, which means one more than DCC[0].get_length()
+			B_calls_TOP++;
 			temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), (max_star.meta_data==0?0:max_star.meta_data-1), nodes, display, 2);
 		}
 		else{
@@ -794,10 +864,14 @@ public class graph {
 			System.out.println("about to enter main  while loop, ntc: "+nodes_to_consider.print_list()+" Tntc: "+TOP_nodes_to_consider.print_list());
 		}
 
+
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		//  MAIN WHILE
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		while(check_set < (DCC.length)){	
+
+			start = System.currentTimeMillis();
 
 			display = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
 
@@ -869,9 +943,9 @@ public class graph {
 
 				this.insert_spaces_for_iteration("B");
 				if(display)
-					System.out.println(" MAIN WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" and common nodes are: "+best_next_me.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
+					System.out.println(" MAIN WHILE time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" and common nodes are: "+best_next_me.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
 				else
-					System.out.println(" MAIN WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" max_star.md: "+max_star.meta_data);
+					System.out.println(" MAIN WHILE time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" max_star.md: "+max_star.meta_data);
 
 				if(!run){
 					this.insert_spaces_for_iteration("B");
@@ -943,13 +1017,18 @@ public class graph {
 				//                     START SUPER WHILE
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+				time_analysis[2] = time_analysis[2] + (System.currentTimeMillis() - start);
 
 				while(TOP_nodes_to_consider != nodes_to_consider){
-
 
 					I_was_deleted = true;
 					run = true;
 					while(I_was_deleted && (nodes_to_consider.get_length() > 0)){
+
+						middle_loop_run++;
+
+						start = System.currentTimeMillis();
+
 
 						nodes_to_consider.meta_data = nodes_to_consider.pop_first();
 						all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data);
@@ -961,7 +1040,7 @@ public class graph {
 
 						if(display){
 							this.insert_spaces_for_iteration("B");
-							System.out.println("initial check of node: "+nodes_to_consider.meta_data+" which is connected to: "+temp_element.print_list()+" but before reduction it was: "+temp_element2.print_list()+" which was pulled from all_nodes_in_set_deleted_used of: "+all_nodes_in_set_deleted_used.print_list()+"");
+							System.out.println("initial check of node: "+nodes_to_consider.meta_data+" which is connected to: "+temp_element.print_list()+/*" but before reduction it was: "+temp_element2.print_list()+*/" which was pulled from all_nodes_in_set_deleted_used of: "+all_nodes_in_set_deleted_used.print_list()+"");
 						}
 
 						if((max_star.meta_data>(temp_element.get_length()+deepness))){
@@ -984,8 +1063,14 @@ public class graph {
 								nodes_to_consider.zero();								
 							}
 
+							time_analysis[7] = time_analysis[7] + (System.currentTimeMillis() - start);
+							start = System.currentTimeMillis();
+
 						}
 						else{
+
+							time_analysis[7] = time_analysis[7] + (System.currentTimeMillis() - start);
+							start = System.currentTimeMillis();
 
 							I_was_deleted = this.deletable(nodes_to_consider.meta_data, all_nodes_in_set_whole, empty_node, false, temp_element);
 
@@ -1015,6 +1100,9 @@ public class graph {
 									all_others_empty = false;
 								}
 
+
+								time_analysis[8] = time_analysis[8] + (System.currentTimeMillis() - start);
+								start = System.currentTimeMillis();
 
 
 								alpha3.similar_differences(temp_element, best_unique_alpha, unique_check);
@@ -1103,6 +1191,27 @@ public class graph {
 
 								}
 
+								time_analysis[9] = time_analysis[9] + (System.currentTimeMillis() - start);
+								start = System.currentTimeMillis();
+
+
+								////////////////////////////////////////////////////////////////////////////////
+								/*this.insert_spaces_for_iteration("B");
+								System.out.println(" SUPER WHILE "+exit_loop+" initial check of node: "+nodes_to_consider.meta_data+" which is connected to: "+temp_element.print_list()+/*" but before reduction it was: "+temp_element2.print_list()+/" which was pulled from all_nodes_in_set_deleted_used of: "+all_nodes_in_set_deleted_used.print_list()+" Time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" and common nodes are: "+best_next_me.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
+								Pointer_ONLY2 = alpha3;
+								System.out.print("Printing alpha nexts that were just found: ");
+								for(int i = 0; i < deepness; i++){
+									System.out.print(" == "+Pointer_ONLY2.alpha_next.print_list());
+								}
+								System.out.println();
+								exit_loop--;
+								if(exit_loop <= 0)
+									System.exit(0);
+								 */
+								///////////////////////////////////////////////////////////////////////////////
+
+
+
 								if(I_was_deleted){
 									alpha3 = alpha3.memory_previous;
 									alpha3.memory_next = null;
@@ -1138,14 +1247,16 @@ public class graph {
 
 						if(display){
 							this.insert_spaces_for_iteration("B");
-							System.out.println("I_was_deleted: "+I_was_deleted);
+							System.out.println("I_was_deleted: "+I_was_deleted+" ntc.md: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list());
 						}
 
+						time_analysis[3] = time_analysis[3] + (System.currentTimeMillis() - start);
 
 					}
 
 					if(!I_was_deleted){// || (nodes_to_consider.get_length()+lost_nodes.get_length()) > 0){
 
+						start = System.currentTimeMillis();
 
 
 
@@ -1240,6 +1351,9 @@ public class graph {
 								}
 								System.out.println(" then null");
 							}
+
+							time_analysis[4] = time_analysis[4] + (System.currentTimeMillis() - start);
+							start = System.currentTimeMillis();
 
 
 							if(all_others_empty){
@@ -1401,7 +1515,7 @@ public class graph {
 			temp= temp.alpha_next;
 		}
 		return false;
-		 
+
 	}
 
 
@@ -1472,10 +1586,16 @@ public class graph {
 		boolean contains_check_set = false;
 
 
-		if(display)System.out.println("In get_next_comp_all_nodes, comp_all_nodes: "+comp_all_nodes.print_list()+" all_nodes_deleting: "+all_nodes_deleting.print_list());
+		if(display){						
+			this.insert_spaces_for_iteration("B");
+			System.out.println("In get_next_comp_all_nodes, comp_all_nodes: "+comp_all_nodes.print_list()+" all_nodes_deleting: "+all_nodes_deleting.print_list());
+		}
 
 		if(comp_all_nodes.get_length() == 0){
-			if(display)System.out.println("returning because comp_all_nodes is zero length");
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("returning because comp_all_nodes is zero length");
+			}
 			next.zero();
 			return contains_check_set;
 		}
@@ -1489,11 +1609,24 @@ public class graph {
 		temp_extra.use_me_and_not_first(all_nodes_deleting, comp_all_nodes);
 
 		if(temp_extra.get_length() == 0){
-			if(display)System.out.println("returning because comp_all_nodes has no nodes that are not already in all_nodes_deleting");
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("returning because comp_all_nodes has no nodes that are not already in all_nodes_deleting");
+			}
 			next.zero();
 			contains_check_set = false;
 			return contains_check_set;
 		}
+		if(temp_extra.get_length() == comp_all_nodes.get_length()){
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("returning because comp_all_nodes has no nodes in common with all_nodes_deleting");
+			}
+			next.zero();
+			contains_check_set = false;
+			return contains_check_set;
+		}
+
 
 		//go_no_further = false;
 		int[] cycle = temp_extra.to_int();
@@ -1505,50 +1638,78 @@ public class graph {
 		for(int i = 0; i < cycle.length; i++){
 
 			Bochert_neighbor(temp_element, cycle[i], comp_all_nodes);
-			if(display)System.out.println("!!!!!comp_all_nodes: "+comp_all_nodes.print_list());
-			if(display)System.out.println("!!!!!connected to: "+cycle[i]+" is temp element: "+temp_element.print_list()+" graph[55][57]"+graph[55][57]);
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("!!!!!comp_all_nodes: "+comp_all_nodes.print_list());
+				this.insert_spaces_for_iteration("B");
+				System.out.println("!!!!!connected to: "+cycle[i]+" is temp element: "+temp_element.print_list()+" graph[55][57]"+graph[55][57]);
+			}
+
 
 			temp_element.similar_differences(all_nodes_deleting, temp_unique, all_nodes_unique);
 			common.use_me_and_not_first(all_nodes_unique, all_nodes_deleting);
 
-			if(display)System.out.println("comparing node: "+cycle[i]+" connected to: "+temp_element.print_list()+" with unique: "+temp_unique.print_list());
-			if(display)System.out.println("check_set connected to: "+all_nodes_deleting.print_list()+" with unique: "+all_nodes_unique.print_list());
-			if(display)System.out.println("common nodes: "+common.print_list());
-
-
-
-			//			all_nodes_unique = reduction(all_nodes_deleting, null, all_nodes_unique);
-			//			if(display)System.out.println("all nodes unique reduced is: "+all_nodes_unique.print_list());
-			if(all_nodes_unique.get_length() == 0){
-				contains_check_set = true;
-				//				System.out.println("this is deletable, no need to run");
-
-				next.copy_array(temp_element);
-				next.meta_data = cycle[i];
-
-				return contains_check_set;
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("comparing node: "+cycle[i]+" connected to: "+temp_element.print_list()+" with unique: "+temp_unique.print_list());
+				this.insert_spaces_for_iteration("B");
+				System.out.println("check_set connected to: "+all_nodes_deleting.print_list()+" with unique: "+all_nodes_unique.print_list());
+				this.insert_spaces_for_iteration("B");
+				System.out.println("common nodes: "+common.print_list());
 			}
 
 
-			//			temp_unique = reduction(temp_element, null, temp_unique);
-			//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
+			if(common.get_length() != 0){
+				//			all_nodes_unique = reduction(all_nodes_deleting, null, all_nodes_unique);
+				//			if(display)System.out.println("all nodes unique reduced is: "+all_nodes_unique.print_list());
+				if(all_nodes_unique.get_length() == 0){
+					contains_check_set = true;
+					//				System.out.println("this is deletable, no need to run");
+
+					next.copy_array(temp_element);
+					next.meta_data = cycle[i];
+
+					return contains_check_set;
+				}
 
 
-			if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
-				if(display)System.out.println("min_unique is g.t. all_nodes_unique");
-				minimizing_unique_all_nodes = all_nodes_unique.get_length();
-				extra = temp_unique.get_length();
-				node = cycle[i];				
-			}
-			else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
-				if(temp_unique.get_length() > extra){//guarnteed better
-					if(display)System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
+				//			temp_unique = reduction(temp_element, null, temp_unique);
+				//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
+
+
+				if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
+					if(display){
+						this.insert_spaces_for_iteration("B");
+						System.out.println("min_unique is g.t. all_nodes_unique");
+					}
 					minimizing_unique_all_nodes = all_nodes_unique.get_length();
 					extra = temp_unique.get_length();
-					node = cycle[i];
+					node = cycle[i];				
+				}
+				else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
+					if(temp_unique.get_length() > extra){//guarnteed better
+						if(display){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
+						}
+						minimizing_unique_all_nodes = all_nodes_unique.get_length();
+						extra = temp_unique.get_length();
+						node = cycle[i];
+					}
 				}
 			}
+		}
 
+
+		if(node == -1){
+			//no common nodes found
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("none of the next nodes contain any common nodes");
+			}
+			next.zero();
+			contains_check_set = false;
+			return contains_check_set;
 		}
 
 		Bochert_neighbor(temp_extra, node, comp_all_nodes);
@@ -1565,7 +1726,10 @@ public class graph {
 		 */
 
 
-		if(display)System.out.println("returning, node "+node+" won"+" and temp_extra: "+temp_extra.print_list());
+		if(display){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("returning, node "+node+" won"+" and temp_extra: "+temp_extra.print_list());
+		}
 
 
 		return contains_check_set;
@@ -1673,6 +1837,8 @@ public class graph {
 
 	private void insert_spaces_for_iteration(String mode){
 		if (mode == "B"){
+			System.out.print(disp_time_old()+" ");
+
 			for (int i = 0; i<=B_iteration_deep; i++)
 				System.out.print(".");
 			System.out.print(B_iteration_deep+" ");
@@ -1685,10 +1851,12 @@ public class graph {
 	}		
 
 
+
+
 	public int[] BronKerbosch (int[] R, int[] P, int[] X){
 
-		if((BK_calls %100000 == 0))
-			System.out.println("BK is on call number: "+BK_calls);
+		//		if((BK_calls %100000 == 0))
+		//			System.out.println("BK is on call number: "+BK_calls);
 
 
 		if (verboseBK) {
@@ -1897,9 +2065,9 @@ public class graph {
 	}
 
 
-	public String disp_time(){
+	public String disp_time_old(){
 
-		long t = System.currentTimeMillis();
+		/*		long t = System.currentTimeMillis();
 
 		t=t/1000;
 		long s = t%60;
@@ -1910,6 +2078,12 @@ public class graph {
 
 
 		return h+":"+m+":"+s;
+		 */
+
+		Date dNow = new Date( );
+		SimpleDateFormat ft = new SimpleDateFormat ("MM-dd HH:mm:ss");
+		return ft.format(dNow);
+
 	}
 
 	public graph() {
@@ -2061,6 +2235,9 @@ public class graph {
 		for (int i = 0; i< nodes; i++){
 			sum = 0;
 			for (int j=0; j<nodes; j++){
+				if (i == j){
+					graph[i][j] = 0;
+				}
 				if (graph[i][j] == 1){
 					sum++;
 					edges++;
@@ -2071,10 +2248,31 @@ public class graph {
 
 		old_graph = graph;
 
+		graph3 = new node3[nodes];
+		for(int i = 0; i<nodes; i++){
+			graph3[i] = new node3(graph[i],nodes,true);
+			//							System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
+		}
+
 
 	}
 
-	public void disp_graph(){
+	public void invert_graph(){
+		
+		for(int i = 0; i<graph.length; i++)
+			for(int j = 0; j<graph.length; j++){
+				if(i == j)
+					graph[i][j] = 0;
+				else if(graph[i][j] == 1)
+					graph[i][j] = 0;
+				else 
+					graph[i][j] = 1;
+			}
+		
+		graph3 = this.make_graph3(graph);
+	}
+	
+	public void disp_graph(int[][] graph){
 		for (int i = 0; i < graph.length; i++){
 			for (int j = 0; j < graph[i].length; j++){
 				System.out.print(graph[i][j]);
@@ -2123,7 +2321,7 @@ public class graph {
 		for (int i = 0; i < nodes.length ; i++){
 			for (int j = 0; j<nodes.length ; j++){
 				if (i != j && graph[nodes[i]-1][nodes[j]-1] == comparitor){
-					System.out.println(nodes[i]+" "+nodes[j]+" failed");
+					//System.out.println(nodes[i]+" "+nodes[j]+" failed");
 					return false;	
 				}
 
@@ -2154,9 +2352,861 @@ public class graph {
 	}
 
 
+	//random integer in range [a,b] inclusive
+	public int randInt(int a,int b){
+
+		return (int)(nextDouble()*(b-a+.99999)+a);
+
+		//((int)((random()/((double)RAND_MAX+1)*((b)-(a)+1)+(a))))
+	}
+	//randomly return either 1 (with probability 1/d) or -1 (with probability 1-1/d)
+	public int randSign(int d){
+		//(random()>RAND_MAX/(d) ? -1 : 1)
+		return (nextDouble() > (1.0/(double)d) ? -1 : 1);
+	}
+
+	public int[][] createLeemon3SAT(int numVar, int numClauses, boolean force3satTrue, int graphnum){
+
+		int sat[][] = new int[3][numClauses];
+		int numVert = 3*numClauses;
+		int perm[] = new int[numVert]; 
+
+		for (int j=0; j<numClauses; j++) { //generate a random, hard 3SAT problem
+			for (int i=0; i<3; i++)
+				sat[i][j] = randSign(force3satTrue ? 4 : 2) * randInt(1,numVar);
+			if (force3satTrue)
+				sat[0][j] = randInt(1,numVar);
+		}//for harder 3SAT: permute each clause, negate solution vars with prob 0.5
+
+		for (int i=0; i<numVert; i++) perm[i]=i; //make perm[] a random permutation
+		for (int i=0; i<numVert; i++) {
+			int r = randInt(i,numVert-1);
+			int t = perm[r];
+			perm[r] = perm[i];
+			perm[i] = t; }
+
+
+		int[][] graph = new int[numVert][numVert];
+
+		for (int i=0; i<numVert; i++) //convert 3SAT problem to max clique problem
+			for (int j=0; j<numVert; j++)
+				if (i/3 != j/3 && sat[i%3][i/3] != -sat[j%3][j/3])
+					graph[perm[i]][perm[j]] = 1;
+				else
+					graph[perm[i]][perm[j]] = 0;
+
+		
+/*		try {
+
+			File file = new File("..\\graph_binaries\\AESLeemon3SATGen-g"+graphnum+"-v"+numVar+"-"+(force3satTrue?"forced":"unforced")+".clq");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			bw.write("c graph generated with Leemon random 3SAT generator \nc used variables: "+numVar+" clauses: "+numClauses+" and has a graph number of: "+graphnum+" and has nodes: "+(short)(4.27*numVar)+"\n");
+			for(int i = 0; i<numClauses; i++){
+				bw.write("c "+sat[0][i]+" "+sat[1][i]+" "+sat[2][i]+"\n");
+			}
+			bw.write("p edge "+(3*numClauses)+" 0\n");
+
+			for(int i = 0; i<numClauses*3; i++){
+				for(int j = 0; j<i; j++){
+					if(graph[i][j] == 1){
+						bw.write("e "+(i+1)+" "+(j+1)+"\n");
+					}
+				}
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		*/
+		return graph;
+		
+		
+	}
+
+	public void start_random_with_seed(int s){
+		generator = new Random(s);
+		randseed = s;
+	}
+	
+	public void init_AES_rand(short G, short N)
+	{	
+//		System.out.println("poopoo - G:"+G+" N:"+N);
+		
+	short[] initpt = new short[8];	
+	short[] initkey = new short[8];
+		
+    for (byte i=0; i<4; i++) {
+        initkey[7-i] = (short)((short)(G<<(i*2)) & 0xff);//255;
+        initkey[  3-i] = (short)((short)(N<<(i*2)) & 0xff);//255;
+    }
+
+    for (int i=0; i<8; i++)
+    	initpt[i] = 0;
+
+//    System.out.print("initkey: ");
+    encryptionKey = "";
+    for(int i = 0; i<8; i++){
+//    	System.out.print(Integer.toHexString(initkey[i]>>>4&0xf)+Integer.toHexString(initkey[i]&0x0f)+" ");
+    	encryptionKey = encryptionKey + Integer.toHexString(initkey[i]>>>4&0xf)+Integer.toHexString(initkey[i]&0x0f);
+    }
+ //   System.out.println();
+//    encryptionKey = initkey.toString();
+//    System.out.println("encryptKey: "+encryptionKey);
+    plaintext = "0000000000000000";
+//    plaintext = encryptionKey;
+//    System.out.println("plaintext: "+plaintext);
+    
+	//static String plaintext = "test text 123\0\0\0"; /*Note null padding*/
+	//static String encryptionKey = "0123456789abcdef";
+
+	}
+
+	
+	public void tickplaintext(){
+		
+		int[] pt = new int[8];
+//		System.out.println("tickplaintext plaintext string:"+plaintext);
+		
+//		System.out.print("plaintext before:");
+		for(int i = 7; i>=0; i--){
+//			System.out.println("literal string:"+plaintext.subSequence((16-(i+1))*2, (16-i)*2).toString());
+			pt[i] = Integer.valueOf(plaintext.subSequence((8-(i+1))*2, (8-i)*2).toString(),16);
+//			System.out.print(Integer.toHexString(pt[i])+" ");
+		}
+//		System.out.println();
+
+		for(int i = 0; i<8; i++){
+			pt[i] = (pt[i] + 1) & 0xff;
+			if(pt[i] != 0)
+				break;
+		}
+		
+	    plaintext = "";
+	    for(int i = 7; i>=0; i--){
+//	    	System.out.println(Integer.toHexString(pt[i]));
+	    	plaintext = plaintext + Integer.toHexString((pt[i]&0xf0)>>>4)+Integer.toHexString(pt[i]&0x0f);
+	    }
+		//System.out.println("tickplaintext plaintext after: "+plaintext);
+		
+	}
+	
+	public double nextDouble(){
+
+		if(current_byte == 4){
+		
+		try{
+		      cipher = encrypt(plaintext, encryptionKey);
+				 		 
+		    } catch (Exception e) {
+		      e.printStackTrace();
+		    } 
+		
+//		System.out.print("cipher: ");
+//		for(int i = 15; i>=0; i--)
+//			System.out.print(Integer.toHexString(cipher[i])+" ");
+//		System.out.println();
+		
+		current_byte = 0;
+		tickplaintext();
+		}
+		
+		int num = (cipher[current_byte*4+0])+(cipher[current_byte*4+1]<<8)+(cipher[current_byte*4+2]<<16)+(cipher[current_byte*4+3]<<24);
+		num = num>>>1;//because all longs in java are signed, and I don't want negatives
+//		System.out.println("num sum: "+Integer.toHexString((int)num)+" = "+num);
+		int dividend = 0xffffffff;
+		dividend = dividend>>>1;
+//		System.out.println("dividing by: "+dividend);
+		
+		current_byte++;
+				
+		return (double)num/(double)dividend;
+	}
+	
+	public int[][] create3SAT(int variables, int clauses){
+
+
+		int c = clauses;    //number of clauses
+		int v = variables; //number of variables
+
+		if(c > (((v*2)*((v-1)*2)*((v-2)*2))/6)){
+			System.out.println("you've requested too many clauses ("+clauses+") for the number of variables ("+variables+"), returning "+(((v*2)*((v-1)*2)*((v-2)*2))/6)+" unique clauses instead");
+			return create3SAT(v,(((v*2)*((v-1)*2)*((v-2)*2))/6));
+		}
+
+
+		int[][] sat = new int[c][3];        //a single 3SAT problem
+		//		int m[3*c][3*c];      //a single max clique problem
+		//Random generator = new Random(0);//seeded to 0 because Leemon said it'd be a good idea for testing consistentcy
+
+		double r;
+		int var1; 
+		int var2;
+		int var3;
+		int[] var = new int[3];
+		boolean found_match;
+
+		for(int row = 0; row<c; row++){
+
+			r = generator.nextDouble();
+			var1 = (int)(r*(double)v*2.0)-v;
+			var1 = (var1>=0?var1+1:var1);
+			do{
+				r = generator.nextDouble();
+				var2 = (int)(r*(double)v*2.0)-v;
+				var2 = (var2>=0?var2+1:var2);
+			}while(Math.abs(var1) == Math.abs(var2));
+			do{
+				r = generator.nextDouble();
+				var3 = (int)(r*(double)v*2.0)-v;
+				var3 = (var3>=0?var3+1:var3);
+			}while(((Math.abs(var1)) == (Math.abs(var3)))||((Math.abs(var2)) == (Math.abs(var3))));
+
+			if(Math.abs(var1) < Math.abs(var2)){
+				if(Math.abs(var1) < Math.abs(var3)){
+					var[0] = var1;
+					if(Math.abs(var2) < Math.abs(var3)){
+						var[1] = var2;
+						var[2] = var3;
+					}
+					else{
+						var[1] = var3;
+						var[2] = var2;	
+					}
+				}
+				else{//3<1<2
+					var[0] = var3;
+					var[1] = var1;	
+					var[2] = var2;	
+				}
+			}
+			else if(Math.abs(var1) < Math.abs(var3)){//2<1<3
+				var[0] = var2;
+				var[1] = var1;	
+				var[2] = var3;				
+			}
+			else{//2<1 3<1
+				var[2] = var1;
+				if(Math.abs(var2) < Math.abs(var3)){//2<3<1
+					var[0] = var2;
+					var[1] = var3;					
+				}
+				else{//3<2<1
+					var[0] = var3;
+					var[1] = var2;					
+				}
+			}
+
+
+			found_match = false;
+			for(int i = 0; i<row; i++){
+				if((sat[i][0] == var[0])&&(sat[i][1] == var[1])&&(sat[i][2] == var[2])){
+					//System.out.println("found that number: "+i+" is the same, it's: "+sat[i][0]+" "+sat[i][1]+" "+sat[i][2]);
+					found_match = true;
+					break;
+				}
+			}
+
+
+			sat[row][0] = var[0];
+			sat[row][1] = var[1];
+			sat[row][2] = var[2];
+
+			//System.out.println("just added number: "+row+" it's: "+sat[row][0]+" "+sat[row][1]+" "+sat[row][2]);
+
+			if(found_match){
+				row--;//repeat this one
+			}
+
+
+		}
+
+
+		int[][] graph = new int[3*c][3*c];
+
+		for(int i = 0; i<c; i++){
+			for(int j = 0; j<i; j++){
+				for(int k = 0; k<3; k++){
+					for(int l = 0; l<3; l++){
+						if(sat[i][k] != -1*sat[j][l]){
+							graph[3*i+k][3*j+l] = 1;
+							graph[3*j+l][3*i+k] = 1;
+						}
+					}
+				}
+			}
+
+		}
+
+
+
+		try {
+
+			File file = new File("..\\graph_binaries\\Random3SATGen-"+v+/*"-"+c+*/".clq");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			bw.write("c graph generated with random 3SAT generator \nc used variables: "+v+" clauses: "+c+"\n");
+			for(int i = 0; i<c; i++){
+				bw.write("c "+sat[i][0]+" "+sat[i][1]+" "+sat[i][2]+"\n");
+			}
+			bw.write("p edge "+(3*c)+" 0\n");
+
+			for(int i = 0; i<c*3; i++){
+				for(int j = 0; j<i; j++){
+					if(graph[i][j] == 1){
+						bw.write("e "+(i+1)+" "+(j+1)+"\n");
+					}
+				}
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return graph;
+	}
+
+	
+
+		  public static byte[] encrypt(String plainText, String encryptionKey) throws Exception {
+		    Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
+		    SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
+		    cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec("AAAAAAAAAAAAAAAA".getBytes("UTF-8")));
+		    return cipher.doFinal(plainText.getBytes("UTF-8"));
+		  }
+		 
+		  public static String decrypt(byte[] cipherText, String encryptionKey) throws Exception{
+		    Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
+		    SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
+		    cipher.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec("AAAAAAAAAAAAAAAA".getBytes("UTF-8")));
+		    return new String(cipher.doFinal(cipherText),"UTF-8");
+		  }
+
+		  private int get_node_with_max_degree(node3 graphmain){
+			  
+			  int big_node = -1;
+			  int big_size = -1;
+			  int[] graphnodes = graphmain.to_int();
+			  node3 test = new node3(nodes);
+			  
+			  for(int i = 0; i<graphnodes.length; i++){
+				  this.Bochert_neighbor(test, graphnodes[i], graphmain);
+				  if(test.length > big_size){
+					  big_size = test.length;
+					  big_node = graphnodes[i];
+				  }
+			  }
+			  
+			  return big_node;
+		  }
+		  
+		  private void connected_compent(node3 graphmain/*preserved*/, node3 sub1, node3 sub2){
+			  
+			  int[] considerations; 
+			  sub1.zero();
+			  sub2.copy_array(graphmain);
+			  
+			  boolean added_one = true;
+			  sub1.add(sub2.pop_first());
+			  int[] sub1_int;
+			  
+			  while(added_one){
+				  
+				  sub2.delete(sub1);
+				  sub1_int = sub1.to_int();
+				  considerations = sub2.to_int();
+				  added_one = false;
+				  
+				  for(int i = 0; i<considerations.length; i++){
+					  for(int j = 0; j<sub1_int.length; j++){
+						  if(graph[sub1_int[j]-1][considerations[i]-1]==1){
+							  sub1.add(considerations[i]);
+							  added_one = true;
+							  break;
+						  }
+					  }
+					  
+				  }
+			  }
+			  
+		  }
+	
+		  public int[] domination(node3 graphmain){
+			  
+			  int[] checkset = graphmain.to_int();
+			  node3 node1 = new node3(nodes);
+			  node3 node2 = new node3(nodes);
+			  node3 node1_unique = new node3(nodes);
+			  node3 node2_unique = new node3(nodes);
+			  int[] return_val = new int[2];//rv[0]=dominated, rv[1]=dominator
+			  
+			  			  
+			  
+			  for(int i = 0; i<checkset.length; i++)
+				  for(int j = i+1; j< checkset.length; j++)
+					  if(graph[checkset[i]-1][checkset[j]-1] == 1){
+//						  System.out.println("checking node1: "+(checkset[i])+" against node2: "+(checkset[j]));
+						  this.Bochert_neighbor(node1, checkset[i], graphmain);
+						  this.Bochert_neighbor(node2, checkset[j], graphmain);
+					  
+						  node1.similar_differences(node2, node1_unique, node2_unique);
+						  node1_unique.delete(checkset[j]);
+						  node2_unique.delete(checkset[i]);
+//						  System.out.println("found node1_u: "+node1_unique.print_list()+" node2_u: "+node2_unique.print_list());
+						  if(node1_unique.length == 0){
+//							  return checkset[j];
+							  return_val[0] = checkset[j];
+							  return_val[1] = checkset[i];
+							  return return_val;
+						  }
+						  else if(node2_unique.length == 0){
+//							  return checkset[i];
+							  return_val[0] = checkset[i];
+							  return_val[1] = checkset[j];
+							  return return_val;
+						  }
+					  }			  
+			  
+			  return null;
+		  }
+		  
+		  private boolean contains_anti_triangle(node3 graphmain){
+
+//			  System.out.println("checking for ats, graphmain: "+graphmain.print_list());
+			  
+			  int[] checkset = graphmain.to_int();
+			  node3 node1 = new node3(nodes);
+			  node3 node2 = new node3(nodes);
+			  node3 node1_unique = new node3(nodes);
+			  node3 node2_unique = new node3(nodes);
+			  node3 node1_nc = new node3(nodes);
+			  node3 node2_nc = new node3(nodes);
+			  
+			  
+			  for(int i = 0; i<checkset.length; i++)
+				  for(int j = i+1; j<checkset.length; j++)
+					  if(graph[checkset[i]-1][checkset[j]-1] == 0){
+						  this.Bochert_neighbor(node1, checkset[i], graphmain);
+						  this.Bochert_neighbor(node2, checkset[j], graphmain);
+//						  System.out.println("checking node1: "+(checkset[i])+" contains: "+node1.print_list()+" against node2: "+(checkset[j])+" contains: "+node2.print_list());
+					  
+						  node1_nc.use_me_and_not_first(node1, graphmain);
+						  node1_nc.delete(checkset[i]);
+						  node2_nc.use_me_and_not_first(node2, graphmain);
+						  node2_nc.delete(checkset[j]);
+//						  System.out.println("found node1_nc: "+node1_nc.print_list()+" node2_nc: "+node2_nc.print_list());
+						  
+						  node1_unique.use_me_and(node1_nc, node2_nc);
+
+						  if(node1_unique.length != 0)
+							  return true;
+					  }			  
+			  
+			  
+			  return false;
+		  }
+		  
+		  public int[][] copy_graph(){
+			  
+			  int[][] new_graph = new int[nodes][nodes];
+
+			  for(int i = 0; i<new_graph.length; i++){
+				  new_graph[i] = graph[i].clone();
+			  }				  
+			  
+			  return new_graph;
+		  }
+		  public node3[] make_graph3(int[][] usegraph){
+				node3[] newgraph3 = new node3[nodes];
+				for(int i = 0; i<nodes; i++){
+					newgraph3[i] = new node3(usegraph[i],nodes,true);
+					//							System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
+				}
+				return newgraph3;
+		  }
+		  
+		  public int[][] fold(node3 graphmain, int[] v, int[] double_node_list, int[] hidden_node_list, int[] index){
+			  
+			  int[] checkset = graphmain.to_int();
+			  node3 connected = new node3(nodes);
+			  int[] connected_list;
+			  int[][] new_graph;
+			  
+//			  int[] double_node_list;
+//			  int[] hidden_node_list;
+			  //int index = 0;
+			  node3 combined = new node3(nodes);
+			  int[] combined_list;
+			  index[0] = 0;
+			  
+			  boolean second_connection = false;
+			  boolean need_second_inversion = false;
+			  
+			  
+			  for(int i = 0; i<checkset.length; i++){
+				  this.Bochert_neighbor(connected, checkset[i], graphmain);
+				  if(connected.length == 1){ //special case
+					v[0] = checkset[i];
+					graphmain.delete(checkset[i]);
+					graphmain.delete(connected);
+					return new int[0][0];
+				  }
+				  if(connected.length <= 4)
+					  if(!contains_anti_triangle(connected)){
+//						  System.out.println("found that node: "+checkset[i]+" is foldable and is connected to: "+connected.print_list());
+						  
+						  v[0] = checkset[i];
+						  connected_list = connected.to_int();
+						  new_graph = this.copy_graph();
+						  //double_node_list = new int[connected_list.length];
+						  //hidden_node_list = new int[connected_list.length];
+						  if((connected.length == 4)&&((graph[connected_list[0]-1][connected_list[2]-1] == 0)&&(graph[connected_list[0]-1][connected_list[3]-1] == 0)&&(graph[connected_list[1]-1][connected_list[2]-1] == 0)&&(graph[connected_list[1]-1][connected_list[3]-1] == 0))){//special case, can't do normal naming method
+							  need_second_inversion = true;
+						  }
+						  //combine nodes, save them as j-node, change new graph accordingly
+						  for(int j = 0; j<connected_list.length; j++){
+							  second_connection = false;
+							  for(int k = j+1; k<connected_list.length; k++){
+								  if(graph[connected_list[j]-1][connected_list[k]-1] == 0){
+									  
+									  if(need_second_inversion){//inverted
+	//									  System.out.println("nsi, inverted");
+										  double_node_list[index[0]] = connected_list[k];
+										  hidden_node_list[index[0]] = connected_list[j];
+										  }
+									  else if(((double_node_list[0] == connected_list[j])||(double_node_list[1] == connected_list[j])||(double_node_list[2] == connected_list[j]))){//inverted
+	//									  System.out.println("nsi, inverted");
+										  double_node_list[index[0]] = connected_list[k];
+										  hidden_node_list[index[0]] = connected_list[j];										  
+									  }
+									  else if(!second_connection){//normal
+	//									  System.out.println("!sc, normal");
+										  double_node_list[index[0]] = connected_list[j];
+										  hidden_node_list[index[0]] = connected_list[k];
+										  }
+									  else{//inverted
+	//									  System.out.println("nsi, inverted");
+										  double_node_list[index[0]] = connected_list[k];
+										  hidden_node_list[index[0]] = connected_list[j];
+									  }
+
+	//								  System.out.println("combining node: "+double_node_list[index[0]]+" with now hidden node: "+hidden_node_list[index[0]]);
+
+									  //update new graph
+									  combined.use_me_or(graph3[connected_list[j]-1], graph3[connected_list[k]-1]);
+									  combined_list = combined.to_int();
+									  for(int l = 0; l<combined_list.length; l++){
+										  if(connected_list[j] != combined_list[l]){
+											  //System.out.println("connecting node: "+connected_list[j]+" to node: "+combined_list[l]);
+											  new_graph[double_node_list[index[0]]-1][combined_list[l]-1] = 1;
+											  new_graph[combined_list[l]-1][double_node_list[index[0]]-1] = 1;
+										  }
+									  }
+
+	//								  System.out.println("resulting connections are: "+combined.print_list());
+									  
+									  index[0]++;
+									  
+									  if(need_second_inversion)
+										  need_second_inversion = false;
+									  else
+										  second_connection = true;
+								  }
+							  }
+						  }
+						  
+//						  System.out.println("double_node_list: "+this.array2string(double_node_list));
+						  
+						  //add one edge betwen each pair of new nodes
+						  for(int j = 0; j<index[0]; j++)
+							  for(int k = j+1; k<index[0]; k++){
+	//							  System.out.println("connected nodes "+double_node_list[j]+" and "+double_node_list[k]);
+								  new_graph[double_node_list[j]-1][double_node_list[k]-1] = 1;
+								  new_graph[double_node_list[k]-1][double_node_list[j]-1] = 1;
+							  }
+						  //test
+						  for(int ii = 0; ii<nodes; ii++)
+							  if(new_graph[ii][ii] == 1){
+								  System.out.println("double_node_list: "+this.array2string(double_node_list));
+								  System.out.println("2it has a node connected to itself: "+ii);
+								  System.exit(0);
+							  }
+
+						  //delete N[v], or at least all but the combined nodes
+						  for(int j = 0; j<index[0]; j++){
+							  connected.delete(double_node_list[j]);
+						  }
+						  graphmain.delete(connected);//delete non reused nodes
+						  graphmain.delete(checkset[i]);//delete node v
+						  
+						  for(int ii = 0; ii<nodes; ii++)
+							  if(new_graph[ii][ii] == 1){
+								  System.out.println("it has a node connected to itself: "+ii);
+								  System.exit(0);
+							  }
+								  
+						  
+						  return new_graph;
+					  }
+					  
+				  
+			  }
+			  
+			  return null;
+		  }
+		  
+		  public node3 mirrors(node3 graphmain, int v){
+			  
+			  node3 not_connected_list = new node3(nodes);
+			  node3 connected = new node3(nodes);
+			  this.Bochert_neighbor(connected, v, graphmain);
+			  not_connected_list.use_me_and_not_first(connected,graphmain);
+			  not_connected_list.delete(v);
+			  
+			  int[] checkset = not_connected_list.to_int();
+			  node3 connected_unique = new node3(nodes);
+			  node3 sub = new node3(nodes);
+			  node3 sub_unique = new node3(nodes);
+			  
+			  node3 mirror_list = new node3(nodes);
+			  
+			  for(int i = 0; i < checkset.length; i++){
+				  this.Bochert_neighbor(sub, checkset[i], graphmain);
+				  connected.similar_differences(sub, connected_unique, sub_unique);
+				  if(this.is_star(connected_unique.to_int(), true)){
+					  mirror_list.add(checkset[i]);
+				  }
+			  }
+			  
+			  return mirror_list;
+		  }
+		  
+		  public node3 mis(node3 checkset, int depth, boolean display){
+if(display)	System.out.println(depth+": starting mis, checkset: "+checkset.print_list());
+boolean next_display = false;
+
+
+			  node3 sub1 = new node3(nodes);
+			  node3 sub2 = new node3(nodes);
+			  int v;
+			  int[] vint;
+
+			  
+			  if(checkset.length <= 1)
+				  return checkset.copy_by_erasing();
+			  
+			  //connected components 
+			  connected_compent(checkset, sub1, sub2);
+			  if(sub2.length != 0){
+				  if(display)			  System.out.println(depth+": splitting for connected component, component 1: "+sub1.print_list()+" component 2: "+sub2.print_list());
+				  sub1 = mis(sub1, depth+1,next_display);
+				  sub2 = mis(sub2, depth+1,next_display);
+				  sub1.use_me_or(sub1, sub2);
+				  return sub1;
+			  }
+
+			  //dominance
+			  vint = this.domination(checkset);
+			  if(vint != null){
+//				  if((vint[0] == -300)||((display)&&((vint[0]==1)||(vint[0]==23)||(vint[0]==6)||(vint[0]==31))))
+//					  next_display = true;
+				  checkset.delete(vint[0]);
+				  if(display)			 System.out.println(depth+" found that node: "+vint[0]+" is dominated by node: "+vint[1]);
+				  return mis(checkset, depth,next_display);
+			  }				  
+			  
+			  //foldable
+			  vint = new int[1];
+			  int[] double_node_list = new int[nodes];
+			  int[] hidden_node_list = new int[nodes];
+			  int[] index = new int[1];
+			  int[][] new_graph = this.fold(checkset, vint, double_node_list, hidden_node_list, index);
+			  if(new_graph != null){
+//				  if((vint[0] == 76)||(vint[0] == 33)||(vint[0] == 59)||(vint[0] == 54)){
+//					  next_display = true;
+//				  }
+				  if(display)			 System.out.println(depth+": folding node: "+vint[0]+" checking set: "+checkset.print_list());
+				  if(new_graph.length == 0){//special case of one node
+					  node3 returned_set = mis(checkset, depth+1,next_display);
+					  returned_set.add(vint[0]);	
+					  return returned_set;
+				  }
+				  else{
+				  int[][] saved_old_graph = graph;
+				  graph = new_graph;
+				  graph3 = this.make_graph3(graph);
+				  
+				  node3 returned_set = mis(checkset, depth+1,next_display);
+				  
+				  for(int i = 0; i<index[0]+1; i++){//will only have one node, or the vint[0], never can it have two in the same max ind set because they're connected
+					  if(i == index[0]){//didn't find any double nodes in the ind set
+						  returned_set.add(vint[0]);
+					  }
+					  else if(returned_set.find(double_node_list[i])){
+						  returned_set.add(hidden_node_list[i]);
+						  break;
+					  }//add the nodes back in that were taken if it's double node was chosen
+				  }
+				  
+				  graph = saved_old_graph;
+				  graph3 = make_graph3(graph);
+				  if(display) System.out.println(depth+": after folding, returning with: "+returned_set.print_list());
+				  return returned_set;
+				  }
+			  }
+			  //find node of max degree
+			  v = this.get_node_with_max_degree(checkset);
+			  
+			  //find mirrors
+			  node3 mirrors = mirrors(checkset,v);
+
+//			  if(display &&((v == 77)||(v==60)||(v==65)||(v==61)||(v==62)||(v==69)||(v==47)||(v==2)||(v==17)||(v==72)||(v==34)||(v==10)||(v==29)||(v==12)||(v==25)||(v==58)||(v==14)||(v==15)||(v==51)||(v==27)||(v==74)))
+//				  next_display = true;
+			  
+			  sub1.use_me_and_not_first(mirrors, checkset);
+			  sub1.delete(v);
+			  if(display)			  System.out.println(depth+": G-v-M, v: "+v+" mirrors: "+mirrors.print_list()+" searching: "+sub1.print_list());
+			  sub1 = mis(sub1,depth,next_display);
+//			  System.out.println(depth+": no optimzing, G-v-M is: "+sub1.print_list());
+
+			  next_display = false;
+
+//			  if(display &&(false))
+//				  next_display = true;
+
+			  this.Bochert_neighbor(sub2, v, checkset);
+			  sub2.use_me_and_not_first(sub2, checkset);
+			  sub2.delete(v);
+			  if(display)			  			  System.out.println(depth+": 1+G-N[v], searching: "+sub2.print_list());
+			  sub2 = mis(sub2, depth+1,next_display);
+			  sub2.add(v);
+			  
+			  if(sub1.length > sub2.length)
+				  return sub1;
+			  else
+				  return sub2;
+		  }
+		  
 	public static void main(String args[]) throws Exception
 	{
 
+		short shorttemp = 0b111111111111111;
+		byte bytetemp = 0b1111111;	
+		System.out.println(shorttemp);
+		System.out.println(bytetemp);
+		
+		shorttemp = -1;
+		bytetemp = -1;	
+		System.out.println(Integer.toHexString(shorttemp));
+		System.out.println(Integer.toHexString(bytetemp));
+		
+		byte[] copykey = ByteBuffer.allocate(8).putInt(0xfedcba98).array();
+		
+		byte[] key = new byte[16];
+		for(int i = 0; i<copykey.length; i++){
+			System.out.println("copy "+Integer.toHexString(copykey[i]));
+			key[i] = copykey[i];
+		}
+		
+		byte[] dataToSend = new byte[31];
+
+		Cipher c = Cipher.getInstance("AES");
+		SecretKeySpec k =
+		new SecretKeySpec(key, "AES");
+		c.init(Cipher.ENCRYPT_MODE, k);
+		byte[] encryptedData = c.doFinal(dataToSend);
+
+		System.out.print("enctyped data: ");
+		for(int i = 0; i < encryptedData.length; i++){
+			System.out.print(encryptedData[i]+" ");
+		}
+		System.out.println();
+		
+		Cipher d = Cipher.getInstance("AES");
+		d.init(Cipher.DECRYPT_MODE, k);
+		byte[] data = d.doFinal(encryptedData);
+
+		System.out.print("data: ");
+		for(int i = 0; i < data.length; i++){
+			System.out.print(data[i]+" ");
+		}
+		System.out.println();
+
+		
+/*		int[][] alp ={{0,1,0,0,0,0,0,0},
+					  {1,0,1,1,0,0,0,0},
+					  {0,1,0,0,0,0,0,0},
+					  {0,1,0,0,0,0,0,0},
+					  {0,0,0,0,0,1,1,0},
+					  {0,0,0,0,1,0,0,0},
+					  {0,0,0,0,1,0,0,0},
+					  {0,0,0,0,0,0,0,0}};
+		
+	int[][] blp ={{0,1,1,1,1,0,0,0},
+				  {1,0,0,0,0,1,0,0},
+				  {1,0,0,1,1,0,0,0},
+				  {1,0,1,0,1,0,0,0},
+				  {1,0,1,1,0,0,0,0},
+				  {0,1,0,0,0,0,0,0},
+				  {0,0,0,0,0,0,0,0},
+				  {0,0,0,0,0,0,0,0}};
+		
+		graph glp = new graph(blp);
+		int[] allnodes = glp.all_neighbors(-1);
+		
+		node3 var1 = new node3(allnodes, glp.nodes), var2 = new node3(glp.nodes), var3 = new node3(glp.nodes);
+		
+		var2 = glp.mirrors(var1, 1);
+		
+		System.out.println("var1: "+var1.print_list()+" var2: "+var2.print_list()+" var3: "+var3.print_list());
+
+		var3 = glp.mis(var1,0);
+		
+		System.out.println("max ind set: "+var3.print_list());
+		
+		if (1==1)
+			return;*/
+		
+/*System.out.println("shoot1");
+	    try {
+		      
+		      System.out.println("==Java==");
+		      System.out.println("plain:   " + plaintext);
+		 
+		      byte[] cipher = encrypt(plaintext, encryptionKey);
+		 
+		      System.out.print("cipher:  ");
+		      for (int i=0; i<cipher.length; i++)
+		        System.out.print(new Integer(cipher[i])+" ");
+		      System.out.println("");
+		 
+		      String decrypted = decrypt(cipher, encryptionKey);
+		 
+		      System.out.println("decrypt: " + decrypted);
+		 
+		    } catch (Exception e) {
+		      e.printStackTrace();
+		    } 
+*/
 
 
 		//int[] isstar = {2,4,6,8,10,11,13,14,19,30,32,36,39,40,45,48,49,54,57,59,63,66,69,70,75,77,81,83,87,90,93,96,98,101,103,106,110,113,115,118,121,124,128,130,133,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,183,186,189,192,195,198,201,204,207,210,213,216,219,222,225,228,231,234,237,240,243,245,249,252,254,257,261,264,267,270,272,276,279,282,285,288,291,294,297,300,303,306,309,312,315,316,321,324,325,329,333,336,339,342,343,348,351,352,357,360,363,366,369,372,375,378};
@@ -2164,7 +3214,7 @@ public class graph {
 		//int[] isstar = {2,4,6,8,10,11,13,14,19,30,32,36,39,40,45,48,49,54,57,59,63,66,69,70,75,77,81,83,87,90,93,96,98,101,103,106,110,113,115,118,121,124,128,130,133,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,183,186,189,192,195,198,201,204,207,210,213,216,219,222,225,228,231,234,237,240,243,245,249,252,254,257,261,264,267,270,272,276,279,282,285,288,291,294,297,300,303,306,309,312,315,316,321,324,325,329,333,336,339,342,343,348,351,352,357,360,363,366,369,372,375,378};
 
 
-		System.out.println("Hello?");
+		//		System.out.println("Hello?");
 
 		int[][] testie={{0,1,0,0,0,0,1,1,0,0,1},
 				{1,0,1,0,0,0,1,1,0,0,0},
@@ -2329,8 +3379,11 @@ public class graph {
 		 */
 
 		long start;
-		int [] temp;
+		int [] temp = new int[0];
 		long elapsedTimeMillis;
+		int[] r = null, x = null;
+		int[] p = g.find_P();
+
 
 		/*		g.graph3 = new node3[g.nodes];
 		for(int i = 0; i<g.nodes; i++){
@@ -2346,7 +3399,7 @@ public class graph {
 		g.pause();
 		 */
 
-		String s[] = new String[35];
+/*		String s[] = new String[35];
 
 		s[0] = "brock200_1.clq";
 		s[1] = "brock200_2.clq";
@@ -2385,94 +3438,150 @@ public class graph {
 		s[34] = "MANN_a9.clq";
 
 		for(int i = 1; i<s.length; i++){//i<s.length; i++){
-			if (((i == 32) && (i != 18)) && (i != 19)){// && (i != 18) && (i != 19)){
-				System.out.println("***********************************************************************************************************");
-				System.out.println("graph#"+i+" "+s[i]);
-				g = new graph(s[i]);
+			if (((i == 31) && (i != 33)) && (i != 18) && (i != 19)){
+*/		 
+
+
+/*		String s[] = new String[35];
+
+		s[0] = "C125.9.clq";
+		s[1] = "keller4.clq";
+		s[2] = "brock200_2.clq";
+		s[3] = "p_hat300-1.clq";
+		s[4] = "brock200_4.clq";
+		s[5] = "gen200_p0.9_44.clq";
+		s[6] = "gen200_p0.9_55.clq";
+		s[7] = "hamming8-4.clq";
+		s[8] = "p_hat300-2.clq";
+		s[9] = "C250.9.clq";
+		s[10] = "p_hat300-3.clq";
+		s[11] = "brock400_4.clq";
+		s[12] = "brock400_2.clq";
+		s[13] = "p_hat700-1.clq";
+		s[14] = "DSJC500.5.clq";
+		s[15] = "MANN_a27.clq";
+		s[16] = "gen400_p0.9_55.clq";
+		s[17] = "gen400_p0.9_75.clq";
+		s[18] = "gen400_p0.9_65.clq";
+		s[19] = "C500.9.clq";
+		s[20] = "p_hat700-2.clq";
+		s[21] = "p_hat700-3.clq";
+		s[22] = "brock800_4.clq";
+		s[23] = "brock800_2.clq";
+		s[24] = "keller5.clq";
+		s[25] = "DSJC1000.5.clq";
+		s[26] = "p_hat1500-1.clq";
+		s[27] = "hamming10-4.clq";
+		s[28] = "C1000.9.clq";
+		s[29] = "MANN_a45.clq";
+		s[30] = "p_hat1500-2.clq";
+		s[31] = "p_hat1500-3.clq";
+		s[32] = "C2000.9.clq";
+		s[33] = "keller6.clq";
+		s[34] = "MANN_a81.clq";
+
+		//		for(int i = 0; i<s.length; i++){//i<s.length; i++){
+		//			if (((i == 0) && (i != -22)) && (i != -24) && (i != -25)){
+*/
+		
+//		System.out.println("Bochert forced seed 2");
+		System.out.println("nv:c:nodes:clique:runs:ms:tf");
+
+		for(int v = 3; v<4; v++){
+			//if(true){
+			if(true){
+
+				int graphnum = 4;
+				g.init_AES_rand((short)graphnum,(short)(4.27*v));
+				g.start_random_with_seed(2);
+
+				System.out.print(v+":"+(int)(4.27*v)+":"+(int)(4.27*v*3)+":");
+				
+				//g = new graph(g.create3SAT(v,(int)(4.27*v)));
+				g = new graph(g.createLeemon3SAT(v,(int)(4.27*v),true,graphnum));
 				//g = new graph(testie8);
-
-				if(i<=0)
-					g.display_level = 0;
-				else if (i == 18)
-					g.display_level = 2;
-				else
-					g.display_level = 0;
-
+				//g = new graph("hamming8-4.clq");
+				//g.create3SAT(v,(int)(4.27*v));
+				//g = new graph(s[i]);
+				
+				g.display_level = -1;
 
 				g.timings[0] = 0;
 				g.timings[1] = 0;
 				g.timings[2] = 0;
 
 
-				System.out.println("Number of nodes: "+g.nodes);
+				//				System.out.println("Number of nodes: "+g.nodes);
 
 
-				System.out.println();
-				System.out.println();
-				System.out.println("AND NOW THE NEWER VERSION");
+				//				System.out.println();
+				//				System.out.println();
+				//				System.out.println("AND NOW THE NEWER VERSION");
 				g.start_showing_crap = false;
 				g.sort_smallest_first = false;
 				g.sort = true;
-				g.degressive_display = true;
+				g.degressive_display = false;
 				g.priority_threading = false;
-				g.num_threads = 0;
-				g.mid_num_threads = 0;
-				g.min_new_thread_size = 10;
+				g.show_me_intermitent_maxes = true;
+				g.num_threads = 0; // set to zero to disable multithreading
+				g.mid_num_threads = 8;
+				g.min_new_bthread_size = 0;//(int)(g.nodes*0.5); //number of nodes needed to make it worth calling a new thread
+				g.min_new_midthread_size = 0;//(int)(g.nodes*0.04); //number of nodes needed to make it worth calling a new thread, should look only at ntc, not memory element because ntc dictates more closely how many times the loop will be run
 				g.hotswap_trigger = -17;//115//116//1986;//12063; //-34530;//35105
-
+				g.lowest_backtrack = 0;//set to nodes if you want to enable the depth first option, not as efficient but easier to track progress
 
 				start = System.currentTimeMillis();
 				g.B_calls = 0;
 				g.B_calls_background = 0;
 				//				temp = g.pre_New_Bochert(false,g.nodes);
-				temp = g.pre_Newer_Bochert(false);
 
+				r = null; 
+				x = null;
+				p = g.find_P();
+
+				
+				//temp = g.pre_Newer_Bochert(false);
+				//temp = g.BronKerbosch(r, p, x);	
+				g.invert_graph();
+				temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
+
+				
 				elapsedTimeMillis = System.currentTimeMillis()-start;
+				System.out.println(temp.length+":"+g.middle_loop_run+":"+elapsedTimeMillis+":"+g.is_star(temp, false));
 
-				System.out.println();
-				System.out.println("max clique from un-optimized Bochert is: ");
-				System.out.println(g.array2string(temp));
-				System.out.println("total calls to Bochert: "+g.B_calls);
-				System.out.println("background calls to Bochert were: "+g.B_calls_background);
-				System.out.println("background to foreground were: "+((double)g.B_calls_background)/((double)g.B_calls));
+				//				System.out.println();
+				//				System.out.println("max clique from un-optimized Bochert is: ");
+				//				System.out.println(g.array2string(temp));
+				//				System.out.println("total calls to Bochert: "+g.B_calls+" and of those, total calls to TOP while were: "+g.B_calls_TOP);
 
-				System.out.println("__ it took:"+elapsedTimeMillis+" miliseconds");
+								
+								//temp = g.pre_Newer_Bochert(false);
+//								g.invert_graph();
+//								temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
+								//System.out.println("\nis star?: "+g.is_star(temp, false)+" and length is: "+temp.length+"\n set: "+g.array2string(temp)+"\n");
+								
+				//				bthread emptybthread = new bthread();
+				//				System.out.println("calls to bthread: "+emptybthread.total_calls_to_bthread+" and interior Bochert calls were: "+emptybthread.B_calls);
 
-				System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
+				//				System.out.println("calls to midthread: "+emptybthread.total_calls_to_midthread+" and interior Bochert calls were: now indistinguishable");
 
-				System.out.println();
+				//				System.out.println("__ it took:"+elapsedTimeMillis+" miliseconds");
+				//				System.out.println("Time analysis");// 0: "+g.time_analysis[0]+" 1: "+g.time_analysis[1]+" 2: "+g.time_analysis[2]+" 3: "+g.time_analysis[3]+" 4: "+g.time_analysis[4]+" 5: "+g.time_analysis[5]+" 6: "+g.time_analysis[6]);
+				//				for(int a = 0; a<g.time_analysis.length; a++){
+				//					System.out.print(" "+a+": "+g.time_analysis[a]);
+				//				}
+				//				System.out.println();
+
+				//				System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
+
+				//				System.out.println("waiting time for semasema: "+g.semasema.total_time_waiting+" mid_semasema: "+g.mid_semasema.total_time_waiting+" semaMax: "+g.semaMax.total_time_waiting+" semasematext: "+g.semasematext.total_time_waiting);
+				//				System.out.println("middle loop run: "+g.middle_loop_run);
 
 
-				
-				//for(int ii=0; ii<3; ii++){
-				//	System.out.println("timing "+ii+": "+(g.timings[ii]/1e6)+" for: "+g.timings2[ii]);
-				//}
-				
-												/*			System.out.println();
-				System.out.println("pooface");
-				int[] pooface = {1,65,132,171};
-				node3 pooface2 = new node3(pooface,g.nodes);
-				int[] peeface = {1,65,132,171};
-				node3 peeface2 = new node3(peeface,g.nodes);
 
-				pooface2 = peeface2;
+				//				System.out.println();
 
-				if(pooface2==peeface2){
-					System.out.println("equal");
-				}
-				else{
-					System.out.println("not equal");
-				}
-
-				/*				node2 ntemp = new node2(temp);
-				for(int a = 1; a<=g.nodes; a++){
-					ntemp.add(a);
-					if(g.is_star(ntemp.get_array_min_size(), true)){
-						System.out.println(a+" was a succex");
-					}
-					ntemp.delete(a);
-				}
-				 */			}
+			}
 		}
 
 

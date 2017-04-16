@@ -284,7 +284,39 @@ public class node3 {
 				
 				temp = temp>>>1;
 			}			
-		}			
+		}	
+		
+		return result;
+	}
+	
+		public int[] to_int(int size){
+			int[] result;
+			if(size > length)
+				result = new int[size];
+			else			
+				result = new int[length];
+			int index = 0;
+			
+			int temp = 0;
+			int bit_count;
+			
+			for(int i = 0; i<array.length; i++){
+				temp = array[i];
+				bit_count = Integer.bitCount(temp);
+				
+				for(int j = 0; j< 32; j++){
+					
+					if((temp&1)==1){
+						result[index] = (i*32+j+1);
+						index++;
+						bit_count--;
+					}
+					if(bit_count < 1)
+						j=32;
+					
+					temp = temp>>>1;
+				}			
+			}			
 		
 		
 		return result;
