@@ -516,12 +516,12 @@ public class graph {
 						{0,0,0,0,1,1,1,1,0,1,1},
 						{0,0,0,0,0,0,1,1,1,0,1},
 						{1,0,0,0,0,0,1,1,1,1,0}};
-		//graph g = new graph(testie);
+		graph g = new graph(testie);
 		
 		
 		//graph g = new graph(15,5);
 		//	graph g = new graph("brock200_1.clq");
-		  graph g = new graph("hamming6-2.clq"); // good small testing graph
+		//  graph g = new graph("hamming6-2.clq"); // good small testing graph
 		//	graph g = new graph("c-fat500-1.clq");
 		//	graph g = new graph("keller6.clq");		int[] r = null, x = null, p = g.find_P();
 

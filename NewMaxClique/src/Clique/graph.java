@@ -2,6 +2,10 @@ package Clique;
 
 import java.io.*;
 
+//import Clique2.graph;
+
+//import OldClique.node;
+
 
 
 public class graph {
@@ -18,18 +22,27 @@ public class graph {
 	private int initial_connected = 1; // used when functions are looking creating the initial matrix, for finding max independant set instead of max clique, this value is inverted
 	private int initial_not_connected = 0; // used when functions are looking creating the initial matrix, for finding max independant set instead of max clique, this value is inverted
 	private int internal_connected = 1; // used when functions are looking at internal connected ness
-	private int internal_not_connected = 0; // used when functions are looking at internal connected ness
-	private node[] independent_sets; // each index in the array (except for index 0) represents an independent set, and the nodes in that set
-	private int[] node_ind_set; // where each node is an index, value is ind set node is in. 0 denotes no specified ind set
+	//private int internal_not_connected = 0; // used when functions are looking at internal connected ness
+	//private node[] independent_sets; // each index in the array (except for index 0) represents an independent set, and the nodes in that set
+	//private int[] node_ind_set; // where each node is an index, value is ind set node is in. 0 denotes no specified ind set
 	private int[] node_edge_count; // number of edges each node has connected to it
-	private int[] node_index_increasing; // array of nodes with increasing edge count - first node has lowest num edges
-	private int[] nodes_with_over_half_edges; // edges with nodes that have over half edges needed to be considered for ind sets
+	private int[] nodes_ordered_increasing; // array of nodes with decreasing edge count - first node has highest num edges
+	private int[] index_ordered_nodes; //array of nodes, where int[0] represents the index of the first node into nodes_ordered_decreasing, and int[1] represents the index of the second, etc 
+	//private int[] nodes_with_over_half_edges; // edges with nodes that have over half edges needed to be considered for ind sets
 	//	private boolean use_node_edge_count = true; // if the sorting mechanism is looking at edge count, or actual array values
 	//	private boolean use_ind_sets = false; // so that bochert can first find the ind sets without getting confused and trying to use them in bochert
-	private node[] memory = new node[1];
-	private boolean optimize_all_set_memory = false;
-	private boolean optimize_ind_sets = true;
-	
+	//private node[] memory = new node[1];
+	//private boolean optimize_all_set_memory = false;
+	//private boolean optimize_ind_sets = true;
+	private int deepest = 0;
+	private int level0nodefinder = -1;
+	private int level1nodefinder = -1;
+	private int levelneg1nodefinder = -1;
+	boolean start_showing_crap = false;
+	private int current_level = 1;
+
+
+
 
 	private void pause() 
 	{
@@ -42,113 +55,19 @@ public class graph {
 		}
 	}
 
-	private void double_memory(){
-		node[] new_memory = new node[memory.length*2];
-		System.arraycopy(memory, 0, new_memory, 0, memory.length);
-		memory = new_memory;
-
-	}
-
-	private void add_memory(node new_element,int level){
-		//Now, it's important to note that this function being run, presupposes that
-		//the find_memory() function has already been run and found that not only 
-		//does this set need to be looked at, but it already has removed all sets 
-		//that are contained in this set
-		if (memory.length <= level)
-			double_memory();
-
-		node temp = memory[level];
-		node copy_new_element = new_element.copy();
-
-		if(temp == null){
-			memory[level] = copy_new_element;
-			return;
-		}
-		else if(temp.get_length() <= copy_new_element.get_length()){
-			copy_new_element.set_memory_next(temp);
-			memory[level] = copy_new_element;
-			return;
-		}
-
-		while ((temp.get_memory_next()!=null)&&(temp.get_memory_next().get_length() > copy_new_element.get_length())){
-			temp = temp.get_memory_next(); 
-		}
-		copy_new_element.set_memory_next(temp.get_memory_next());
-		temp.set_memory_next(copy_new_element);
-
-	}
-
-	private boolean find_memory(node element, int level){
-		if (memory.length <= level)
-			double_memory();
-
-		node temp = memory[level];
-		int[] found = {};
-
-		if (temp == null){
-//			System.out.println("starting position is blank");
-			return false;
-		}
-		else{ 
-			if (temp.get_length() >= element.get_length()){
-//				System.out.println("temp.l >= elm.l");
-				if (temp.contains(element)){
-//					System.out.println("temp contains elm");
-					return true;//temp.get_max_star();
-				}
-			}
-			else{
-//				System.out.println("elm.l > temp.l");
-				while ((temp != null) && (element.contains(temp))){
-//					System.out.println("temp != null && elm contains temp");
-					memory[level] = memory[level].get_memory_next();
-					temp = memory[level];
-				}
-				if (memory[level] == null){
-//					System.out.println("mem[lev] now equals null");
-					return false;
-				}
-			}
-		}
-
-		//at this point, the first element of the list of memory has been passed over
-		while (temp.get_memory_next() != null){
-//			System.out.println("first elem of list has been passed over");
-
-			if (temp.get_memory_next().get_length() >= element.get_length()){
-//				System.out.println("temp.n.l >= elm.l");
-				if (temp.get_memory_next().contains(element)){
-//					System.out.println("temp.n contains elm");
-					return true;//temp.get_max_star();
-				}
-			}
-			else{
-//				System.out.println("elm.l > temp.n.l");
-				while ((temp.get_memory_next() != null) && (element.contains(temp.get_memory_next()))){
-//					System.out.println("temp.n != null && elm contains temp.n");
-					temp.set_memory_next(temp.get_memory_next().get_memory_next());
-				}
-			}
-			if (temp.get_memory_next() != null){
-//				System.out.println("incrimenting temp");
-				temp = temp.get_memory_next(); 
-			}
-		}
-
-		return false;
-	}
 
 	private void add_imemory(node new_element,node imemory, int new_head){
 		//Now, it's important to note that this function being run, presupposes that
 		//the find_memory() function has already been run and found that not only 
 		//does this set need to be looked at, but it already has removed all sets 
 		//that are contained in this set
-		
+
 		node temp = imemory.memory_next;
 		node copy_new_element = new_element.copy();
 		copy_new_element.set_head(new_head);
-		
-		
+		imemory.incriment_length();
+
+
 		if(temp == null){
 			imemory.set_memory_next(copy_new_element);
 			return;
@@ -164,47 +83,105 @@ public class graph {
 		}
 		copy_new_element.set_memory_next(temp.get_memory_next());
 		temp.set_memory_next(copy_new_element);
-		
-		
+
+
 	}
-	
-	private boolean find_imemory(node element, node imemory){
 
-		node temp = imemory.get_memory_next();
-		int[] found = {};
+	private boolean find_imemory(node imemory, node element, node pergatory, int toptop/*, int[] who_was_bigger*/){
+		//true means the memory was found, don't add it
+		//false means add the element, it isn't currently in memory
 
 		
-		if (temp.get_length() == 0){
-			if  (element.get_length() == 0){
-				return true;
-			}
-			else{
-				imemory.set_memory_next(null);
-				temp = imemory.get_memory_next();
-			}
-		}
-		
-		if (temp == null){
-//			System.out.println("starting position is blank");
+		node temp = imemory;
+		int[] new_toptop = new int[1];
+
+		if (temp.get_memory_next() == null){
+			if (start_showing_crap)
+				System.out.println(toptop+" Contains: BLANK");			
 			return false;
 		}
+
+		if  (element.get_length() == 0){
+
+			if (start_showing_crap)
+			System.out.println(toptop+" (being empty) is cOntained in: "+temp.get_memory_next().get_head());			
+
+			new_toptop[0] = toptop;
+			pergatory.add(new node(new_toptop));
+
+//			who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
+
+
+			return true;
+		}
+
+		if (temp.get_memory_next().get_length() == 0){
+			//element can't be of zero length now - because it would've returned already
+
+			//there can be only one in memory of size zero...
+			//if this hasn't been checked yet
+			//if it has been checked already, then don't delete it, leave it where it is
+			if (temp.get_memory_next().get_meta_data() == 0){//0 means not checked
+
+				
+				if (start_showing_crap)
+				System.out.println(toptop+" coNtains: "+temp.get_memory_next().get_head());			
+
+				
+				imemory.decriment_length();
+				new_toptop[0] = temp.get_memory_next().get_head();
+				pergatory.add(new node(new_toptop));
+
+//				who_was_bigger[new_toptop[0]-1] = toptop;
+
+				imemory.set_memory_next(null);
+			}
+			return false;
+
+		}		
 		else{ 				
-			if (temp.get_length() >= element.get_length()){
-//				System.out.println("temp.l >= elm.l");
-				if (temp.contains(element)){
-//					System.out.println("temp contains elm");
+
+			if (temp.get_memory_next().get_length() >= element.get_length()){
+				//				System.out.println("temp.l >= elm.l");
+				if (temp.get_memory_next().contains(element)){
+					//					System.out.println("temp contains elm");
+
+
+					if (start_showing_crap)
+					System.out.println(toptop+" is conTained in: "+temp.get_memory_next().get_head());			
+					//					System.out.println("B");
+					new_toptop[0] = toptop;
+					pergatory.add(new node(new_toptop));
+
+//					who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
+
 					return true;//temp.get_max_star();
 				}
 			}
 			else{
-//				System.out.println("elm.l > temp.l");
-				while ((temp != null) && (element.contains(temp))){
-//					System.out.println("temp != null && elm contains temp");
-					imemory = imemory.get_memory_next();
-					temp = imemory;
+				//				System.out.println("elm.l > temp.l");
+				while ((temp.get_memory_next() != null) && (element.contains(temp.get_memory_next()))){
+					//					System.out.println("temp != null && elm contains temp");
+					//					System.out.println("C");
+
+					if (temp.get_memory_next().get_meta_data() == 0){
+
+						if (start_showing_crap)
+						System.out.println(toptop+" contAins: "+temp.get_memory_next().get_head());			
+						
+						imemory.decriment_length();
+
+						new_toptop[0] = temp.get_memory_next().get_head();
+						pergatory.add(new node(new_toptop));
+
+//						who_was_bigger[new_toptop[0]-1] = toptop;
+
+						imemory.set_memory_next(imemory.get_memory_next().get_memory_next());
+					}
+					//temp = imemory.get_memory_next();
 				}
-				if (imemory == null){
-//					System.out.println("mem[lev] now equals null");
+				if (imemory.get_memory_next() == null){
+					//					System.out.println("mem[lev] now equals null");
 					return false;
 				}
 			}
@@ -212,24 +189,48 @@ public class graph {
 
 		//at this point, the first element of the list of memory has been passed over
 		while (temp.get_memory_next() != null){
-//			System.out.println("first elem of list has been passed over");
+
+			//			System.out.println("first elem of list has been passed over");
 
 			if (temp.get_memory_next().get_length() >= element.get_length()){
-//				System.out.println("temp.n.l >= elm.l");
+				//				System.out.println("temp.n.l >= elm.l");
 				if (temp.get_memory_next().contains(element)){
-//					System.out.println("temp.n contains elm");
+					//					System.out.println("temp.n contains elm");
+					//					System.out.println("D");
+
+					if (start_showing_crap)
+					System.out.println(toptop+" is contaIned in: "+temp.get_memory_next().get_head());			
+					
+					new_toptop[0] = toptop;
+					pergatory.add(new node(new_toptop));
+
+//					who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
+
 					return true;//temp.get_max_star();
 				}
 			}
 			else{
-//				System.out.println("elm.l > temp.n.l");
+				//				System.out.println("elm.l > temp.n.l");
 				while ((temp.get_memory_next() != null) && (element.contains(temp.get_memory_next()))){
-//					System.out.println("temp.n != null && elm contains temp.n");
-					temp.set_memory_next(temp.get_memory_next().get_memory_next());
+					//					System.out.println("temp.n != null && elm contains temp.n");
+					if (temp.get_memory_next().get_meta_data() == 0){
+						
+						if (start_showing_crap)
+						System.out.println(toptop+" contaiNs: "+temp.get_memory_next().get_head());			
+												
+						imemory.decriment_length();
+						new_toptop[0] = temp.get_memory_next().get_head();
+						pergatory.add(new node(new_toptop));
+
+//						who_was_bigger[new_toptop[0]-1] = toptop;
+
+
+						temp.set_memory_next(temp.get_memory_next().get_memory_next());
+					}
 				}
 			}
 			if (temp.get_memory_next() != null){
-//				System.out.println("incrimenting temp");
+				//				System.out.println("incrimenting temp");
 				temp = temp.get_memory_next(); 
 			}
 		}
@@ -237,364 +238,338 @@ public class graph {
 		return false;
 	}
 
-	
+
 	public int[] pre_Bochert(){
 
+//		sort_nodes();
+//		reorganize_nodes();
+//		return unreorganize_nodes(Bochert(all_neighbors(-1), 0));
+
+		
+		return Bochert(all_neighbors(-1), 0);
+	}
+
+
+	public int[] pre_Old_Bochert(){
+
 
 		int[] all_nodes = all_neighbors(-1);
 
-		return Bochert(all_nodes, 0);
+		return Old_Bochert(all_nodes, 0);
 	}
 
-	
-	public int[] pre_iBochert(){
+	private void sort_nodes(){
 
-		make_independent_sets();
+		nodes_ordered_increasing = merge_sort(this.all_neighbors(-1));
 
-/*		for (int i = 0; i<node_ind_set.length; i++)
-			System.out.println("node: "+i+" is in set: "+node_ind_set[i]);
+		index_ordered_nodes = new int[nodes];
 
-		System.out.println("Node independent sets are:");
-		for (int i = 0; i<independent_sets.length ; i++)
-			System.out.println("Set: "+i+" is: "+array2string(independent_sets[i].print_array()));
-*/
-		
-		
-
-		int[] all_nodes = all_neighbors(-1);
-
-		return iBochert(all_nodes, 0);
-	}
-
-	public int[] oldversion_pre_Bochert(){
-		int[] max_clique = null;
-
-		//		B_calls = 0;
-
-
-		node_index_increasing = new int[nodes];
-		for(int i = 0; i<nodes; i++)
-			node_index_increasing[i] = i;
-
-		node_index_increasing = merge_sort(node_index_increasing);
-		nodes_with_over_half_edges = find_nodes_with_over_half();
-		for(int i = 0; i<nodes_with_over_half_edges.length; i++)
-			nodes_with_over_half_edges[i]++;
-
-
-		boolean use_node_edge_count = false; //was global
-		//		System.out.println(array2string(nodes_with_over_half_edges));
-		nodes_with_over_half_edges = merge_sort(nodes_with_over_half_edges);
-		//		System.out.println("Nodes with over half: "+array2string(nodes_with_over_half_edges));		
-
-		make_independent_sets();
-
-		/*		for (int i = 0; i<node_ind_set.length; i++)
-			System.out.println("node: "+i+" is in set: "+node_ind_set[i]);
-
-		System.out.println("Node independent sets are:");
-		for (int i = 0; i<independent_sets.length ; i++)
-			System.out.println("Set: "+i+" is: "+array2string(independent_sets[i].print_array()));
-		 */
-		boolean use_ind_sets = true; //was global
-
-		//		B_calls = 0;
-
-		max_clique = Bochert2(all_neighbors(-1), 0);
-		System.out.println("Exiting Bochert with max_clique:"+array2string(max_clique));
-		//max_clique = Bochert_Ind_Control(all_neighbors(-1), null, 0);
-
-		return max_clique;
-	}
-
-	
-	private int[] merge_sort(int[] list){
-		return null;
-	}
-
-	private int[] find_nodes_with_over_half(){
-		return null;
-	}
-	
-	private void make_independent_sets(){
-
-		internal_connected = 0;
-		internal_not_connected = 1;
-
-		node[] ind_sets = new node[nodes];
-		ind_sets[0] = new node();
-		int index_ind_sets = 1;
-		node_ind_set = new int[nodes];
-
-		int[] all_nodes = all_neighbors(-1);//nodes_with_over_half_edges;//all_neighbors(-1);
-		int[] found_ind_set;
-		node nodes_to_consider = new node(all_nodes);
-
-		while (nodes_to_consider.get_length() != 0){
-			
-			found_ind_set = Bochert(nodes_to_consider.print_array(), 0);
-			ind_sets[index_ind_sets] = new node(found_ind_set);
-			
-			for (int i = 0; i < found_ind_set.length; i++)
-				node_ind_set[found_ind_set[i]-1] = index_ind_sets;
-
-
-			index_ind_sets++;
-			nodes_to_consider.split_nodes(found_ind_set);
+		for(int i = 0; i<nodes_ordered_increasing.length; i++){
+//			System.out.println(i+" node: "+nodes_ordered_increasing[i]+" has "+node_edge_count[nodes_ordered_increasing[i]-1]+" edges");
+			index_ordered_nodes[nodes_ordered_increasing[i]-1] = i;			
 		}
 
+//		pause();
+		
+	}
 
+	private void reorganize_nodes(){
+		//function reorganizes the graph[][] to make the node with the fewest edges node 1 and the node with the most nodes the last node
 
-		independent_sets = new node[index_ind_sets];
-		System.arraycopy(ind_sets, 0, independent_sets, 0, index_ind_sets);
-
-
-		internal_connected = 1;
-		internal_not_connected = 0;
-		B_calls = 0;
-	}	
-
-	private int[] Bochert2(int[] nodes, int current_max){
-		return null;
+		int[][] newgraph = new int[nodes][nodes];
+		
+		for(int i = 0; i<nodes; i++)
+			for(int j = 0; j<nodes; j++){
+				newgraph[i][j] = graph[nodes_ordered_increasing[i]-1][nodes_ordered_increasing[j]-1];								
+			}				
+		
 	}
 	
-	private int[] iBochert(int[] nodes, int current_max){
-		//original Bochert
+	private int[] unreorganize_nodes(int[] result){
+		//find out what the real nodes are
+		
+		int[] real_result = new int[result.length];
+		
+		for(int i = 0; i<result.length; i++)
+			real_result[i] = nodes_ordered_increasing[result[i]-1];
 
+		return real_result;
+	}
+	
+	private int[] merge_sort(int[] list)
+	{
+		if (list.length <= 1)
+			return list;
+		int[] left, right, result;
+
+		int middle = list.length / 2;
+		left = new int[middle];
+		right = new int[list.length - middle];
+		System.arraycopy(list, 0, left, 0, middle);
+		System.arraycopy(list, middle, right, 0, list.length - middle);
+
+		left = merge_sort(left);
+		right = merge_sort(right);
+		result = merge(left, right);
+
+		return result;
+
+
+
+	}
+
+
+
+	private int[] merge(int[] left,int [] right)
+	{
+
+		int lefti = 0, righti = 0, resulti = 0;
+		int leftl = left.length, rightl = right.length;
+		int resultl = leftl + rightl;
+		int[] result = new int[resultl];
+
+
+		while ((lefti < leftl) && (righti < rightl)){
+			if (node_edge_count[left[lefti]-1] >= node_edge_count[right[righti]-1]){ 
+				result[resulti] = left[lefti];
+				resulti++;
+				lefti++;
+			}
+			else{
+				result[resulti] = right[righti];
+				resulti++;
+				righti++;        }
+		}
+
+		while (lefti < leftl){		
+			result[resulti] = left[lefti];
+			resulti++;
+			lefti++;
+		}
+		while (righti < rightl){		
+			result[resulti] = right[righti];
+			resulti++;
+			righti++;
+		}
+
+		return result;
+	}
+
+
+
+	private int[] Bochert(int[] nodes, int current_max){
+		//not original Bochert
+
+
+//		System.out.println("SH*T SH*T!! Fire the MISILES!!");
 
 		int[] temp_connected_nodes = null;
 		int[] max_star = null;
 		int[] temp_max = null;
 		int temp_current_max = current_max;
 		int current_node;
-		int current_ind_set_num;
-		int[] current_ind_set;
 		int node_that_found_max_star = -1;
 
 
 		B_calls++;
 		B_iteration_deep++;
 
-		if (B_iteration_deep < 3){
-			System.out.println("B_iteration_deep: "+B_iteration_deep+" B_calls: "+B_calls+" and length nodes left: "+nodes.length);
-		}
 
-		node nodes_to_consider = new node(nodes); 
+
+		//		if (B_iteration_deep < 4){
+		//			System.out.println("B_iteration_deep: "+B_iteration_deep+" B_calls: "+B_calls);
+		//		}
+
+		node nodes_to_consider = new node(nodes);
+
 		node head_max_star = new node();
-		node temp = null;
+
 		node imemory = new node();
-		
+
 		//		int length_nodes_left = nodes.length; 
 
-//		System.out.println("Level: "+B_iteration_deep+" Looking for: "+nodes_to_consider.print_list());
 
-//		if (memory.length > B_iteration_deep){
-//			node delete = memory[B_iteration_deep];
-//			System.out.println("Contents of memory:");
-//			while (delete != null){
-//				System.out.println(delete.print_list());
-//				delete = delete.get_memory_next();
-//			}
-//		}
-if (optimize_all_set_memory == true){
-		if (this.find_memory(nodes_to_consider, B_iteration_deep)){
-//			System.out.println("FOUND");
-			B_iteration_deep--;
-//			pause();
-			return null; //this set has already been considered
-		}
-//		System.out.println("ADDING");
-		this.add_memory(nodes_to_consider, B_iteration_deep);
-//		pause();
-}
+		boolean found_new_set = true;
+		node pergatory = new node();
+		node dantes_inferno = new node();
+		int[] index_dante = null;
+		node pergatory_and_max_star = new node();
+		node memory_element = new node();
+		int[] delete_this = new int[1];
+		node index_imemory = imemory;
+		node deleted_nodes = new node();
+		int[] cesspool = null;
+//		int[] where_is_that_darn_node = new int[this.nodes];//BAD BAD BAD!!! YOU SHOULD BE ASHAMED OF YOURSELF... don't forget to go back and use the enumerated values instead of indexes because this wastes so much space
+		//0 means it's nowhere
+		//-1 means it's in purgatory
+		//1 means it's in imemory
+//		int[] who_was_bigger = new int[this.nodes];//BAD BAD BAD!!! YOU SHOULD BE ASHAMED OF YOURSELF... don't forget to go back and use the enumerated values instead of indexes because this wastes so much space
+		
+//		if (B_calls > 17)
+//			start_showing_crap = true;
+		
+		do{
 
-		while (nodes_to_consider.get_length() != 0)
-		{
+			//////////////////////////////////////////////////
+			/**************** check function ****************/
+			//////////////////////////////////////////////////
 
-
-			if (nodes_to_consider.get_length() <= current_max){
-				B_iteration_deep--;
-				return null; //that is to say there aren't enough nodes left to make a star big enough to beat the current max
-			}
-
-
-			current_node = nodes_to_consider.get_next().get_value();
-			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(head_max_star));
-
-			
-//			System.out.println("Problem: when memory gets optimized out, node should be deleted from ")
-			if (temp_connected_nodes.length >= temp_current_max) {
+			if (found_new_set == true){
 				
-//				insert_spaces_for_iteration("B");
-//				System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-//				System.out.println("entering optimization with current node: "+current_node+" nodes_to_consider: "+nodes_to_consider.print_list()+" head_max_star: "+head_max_star.print_list()+" node_that_found_max_star: "+node_that_found_max_star);
-				
-				current_ind_set_num = node_ind_set[current_node-1];
-				current_ind_set = independent_sets[current_ind_set_num].print_array();
+				dantes_inferno = nodes_to_consider;
+				pergatory = new node(); //this is a waste... oh well... I'm trying this out quick, not really worth the effort
+				// so now all the nodes are in temp, and pergatory and nodes to consider are empty
+				index_dante = dantes_inferno.print_array();
+				index_imemory = imemory;
 
-//				System.out.println("independent set includes: "+array2string(current_ind_set));
-				
-				temp = new node(temp_connected_nodes);
-				add_imemory(temp, imemory, current_node);
-				
-				for(int i = 0; i < current_ind_set.length; i++){
-					
-					if (current_ind_set[i] != current_node){
-						if (nodes_to_consider.find(current_ind_set[i])){
-							temp = new node(Bochert_neighbor(current_ind_set[i], nodes_to_consider.combine(head_max_star)));						
-							if (temp.get_length() >= temp_current_max){								
-							
-						
-						if (!find_imemory(temp, imemory)){
-//							System.out.println("node: "+current_ind_set[i]+" was added to the memory");
-							add_imemory(temp, imemory, current_ind_set[i]);
-						}
-						else{
-							nodes_to_consider.delete(current_ind_set[i]);
-						}
-					}
-						}
-					}
-				}
-			
-				current_node = imemory.get_memory_next().get_head();
-				temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(head_max_star));
-				imemory.set_memory_next(null);
-//				System.out.println("IT WAS DECIDED THAT NODE: "+current_node+" with set: "+array2string(temp_connected_nodes)+" was worth looking into");
-			}
-			
-
-			
-			 //imemory = new node[1]
-			
-
-			if (temp_connected_nodes.length == 0 && temp_current_max == 0 && node_that_found_max_star == -1){
-				node_that_found_max_star = current_node;
-				temp_current_max = 1;
-				max_star = null;
-			}
-			else if ((temp_connected_nodes.length >= temp_current_max) && (temp_connected_nodes.length != 0)) {
-
-				if (temp_connected_nodes.length == 1) {
-					temp_max = temp_connected_nodes;
-				}
-				else{
-
-					if (temp_current_max == 0){
-//						insert_spaces_for_iteration("B");
-//						System.out.println("========calling Bochert again on current node: "+current_node);
-//						System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
-						temp_max = iBochert(temp_connected_nodes, temp_current_max);
+				//this function cycles through imemory and pulls out all the nodes that haven't be checked yet to decide if they should still be in imemory
+				while (index_imemory.get_memory_next() != null){
+					if (index_imemory.get_memory_next().get_meta_data() == 0){//if it hasn't been checked yet
+//						where_is_that_darn_node[index_imemory.get_memory_next().get_head()-1] = 0;
+						index_imemory.set_memory_next(index_imemory.get_memory_next().get_memory_next());
+						imemory.decriment_length();
 					}
 					else{
-//						insert_spaces_for_iteration("B");
-//						System.out.println("========calling Bochert again on current node: "+current_node);
-//						System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
-						temp_max = iBochert(temp_connected_nodes, temp_current_max-1);
+						index_imemory = index_imemory.get_memory_next();
 					}
 				}
-				if ((temp_max != null) && (temp_max.length >= temp_current_max)){
 
 
+				cesspool = head_max_star.combine(dantes_inferno);
 
-					nodes_to_consider.add(head_max_star);
-					node_that_found_max_star = current_node;
-					max_star = temp_max;
-					temp_current_max = max_star.length+1;
+				for (int i = 0; i < index_dante.length; i++){
 
+//					System.out.print("index_dante[i]: "+index_dante[i]);
+//					System.out.print(" who_was_bigger[~-1]: "+who_was_bigger[index_dante[i]-1]);
+//					if (who_was_bigger[index_dante[i]-1]!=0)
+//						System.out.println(" where_is_that_darn_node[~-1]: "+where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1]);
+//					else
+//						System.out.println();
+					
+//					if (false || ((who_was_bigger[index_dante[i]-1] == 0) || (where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1] < 1))){
+						//ie. the node that was found to bigger than this node last time we went through this, isn't currently in imemory so it's worth looking into
 
-					head_max_star = nodes_to_consider.split_nodes(max_star);
+						memory_element = new node(Bochert_neighbor(index_dante[i], head_max_star.combine(dantes_inferno)));
+//						memory_element = new node(Bochert_neighbor(index_dante[i], head_max_star.combine(dantes_inferno)),index_dante[i]);
 
+						if (!this.find_imemory(imemory, memory_element, pergatory, index_dante[i]/*,who_was_bigger*/)){
+							this.add_imemory(memory_element, imemory, index_dante[i]);
+//							where_is_that_darn_node[index_dante[i]-1] = 1;
+							if(start_showing_crap)
+							System.out.println("added to imemory: "+index_dante[i]+" connected to: "+memory_element.print_list());
+						}
+						else {
+//							where_is_that_darn_node[index_dante[i]-1] = -1;
+						}
 
+/*					}
+					else {
+						if(start_showing_crap)
+							System.out.println(index_dante[i]+" was contained in "+who_was_bigger[index_dante[i]-1]+" (which is currently in: "+where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1]+")");
 
+						delete_this[0] = index_dante[i];
+						pergatory.add(new node(delete_this));
 
+						//the node that was bigger last time is still in memory, so don't bother looking again, because you'll find it again
+						where_is_that_darn_node[index_dante[i]-1] = -1;
+					}
+*/					
+					dantes_inferno.delete(index_dante[i]);
 				}
+
+				pergatory_and_max_star = pergatory.copy();
+				pergatory_and_max_star.add(head_max_star.copy());
+				nodes_to_consider = imemory.print_memory_to_consider();
+				found_new_set = false;
+				index_imemory = imemory;
+
+				while((index_imemory.get_memory_next() != null)&&(index_imemory.get_memory_next().get_meta_data() == 1)){
+					index_imemory = index_imemory.get_memory_next();
+				}
+
+				if (start_showing_crap){
+					System.out.println("******************************************************************");
+					this.insert_spaces_for_iteration("B");
+					System.out.println();
+					System.out.println("nodes was originally: "+array2string(nodes));
+					System.out.println("nodes to consider is: "+nodes_to_consider.print_list());
+					System.out.println("pergatory is:         "+pergatory.print_list());
+					System.out.println("maxstar is:           "+head_max_star.print_list());
+					System.out.println("pergatory+maxstar is: "+pergatory_and_max_star.print_list());
+					System.out.println("node_that_found_max : "+node_that_found_max_star);
+					System.out.println("a ref list of nodes : "+array2string(this.all_neighbors(-1)));
+//					System.out.println("where_is_that_darn_n: "+array2string(where_is_that_darn_node));					
+//					System.out.println("who_was_bigger:       "+array2string(who_was_bigger));
+					System.out.println("******************************************************************");
+					
+				}
+
+				
+				
 			}
 
-
-			//			length_nodes_left--;
-			nodes_to_consider.delete_next();
-
-
-		}	
+			///////////////////////////////////////////////////////////
+			//               	END CHECK FUNCTION                   //
+			///////////////////////////////////////////////////////////
 
 
-		if (node_that_found_max_star == -1){
-			//			System.out.println("Returning null");
-			B_iteration_deep--;		
-			return null;
-		}
+			if (((nodes_to_consider.get_length()+pergatory.get_length()) <= current_max)||(index_imemory.get_memory_next() == null)){
+				//this.insert_spaces_for_iteration("B");
+				//System.out.println("returning null");
+				//B_iteration_deep--;
+				//return null; //that is to say there aren't enough nodes left to make a star big enough to beat the current max
+
+				if (node_that_found_max_star == -1){
+					//			this.insert_spaces_for_iteration("B");
+					//			System.out.println("Returning null");
+					B_iteration_deep--;		
+					return null;
+				}
 
 
-		int[] temp_finder = {node_that_found_max_star};
-		node finder = new node(temp_finder);
+				int[] temp_finder = {node_that_found_max_star};
+				node finder = new node(temp_finder);
 
-		head_max_star.add(finder);
+				head_max_star.add(finder);
 
-		B_iteration_deep--;
-		return head_max_star.print_array();
-
-	}
-
-	
-	private int[] Bochert(int[] nodes, int current_max){
-		//original Bochert
-
-
-		int[] temp_connected_nodes = null;
-		int[] max_star = null;
-		int[] temp_max = null;
-		int temp_current_max = current_max;
-		int current_node;
-		int node_that_found_max_star = -1;
-
-
-		B_calls++;
-		B_iteration_deep++;
-
-//		if (B_iteration_deep < 4){
-//			System.out.println("B_iteration_deep: "+B_iteration_deep+" B_calls: "+B_calls);
-//		}
-
-		node nodes_to_consider = new node(nodes); 
-		node head_max_star = new node();
-
-		//		int length_nodes_left = nodes.length; 
-
-//		System.out.println("Level: "+B_iteration_deep+" Looking for: "+nodes_to_consider.print_list());
-
-//		if (memory.length > B_iteration_deep){
-//			node delete = memory[B_iteration_deep];
-//			System.out.println("Contents of memory:");
-//			while (delete != null){
-//				System.out.println(delete.print_list());
-//				delete = delete.get_memory_next();
-//			}
-//		}
-if (optimize_all_set_memory == true){
-		if (this.find_memory(nodes_to_consider, B_iteration_deep)){
-//			System.out.println("FOUND");
-			B_iteration_deep--;
-//			pause();
-			return null; //this set has already been considered
-		}
-//		System.out.println("ADDING");
-		this.add_memory(nodes_to_consider, B_iteration_deep);
-//		pause();
-}
-
-		while (nodes_to_consider.get_length() != 0)
-		{
-
-
-			if (nodes_to_consider.get_length() <= current_max){
 				B_iteration_deep--;
-				return null; //that is to say there aren't enough nodes left to make a star big enough to beat the current max
+
+				//				this.insert_spaces_for_iteration("B");
+				//				System.out.println("Returning: "+head_max_star.print_list());
+
+				return head_max_star.print_array();
+
 			}
 
 
-			current_node = nodes_to_consider.get_next().get_value();
-			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(head_max_star));
+			current_node = index_imemory.get_memory_next().get_value();
+			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(pergatory_and_max_star));
+			//			insert_spaces_for_iteration("B");
+			//			System.out.println("nodes_to_consider: "+array2string(nodes_to_consider.print_array())+" perg&maxS: "+array2string(pergatory_and_max_star.print_array()));
+			//			insert_spaces_for_iteration("B");
+			//			System.out.println("the neighbors of "+current_node+" were found to be: "+array2string(temp_connected_nodes));
+
+			if(current_level > B_iteration_deep){
+				System.out.println();
+				System.out.print("*"+B_iteration_deep+"* ");
+			}
+			
+			if(B_iteration_deep < 10){//this.nodes/100){
+				if(current_level < B_iteration_deep){
+					System.out.println();
+					System.out.print("*"+B_iteration_deep+"* ");					
+				}				
+				current_level = B_iteration_deep;
+				
+//				imemory.print_memory();
+			}
+			
+			if(B_iteration_deep < 18){//this.nodes/100){
+//				this.insert_spaces_for_iteration("B");
+				System.out.print(current_node+" ");			
+			}
+//				if(B_calls > 200)
+//					pause();
 
 
 			if (temp_connected_nodes.length == 0 && temp_current_max == 0 && node_that_found_max_star == -1){
@@ -610,16 +585,300 @@ if (optimize_all_set_memory == true){
 				else{
 
 					if (temp_current_max == 0){
-//						System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
+						//	insert_spaces_for_iteration("B");
+						//	System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
 						temp_max = Bochert(temp_connected_nodes, temp_current_max);
 					}
 					else{
-//						System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
+						//	insert_spaces_for_iteration("B");
+						//	System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
 						temp_max = Bochert(temp_connected_nodes, temp_current_max-1);
 					}
 				}
 				if ((temp_max != null) && (temp_max.length >= temp_current_max)){
 
+					
+					nodes_to_consider.add(pergatory);
+					nodes_to_consider.add(head_max_star);
+					node_that_found_max_star = current_node;
+					max_star = temp_max;
+					temp_current_max = max_star.length+1;
+
+					if(start_showing_crap)
+					System.out.println("JUST FOUND A NEW MAX STAR: "+node_that_found_max_star+" is attached to: "+array2string(max_star));
+					head_max_star = nodes_to_consider.split_nodes(max_star);
+
+					found_new_set = true;
+
+
+
+
+				}
+			}
+
+
+			//			length_nodes_left--;
+			delete_this[0] = index_imemory.get_memory_next().get_value();
+
+			deleted_nodes.add(nodes_to_consider.split_nodes(delete_this));// .delete(index_imemory.get_memory_next().get_value());
+			
+			//so update imemory with what nodes the checked node was actually connected to, no need to leave that ghost of a connection set
+			memory_element = new node(temp_connected_nodes);//new_element.copy();
+			memory_element.set_head(current_node);
+			memory_element.set_meta_data(1);
+			memory_element.set_memory_next(index_imemory.get_memory_next().get_memory_next());		
+			index_imemory.set_memory_next(memory_element);
+			
+//			index_imemory.get_memory_next().set_meta_data(1)
+
+
+			while((index_imemory.get_memory_next() != null)&&(index_imemory.get_memory_next().get_meta_data() == 1)){
+				index_imemory = index_imemory.get_memory_next();
+			}
+
+			imemory.decriment_length();
+
+			/*			this.insert_spaces_for_iteration("B");
+			System.out.println("**EndLoop: NtoC: "+array2string(nodes_to_consider.print_array())+" and pergatory: "+array2string(pergatory.print_array())+" and max star: "+array2string(head_max_star.print_array())+" and deleted nodes: "+deleted_nodes.print_list());
+
+			temp = new node();
+			if (nodes_to_consider.get_length() != 0)
+				temp = new node(temp.combine(nodes_to_consider));
+			if (deleted_nodes.get_length() != 0)
+				temp = new node(temp.combine(deleted_nodes));
+			if (head_max_star.get_length() != 0)
+				temp = new node(temp.combine(head_max_star));
+			if (pergatory.get_length() != 0)
+				temp = new node(temp.combine(pergatory));
+			if (node_that_found_max_star != -1){				
+				delete_this[0] = node_that_found_max_star;
+				dantes_inferno = new node(delete_this);
+				temp = new node(temp.combine(dantes_inferno));
+			}
+
+			this.insert_spaces_for_iteration("B");
+			System.out.println("!!!!!!!!!!!all nodes: "+array2string(nodes));
+			this.insert_spaces_for_iteration("B");
+			System.out.println("!SHOULD BE!all nodes: "+temp.print_list());
+			 */		
+
+		}while (index_imemory.get_memory_next() != null);
+
+
+
+		if (node_that_found_max_star == -1){
+			//	this.insert_spaces_for_iteration("B");
+			//	System.out.println("Returning null");
+			B_iteration_deep--;		
+			return null;
+		}
+
+
+		int[] temp_finder = {node_that_found_max_star};
+		node finder = new node(temp_finder);
+
+		head_max_star.add(finder);
+
+		B_iteration_deep--;
+
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("Returning: "+head_max_star.print_list());
+		
+		if (B_iteration_deep == -1)
+			levelneg1nodefinder = node_that_found_max_star;
+		else if (B_iteration_deep == 0)
+			level0nodefinder = node_that_found_max_star;
+		else if (B_iteration_deep == 1)
+			level1nodefinder = node_that_found_max_star;
+		
+		
+		return head_max_star.print_array();
+
+	}
+
+
+
+	private int[] Old_Bochert(int[] nodes, int current_max){
+		//Original Bochert (hopefully)
+
+
+		//System.out.println("SH*T SH*T!! Fire the MISILES!!");
+
+
+		int[] temp_connected_nodes = null;
+		int[] max_star = null;
+		int[] temp_max = null;
+		int temp_current_max = current_max;
+		int current_node;
+		int node_that_found_max_star = -1;
+
+
+		B_calls++;
+		B_iteration_deep++;
+
+		if(B_iteration_deep > deepest){
+			deepest = B_iteration_deep;
+			System.out.println("Deepest is now: "+deepest);			
+		}
+
+
+		node nodes_to_consider = new node(nodes); 
+		node head_max_star = new node();
+
+
+
+
+
+		while (nodes_to_consider.get_next() != null){
+
+
+
+			if (nodes_to_consider.get_length() <= (current_max)){
+				B_iteration_deep--;		
+				return null;
+			}
+
+			current_node = nodes_to_consider.get_next().get_value();
+			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(head_max_star));
+
+
+			if(B_iteration_deep <= 1){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(current_node);			
+			}
+
+
+
+			if (temp_connected_nodes.length == 0 && temp_current_max == 0 && node_that_found_max_star == -1){
+				node_that_found_max_star = current_node;
+				temp_current_max = 1;
+				max_star = null;
+			}
+			else if ((temp_connected_nodes.length >= temp_current_max) && (temp_connected_nodes.length != 0)) {
+
+				if (temp_connected_nodes.length == 1) {
+					temp_max = temp_connected_nodes;
+				}
+				else{
+
+					if (temp_current_max == 0){
+						temp_max = Old_Bochert(temp_connected_nodes, temp_current_max);
+					}
+					else{
+						temp_max = Old_Bochert(temp_connected_nodes, temp_current_max-1);
+					}
+				}
+				if ((temp_max != null) && (temp_max.length >= temp_current_max)){
+
+
+					nodes_to_consider.add(head_max_star);
+					node_that_found_max_star = current_node;
+					max_star = temp_max;
+					temp_current_max = max_star.length+1;
+
+					//					System.out.println("JUST FOUND A NEW MAX STAR: "+array2string(max_star)+" NtoC")
+					head_max_star = nodes_to_consider.split_nodes(max_star);
+
+
+
+
+				}
+			}
+
+
+			//			length_nodes_left--;
+			nodes_to_consider.delete_next();
+
+		}
+
+
+
+		if (node_that_found_max_star == -1){
+			B_iteration_deep--;		
+			return null;
+		}
+
+
+		int[] temp_finder = {node_that_found_max_star};
+		node finder = new node(temp_finder);
+
+		head_max_star.add(finder);
+
+		B_iteration_deep--;
+
+		return head_max_star.print_array();
+
+	}
+
+
+
+
+	private int[] Old_Bochert_wrong(int[] nodes, int current_max){
+		//original Bochert
+
+
+
+
+		int[] temp_connected_nodes = null;
+		int[] max_star = null;
+		int[] temp_max = null;
+		int temp_current_max = current_max;
+		int current_node;
+		int node_that_found_max_star = -1;
+
+
+		B_calls++;
+		B_iteration_deep++;
+
+
+		node nodes_to_consider = new node(nodes); 
+		node head_max_star = new node();
+
+
+		while (nodes_to_consider.get_length() > 0)
+		{
+
+
+
+
+			if (nodes_to_consider.get_length() <= current_max){
+				B_iteration_deep--;
+				return null; //that is to say there aren't enough nodes left to make a star big enough to beat the current max
+			}
+
+
+			current_node = nodes_to_consider.get_next().get_value();
+			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(head_max_star));
+
+			if(B_iteration_deep >= 3){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(current_node);			
+			}
+
+
+			if (temp_connected_nodes.length == 0 && temp_current_max == 0 && node_that_found_max_star == -1){
+				node_that_found_max_star = current_node;
+				temp_current_max = 1;
+				max_star = null;
+			}
+			else if ((temp_connected_nodes.length >= temp_current_max) && (temp_connected_nodes.length != 0)) {
+
+				if (temp_connected_nodes.length == 1) {
+					temp_max = temp_connected_nodes;
+				}
+				else{
+
+					if (temp_current_max == 0){
+						//							System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
+						temp_max = Old_Bochert(temp_connected_nodes, temp_current_max);
+					}
+					else{
+						//							System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
+						temp_max = Old_Bochert(temp_connected_nodes, temp_current_max-1);
+					}
+				}
+				if ((temp_max != null) && (temp_max.length >= temp_current_max)){
+
 
 
 					nodes_to_consider.add(head_max_star);
@@ -660,7 +919,6 @@ if (optimize_all_set_memory == true){
 		return head_max_star.print_array();
 
 	}
-
 
 
 	private int[] Bochert_neighbor(int n, int[] nodes){
@@ -701,6 +959,10 @@ if (optimize_all_set_memory == true){
 
 	public int[] BronKerbosch (int[] R, int[] P, int[] X){
 
+		if((BK_calls %100000 == 0))
+			System.out.println("BK is on call number: "+BK_calls);
+
+
 		if (verboseBK) {
 			for (int i = 0; i<=BK_iteration_deep; i++)
 				System.out.print(" ");
@@ -714,6 +976,7 @@ if (optimize_all_set_memory == true){
 			}
 		}
 
+		//		long start;		
 
 		BK_iteration_deep++;
 		BK_calls++;
@@ -735,9 +998,11 @@ if (optimize_all_set_memory == true){
 		System.arraycopy(P, 0, Pprime, 0, P.length);
 
 
-
 		System.arraycopy(P, 0, pivot_node, 0, 1); //define pivot
 		for (int i = 0; i < P.length; i++){ //start on first node that isn't pivot
+
+			//			start = System.currentTimeMillis();
+
 			if (!neighbor(pivot_node[0], P[i])){
 
 				System.arraycopy(P, i, current_node, 0, 1); //define current node
@@ -756,6 +1021,11 @@ if (optimize_all_set_memory == true){
 				X = union(X, current_node);
 
 			}
+
+
+			//			System.out.println(System.currentTimeMillis()-start);
+			//			this.pause();
+
 		}
 
 		BK_iteration_deep--;
@@ -939,7 +1209,7 @@ if (optimize_all_set_memory == true){
 
 		try {
 
-/*			System.out.println("Hewwo");
+			/*			System.out.println("Hewwo");
 			File dir = new File("./src/Clique");
 			if (dir.isDirectory()){
 				String[] dircont = dir.list();
@@ -949,8 +1219,8 @@ if (optimize_all_set_memory == true){
 			}
 			else
 				System.out.println("Nope, it's not a directory");
-*/					
-			
+			 */					
+
 			File myFile = new File("src\\Clique\\graph_binaries\\"+file_name);
 			FileReader fileReader = new FileReader(myFile);
 
@@ -1083,6 +1353,9 @@ if (optimize_all_set_memory == true){
 
 	public boolean is_star(int[] nodes, boolean clique){
 
+		if(nodes == null)
+			return false;
+
 		int comparitor;
 
 		if (clique)
@@ -1114,144 +1387,173 @@ if (optimize_all_set_memory == true){
 	}
 
 
+	public int[] test(){
+
+		int[] temp = new int[100];
+
+
+		return temp;
+	}
+
+
 	public static void main(String args[]) throws Exception
 	{
 
-		
-		
-		
-		
+
+
+
+
 		System.out.println("Hello?");
 
-		
-		
-		
-		
+		int[][] testie={{0,1,0,0,0,0,1,1,0,0,1},
+				{1,0,1,0,0,0,1,1,0,0,0},
+				{0,1,0,1,1,1,0,1,0,0,0},
+				{0,0,1,0,1,1,0,0,0,0,0},
+				{0,0,1,1,0,1,0,1,1,0,0},
+				{0,0,1,1,1,0,0,0,1,0,0},
+				{1,1,0,0,0,0,0,1,1,1,1},
+				{1,1,1,0,1,0,1,0,1,1,1},
+				{0,0,0,0,1,1,1,1,0,1,1},
+				{0,0,0,0,0,0,1,1,1,0,1},
+				{1,0,0,0,0,0,1,1,1,1,0}};
+		//			graph g = new graph(testie);
+		int[][] testie2={	{0,0,1,1,1,1,0},
+				{0,0,1,1,1,1,1},
+				{1,1,0,1,1,1,1},
+				{1,1,1,0,1,1,1},
+				{1,1,1,1,0,1,1},
+				{1,1,1,1,1,0,1},
+				{0,1,1,1,1,1,0}};
+		//graph g = new graph(testie2);
+
+
+
+
 		//graph g = new graph(15,5);
-		//	graph g = new graph("brock200_1.clq");
-		  graph g = new graph("hamming6-2.clq"); // good small testing graph
+		//graph g = new graph("brock200_1.clq"); //causes an error
+		//  graph g = new graph("hamming6-2.clq"); // good small testing graph
 		//	graph g = new graph("c-fat500-1.clq");
-		//	graph g = new graph("keller6.clq");		int[] r = null, x = null, p = g.find_P();
+		//	graph g = new graph("c-fat500-5.clq.b"); //dne
+		//graph g = new graph("c-fat200-5.clq.b"); //dne
+		//	graph g = new graph("keller6.clq");	
+		graph g;
 
-		  
-//		  int[] test_star = {2,3,5,8,9,12,14,15,17,20,22,23,26,27,29,32,33,36,38,39,42,43,45,48,50,51,53,56,57,60,62,63};
-//		  int[] test_star2 = {1,4,6,7,10,11,13,16,18,19,21,24,25,28,30,31,34,35,37,40,41,44,46,47,49,52,54,55,58,59,61,64};
-//		  System.out.println("length star 1: "+test_star.length+" and is "+g.is_star(test_star, true)+" length of star 2: "+test_star2.length+" and is "+g.is_star(test_star2, true));
-		  
-			long start = System.currentTimeMillis();
-			int [] temp = g.pre_iBochert();
-			long elapsedTimeMillis = System.currentTimeMillis()-start;
-			
-			System.out.println("max clique from optimized Bochert is: ");
-			System.out.println(g.array2string(temp));
-			System.out.println("total calls to Bochert: "+g.B_calls);
-			System.out.println("__ it took:"+elapsedTimeMillis/1000+" seconds");
-		  
-		  
-/*			start = System.currentTimeMillis();
-			temp = g.pre_Bochert();
-			elapsedTimeMillis = System.currentTimeMillis()-start;
-			
-			System.out.println("max clique from un-optimized Bochert is: ");
-			System.out.println(g.array2string(temp));
-			System.out.println("total calls to Bochert: "+g.B_calls);
-			System.out.println("__ it took:"+elapsedTimeMillis/1000+" seconds");
-*/		  
-		  
-			if (1 == 2){
-
-
-
-		//		int[] temp = g.BronKerbosch(r,p,x);
-		//		System.out.println("max clique from BronKerbosch is: ");
-		//		System.out.println(g.array2string(temp));
-
-/*		g.optimize_all_set_memory = true;
-		long start = System.currentTimeMillis();
-		int[] temp = g.pre_Bochert();
-		long elapsedTimeMillis = System.currentTimeMillis()-start;
 		
+
+		
+		String s[] = new String[34];
+		
+s[0] = "brock200_1.clq";
+s[1] = "brock200_2.clq";
+s[2] = "brock200_3.clq";
+s[3] = "brock200_4.clq";
+s[4] = "c-fat200-1.clq";
+s[5] = "c-fat200-2.clq";
+s[6] = "c-fat200-5.clq";
+s[7] = "c-fat500-1.clq";
+s[8] = "c-fat500-10.clq";
+s[9] = "c-fat500-2.clq";
+s[10] = "c-fat500-5.clq";
+s[11] = "hamming6-2.clq";
+s[12] = "hamming6-4.clq";
+s[13] = "hamming8-4.clq";
+s[14] = "johnson16-2-4.clq";
+s[15] = "johnson8-2-4.clq";
+s[16] = "johnson8-4-4.clq";
+s[17] = "keller4.clq";
+s[18] = "keller5.clq";
+s[19] = "keller6.clq";
+s[20] = "MANN_a27.clq";
+s[21] = "MANN_a45.clq";
+s[22] = "MANN_a81.clq";
+s[23] = "p_hat300-1.clq";
+s[24] = "p_hat300-2.clq";
+s[25] = "p_hat300-3.clq";
+s[26] = "p_hat500-1.clq";
+s[27] = "p_hat500-2.clq";
+s[28] = "p_hat700-1.clq";
+s[29] = "p_hat1000-1.clq";
+s[30] = "p_hat1500-1.clq";
+s[31] = "san400_0.5_1.clq";
+s[32] = "sanr200_0.7.clq";
+s[33] = "sanr400_0.5.clq";
+			
+
+for(int i = 0; i<s.length; i++){
+	
+	if ((i == 20) && (i != 18) && (i != 19) && (i != 21) && (i != 22)){
+	
+		System.out.println("***********************************************************************************************************");
+		System.out.println(i+" "+s[i]);
+		g = new graph(s[i]);
+	
+		
+		System.out.println("Number of nodes: "+g.nodes);
+
+
+
+		long start = System.currentTimeMillis();
+		g.B_calls = 0;
+		int [] temp = g.pre_Bochert();
+		long elapsedTimeMillis = System.currentTimeMillis()-start;
+
+		System.out.println();
+		System.out.println();
+		System.out.println("NOW FOR THE OPTIMIZED VERSION");
 		System.out.println("max clique from optimized Bochert is: ");
 		System.out.println(g.array2string(temp));
 		System.out.println("total calls to Bochert: "+g.B_calls);
-		System.out.println("__ it took:"+elapsedTimeMillis/1000+" seconds");
-*/
-		
-		g.optimize_ind_sets = true;
+		System.out.println("__ it took:"+elapsedTimeMillis+" miliseconds");
+
+		System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
+
+		System.out.println();
+
+//		System.out.println("levelneg1nodefinder: "+g.levelneg1nodefinder);
+//		System.out.println("level0nodefinder: "+g.level0nodefinder);
+//		System.out.println("level1nodefinder: "+g.level1nodefinder);
+
+}	
+}
+/*		System.out.println();
+		System.out.println();
+		System.out.println("AND NOW THE OLDER VERSION");
+
 		start = System.currentTimeMillis();
-		temp = g.pre_Bochert();
+		g.B_calls = 0;
+		//temp = g.pre_Old_Bochert();
 		elapsedTimeMillis = System.currentTimeMillis()-start;
-		
+
 		System.out.println("max clique from un-optimized Bochert is: ");
 		System.out.println(g.array2string(temp));
 		System.out.println("total calls to Bochert: "+g.B_calls);
 		System.out.println("__ it took:"+elapsedTimeMillis/1000+" seconds");
 
-		/*		int[] a = {1,2,3}, b={2};
-		int[] c = {1,2,3,4,7}, d={7};
-		node na = new node(a), nb = new node(b);
-		node nc = new node(c), nd = new node(d);
+		System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
 
-		g.add_memory(na, 1);		
-		g.add_memory(nb, 1);		
-		g.add_memory(nd, 1);		
-		node delete = g.memory[1];
-		System.out.println("Contents of memory:");
-		while (delete != null){
-			System.out.println(delete.print_list());
-			delete = delete.get_memory_next();
-		}
-		System.out.println();
+*/
 
+		/*			System.out.println();
+			System.out.println();
+			System.out.println("AND NOW THE BRONKERBOSCH");
 
-		System.out.println("looking for: "+g.array2string(c));
-		boolean res = g.find_memory(nc, 1);
-		if (res == false)
-			System.out.println("not found");
-		else 
-			System.out.println("found");
+			int[] r = null, x = null, p = g.find_P();
+			start = System.currentTimeMillis();
+			g.BK_calls = 0;
+			temp = g.BronKerbosch(r, p, x);
+			elapsedTimeMillis = System.currentTimeMillis()-start;
 
+			System.out.println("max clique from un-optimized Bochert is: ");
+			System.out.println(g.array2string(temp));
+			System.out.println("total calls to BronKerbosch: "+g.BK_calls);
+			System.out.println("__ it took:"+elapsedTimeMillis/1000+" seconds");
 
-		delete = g.memory[1];
-		System.out.println("Contents of memory:");
-		while (delete != null){
-			System.out.println(delete.print_list());
-			delete = delete.get_memory_next();
-		}
-		System.out.println();
-		 */
-		/*		g.add_memory(nb, 0);
-		delete = g.memory[0];
-		while (delete != null){
-			System.out.println(delete.print_list());
-			delete = delete.get_memory_next();
-		}
-		System.out.println();
+			System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
 
-		g.add_memory(nc, 0);
-		delete = g.memory[0];
-		while (delete != null){
-			System.out.println(delete.print_list());
-			delete = delete.get_memory_next();
-		}
-		System.out.println();
-
-		g.add_memory(nd, 0);		
-		delete = g.memory[0];
-		while (delete != null){
-			System.out.println(delete.print_list());
-			delete = delete.get_memory_next();
-		}
-		System.out.println();
+		 */			
 
 
-		int[] tt = {};
-		if (tt == null)
-			System.out.println("null");
-		else if (tt.length == 0)
-			System.out.println("length = 0");
-		 */
-	}
+
 	}
 
 }

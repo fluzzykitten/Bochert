@@ -10,6 +10,7 @@ public class node {
 	node next;
 	node previous;
 	node memory_next = null;
+	int meta_data = 0;
 //	int[] max_star = {};
 	
 
@@ -82,6 +83,122 @@ public class node {
 
 	}
 
+	public node(int[] n, int toptop){
+//come on, don't try to break this - it assumes toptop is a node, and it's not already in n
+		node = -1;
+		next = null;
+		previous = null;
+		head = this;
+		boolean added = false;
+
+
+		if ((n == null)|| (n.length == 0)){		
+			length = new node(1);
+			length.head = this;
+			length.length = length;
+			length.next = null;
+			length.previous = null;
+
+			next = new node(toptop);
+			next.head = this;
+			next.length = length;
+		
+		}
+		else{
+			length = new node(n.length+1);
+			length.head = this;
+			length.length = length;
+			length.next = null;
+			length.previous = null;
+			node currentnode;
+			node previousnode; 
+			
+			if(toptop > n[0]){			
+				currentnode = new node(n[0]);
+				next = currentnode;
+				currentnode.head = this;
+				currentnode.length = length;
+				previousnode = currentnode;						
+			}
+			else{
+				currentnode = new node(toptop);
+				next = currentnode;
+				currentnode.head = this;
+				currentnode.length = length;
+				previousnode = currentnode;
+				added = true;
+
+				currentnode = new node(n[0]);
+				previousnode.next = currentnode;
+				currentnode.previous = previousnode;
+				currentnode.head = this;
+				currentnode.length = length;
+				previousnode = currentnode;						
+			}
+			
+			for(int i = 1; i<n.length ; i++){
+
+				if((toptop > n[i])||(added)){
+					currentnode = new node(n[i]);
+					previousnode.next = currentnode;
+					currentnode.previous = previousnode;
+					currentnode.head = this;
+					currentnode.length = length;
+					previousnode = currentnode;						
+				}
+				else{
+					currentnode = new node(toptop);
+					previousnode.next = currentnode;
+					currentnode.previous = previousnode;
+					currentnode.head = this;
+					currentnode.length = length;
+					previousnode = currentnode;
+					added = true;
+
+					currentnode = new node(n[i]);
+					previousnode.next = currentnode;
+					currentnode.previous = previousnode;
+					currentnode.head = this;
+					currentnode.length = length;
+					previousnode = currentnode;						
+				}
+
+			}
+
+			if(!added){
+				currentnode = new node(toptop);
+				previousnode.next = currentnode;
+				currentnode.previous = previousnode;
+				currentnode.head = this;
+				currentnode.length = length;
+				previousnode = currentnode;
+			}
+
+			
+			next.previous = currentnode;
+			currentnode.next = next;
+		}
+
+	}
+
+	
+	public void decriment_length(){
+		length.node--;
+	}
+
+	public void incriment_length(){
+		length.node++;
+	}
+
+	
+	public int get_meta_data(){
+		return meta_data;
+	}
+	
+	public void set_meta_data(int poo){
+		meta_data = poo;
+	}
+	
 	public void set_memory_next(node mem){
 		memory_next = mem;
 	}
@@ -116,7 +233,7 @@ public class node {
 		return previous;
 	}
 
-	public void print_memory(){
+	public void print_memory_old(){
 		System.out.println("Head: "+head.node+" Lenght: "+length.node+" and contents: "+print_list());
 		
 		node mem_next = memory_next;
@@ -398,7 +515,7 @@ public class node {
 		boolean head_start = true;
 
 		node temp;
-
+		
 		if (head.length.node == 0)
 			return;
 		if (length.node == 0){
@@ -592,5 +709,105 @@ public class node {
 		
 	}
 	
+	
+	public void add_to_end(int n){
+		//this presupposes that the nodes are already in order and that this node is larger than the others
+		//this helps to cut a lot of the overhead
+		
+		node temp = new node(n);
+		temp.head = head;
+		temp.length = length;
+		length.node++;
 
+		if (next != null){
+			temp.previous = next.previous;
+			temp.next = next;
+			next.previous.next = temp;
+			next.previous = temp;
+		}
+		else {
+			next = temp;
+			previous = temp;
+			temp.next = temp;
+			temp.previous = temp;
+		}
+	}
+	
+	public node print_memory_to_consider(){
+		
+		
+		node head = new node();
+		node element;
+		node index_this = this;
+		node index_head = head;
+		node lazy = new node();
+		
+		if ((memory_next == null)||(length.node == 0))
+			return head;
+
+		
+		//find next node that should be considered
+		while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1)){
+			index_this = index_this.memory_next;
+		}
+		
+		element = new node(index_this.memory_next.node);
+
+//		System.out.println("In PMTC: the first element is: "+index_this.memory_next.node+" and length: "+index_this.memory_next.get_length());
+
+		
+		lazy.next = element;
+		element.length = lazy.length;
+		element.head = lazy;
+		lazy.length.node++;
+
+		head.add(lazy);
+
+
+		index_this = index_this.memory_next;
+
+		while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1))
+			index_this = index_this.memory_next;
+		
+		while (index_this.memory_next != null){
+			//find next node that should be considered
+			
+			element = new node(index_this.memory_next.node);
+//			System.out.println("In PMTC: the next element is: "+index_this.memory_next.node+" and length: "+index_this.memory_next.get_length());
+
+			lazy.next = element;
+			element.length = lazy.length;
+			element.head = lazy;
+			lazy.length.node++;
+			
+			head.add(lazy);
+
+			index_this = index_this.memory_next;
+
+			while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1))
+				index_this = index_this.memory_next;
+			
+
+		}
+		
+
+		return head;
+	}
+
+	public void print_memory(){
+		System.out.println("Printing Memory:");
+		
+		node index = this;
+				
+		while (index != null){
+			if (index.next == null)
+				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: NULL");
+			else
+				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: "+index.print_list());
+
+			index = index.memory_next;
+		}
+		
+	}
+	
 }
