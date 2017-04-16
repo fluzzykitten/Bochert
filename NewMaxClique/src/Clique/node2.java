@@ -70,6 +70,9 @@ public void copy_array(node2 source){
 
 	
 	public int get_last(){
+		if(length == 0)
+			return -1;
+		
 		return array[get_length()-1];
 	}
 	
