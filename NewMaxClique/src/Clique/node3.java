@@ -6,8 +6,10 @@ public class node3 {
 	node3 memory_next = null;
 	node3 memory_previous = null;
 	int length = 0;
-	int meta_data = 0;// 1 == A, 2 == B
+	int meta_data = 0;// 1 == not been run yet
 	char side;
+	node3 alpha_next = null;
+	node3 alpha_previous = null;
 
 	
 	
@@ -318,13 +320,13 @@ public class node3 {
 	
 	public node3 copy_by_erasing(){
 		node3 result = new node3();
-		result.memory_next = memory_next;
-		result.memory_previous = memory_previous;
+		//result.memory_next = memory_next;
+		//result.memory_previous = memory_previous;
 		result.length = length;
 		result.array = new int[array.length];
 		System.arraycopy(array, 0, result.array, 0, array.length);
-		result.side = side;
-		result.meta_data = meta_data;
+		//result.side = side;
+		//result.meta_data = meta_data;
 		
 		return result;
 	}
@@ -333,8 +335,8 @@ public class node3 {
 public void copy_array(node3 source){
 	
 	length = source.length;
-	meta_data = source.meta_data;
-	side = source.side;
+//	meta_data = source.meta_data;
+//	side = source.side;
 
 	if (array.length < source.array.length)
 		array = new int[source.array.length];
@@ -392,7 +394,7 @@ public boolean find(int n){
 public void add(int n){
 	
 	if(n<=0){
-		System.out.println("in node3:add function, add was called to add -1, system set to halt");
+		System.out.println("in node3:add function, add was called to add a number <= 0, system set to halt");
 		System.out.println(array[-1]);
 	}
 	
@@ -444,6 +446,26 @@ public void zero(){
 	length = 0;
 }
 	
+
+public boolean equals(Object o) {
+
+	System.out.println("in equals function");
+	
+	if (o instanceof node3) {
+		node3 c = (node3) o;
+
+		if(length != c.length)
+			return false;
+		
+		for(int i = 0; i<length; i++){
+			if(array[i] != c.array[i])
+				return false;
+		}
+		return true;
+	
+	}
+	    return false;
+}
 
 public int get_index(int n){
 	
