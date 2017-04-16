@@ -43,7 +43,37 @@ typedef struct Params
 
      */
     private static String programSource =
-/******/"void Bochert_neighbor(" +
+/******/"" +
+		"    bool delete(__global int* array, __global int* array_length, int n){" +
+"if(array_length[0] == 0)" +
+"	return false;" +
+"int index = 0;" +
+"bool found = false;" +
+"while(((found)&&(index < (array_length[0])))||(index < (array_length[0]-1))){" +
+"if(array[index] == n){" +
+"		found = true;" +
+"		index++;" +
+"		array_length[0]--;" +
+"	}" +
+"	else{" +
+"		if(found)" +
+"			array[index-1] = array[index];" +
+"		index++;" +
+"	}	" +		
+"}	" +
+"if((!found)&&(array[index]==n)){" +
+"	array_length[0]--;" +
+"	found = true;" +
+"}" +
+"else if (found){" +
+"	array[index-1] = array[index];" +
+"}" +
+"return found;" +
+"	}" +
+"" +
+"" +
+		"" +
+		"void Bochert_neighbor(" +
 		"__global int * results, " +
 		"int results_start, " +
 		"__global int * results_length, " +
@@ -82,10 +112,11 @@ typedef struct Params
 		"__global int* check_set_length, " +
 		"__global int* results, " +
 		"__global int* results_length, " +
+		"__global int* nodes_to_consider, " +
+		"__global int * nodes_to_consider_length," +
 		"__global int* nodes, " +
 		"__global int* graph, " +
-		"__global int* nodes_to_consider, " +
-		"__global int * nodes_to_consider_length){" +
+		"__global int * synch){" +
 		"" +
 		"int gid = get_global_id(0);"+
 		"check_set_length[gid] = 0;" +
@@ -117,13 +148,15 @@ typedef struct Params
 		"__global int* check_set_length, " +
 		"__global int* results, " +
 		"__global int* results_length, " +
+		"__global int* nodes_to_consider, " +
+		"__global int * nodes_to_consider_length," +
 		"__global int* nodes, " +
 		"__global int* graph, " +
-		"__global int* nodes_to_consider, " +
-		"__global int * nodes_to_consider_length){" +
+		"__global int * synch){" +
 		"" +
 		"int gid = get_global_id(0);"+
 		"check_set_length[gid] = 0;" +
+		"synch[gid] = 0;" +
     	"" +
 		"Bochert_neighbor(check_set, gid*nodes[0], check_set_length, gid, nodes, graph, nodes_to_consider[gid], nodes_to_consider, 0, nodes_to_consider_length[0]);" +
 		"" +
@@ -143,6 +176,12 @@ typedef struct Params
 		"	}" +
 		"" +
 		"}" +
+		"" +
+//		"if(gid != 0){" +
+//		"	if(synch[gid-1] == 0){" +
+//		"	}" +
+//		"}" +
+		"synch[0] = 1;" +
 		"" +
 		"	return;" +
 		"}" +
@@ -206,6 +245,7 @@ Pointer src_results;// = Pointer.to(results);
 Pointer src_results_length;// = Pointer.to(results_length);
 Pointer src_nodes;// = Pointer.to(nodes);
 Pointer src_graph;// = Pointer.to(graph);
+Pointer src_synch;// = Pointer.to(graph);
 Pointer src_nodes_to_consider;// = Pointer.to(nodes_to_consider);
 Pointer src_nodes_to_consider_length;// = Pointer.to(nodes_to_consider_length);
 cl_device_id devices[];
@@ -293,10 +333,7 @@ public gpu(int[] new_graph, int setnodes){
 			"__global int * nodes_to_consider_length){";
 
 	
-	
-	for(int i = 0; i<square_size; i++)
-		results[0] = 0;
-	
+		
     // Create input- and output data 
     
     
@@ -351,9 +388,63 @@ public gpu(int[] new_graph, int setnodes){
     // Build the program
     clBuildProgram(program, 0, null, null, null, null);
     
+    
+    kernel = clCreateKernel(program, "is_there_another_self_contained", null);
 
     
- 
+    
+	src_check_set = Pointer.to(check_set);
+	src_check_set_length= Pointer.to(check_set_length);
+    src_results = Pointer.to(results);
+    src_results_length = Pointer.to(results_length);
+    src_nodes = Pointer.to(nodes);
+	src_graph = Pointer.to(graph);
+	src_nodes_to_consider = Pointer.to(nodes_to_consider.get_full_array());
+	src_nodes_to_consider_length = Pointer.to(nodes_to_consider_length);
+	src_synch = Pointer.to(synch);
+
+	
+	   // Allocate the memory objects for the input- and output data
+    memObjects = new cl_mem[9];
+    memObjects[0] = clCreateBuffer(context, 
+        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * nodes[0] * nodes[0], src_check_set, null);
+    memObjects[1] = clCreateBuffer(context, 
+         CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+         Sizeof.cl_int * nodes[0], src_check_set_length, null);
+    memObjects[2] = clCreateBuffer(context, 
+        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * nodes[0] * nodes[0], src_results, null);
+    memObjects[3] = clCreateBuffer(context, 
+        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * nodes[0], src_results_length, null);
+    memObjects[6] = clCreateBuffer(context, 
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * 1, src_nodes, null);
+    memObjects[7] = clCreateBuffer(context, 
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * nodes[0] * nodes[0], src_graph, null);
+    memObjects[8] = clCreateBuffer(context, 
+            CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+            Sizeof.cl_int * nodes[0], src_check_set, null);
+    
+        // Set the arguments for the kernel
+    clSetKernelArg(kernel, 0, 
+            Sizeof.cl_mem, Pointer.to(memObjects[0]));
+        clSetKernelArg(kernel, 1, 
+            Sizeof.cl_mem, Pointer.to(memObjects[1]));
+        clSetKernelArg(kernel, 2, 
+            Sizeof.cl_mem, Pointer.to(memObjects[2]));
+        clSetKernelArg(kernel, 3, 
+            Sizeof.cl_mem, Pointer.to(memObjects[3]));
+        clSetKernelArg(kernel, 6, 
+            Sizeof.cl_mem, Pointer.to(memObjects[6]));
+        clSetKernelArg(kernel, 7, 
+            Sizeof.cl_mem, Pointer.to(memObjects[7]));
+        clSetKernelArg(kernel, 8, 
+                Sizeof.cl_mem, Pointer.to(memObjects[8]));
+        
+        
         
         
 
@@ -372,102 +463,61 @@ public void run_it(node2 ntc){
     global_work_size = new long[]{nodes_to_consider_length[0]};
     local_work_size = new long[]{nodes_to_consider_length[0]};
 
-    
-    
-    kernel = clCreateKernel(program, "is_there_another", null);
-
-    
-	src_check_set = Pointer.to(check_set);
-	src_check_set_length= Pointer.to(check_set_length);
-    src_results = Pointer.to(results);
-    src_results_length = Pointer.to(results_length);
-    src_nodes = Pointer.to(nodes);
-	src_graph = Pointer.to(graph);
-	src_nodes_to_consider = Pointer.to(nodes_to_consider.get_full_array());
-	src_nodes_to_consider_length = Pointer.to(nodes_to_consider_length);
-
 	
-	   // Allocate the memory objects for the input- and output data
-    memObjects = new cl_mem[8];
-    memObjects[0] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_check_set, null);
-    memObjects[1] = clCreateBuffer(context, 
-         CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-         Sizeof.cl_int * nodes[0], src_check_set_length, null);
-    memObjects[2] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_results, null);
-    memObjects[3] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0], src_results_length, null);
-    memObjects[4] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * 1, src_nodes, null);
-    memObjects[5] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_graph, null);
-    
-        // Set the arguments for the kernel
-    clSetKernelArg(kernel, 0, 
-            Sizeof.cl_mem, Pointer.to(memObjects[0]));
-        clSetKernelArg(kernel, 1, 
-            Sizeof.cl_mem, Pointer.to(memObjects[1]));
-        clSetKernelArg(kernel, 2, 
-            Sizeof.cl_mem, Pointer.to(memObjects[2]));
-        clSetKernelArg(kernel, 3, 
-            Sizeof.cl_mem, Pointer.to(memObjects[3]));
-        clSetKernelArg(kernel, 4, 
-            Sizeof.cl_mem, Pointer.to(memObjects[4]));
-        clSetKernelArg(kernel, 5, 
-            Sizeof.cl_mem, Pointer.to(memObjects[5]));
-        
-       
-    
+/*  	for(int i = 0; i<ntc.get_length(); i++){
+	this.is_there_another(check_set, check_set_length, results, results_length, nodes, graph, nodes_to_consider, nodes_to_consider_length[0], i);
+ 	}	
+*/
+  	
+//  	if(1!=2)
+//  		return;
 	
-	memObjects[6] = clCreateBuffer(context, 
+    // Create the kernel
+
+
+	memObjects[4] = clCreateBuffer(context, 
 	        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 	        Sizeof.cl_int * nodes[0], src_nodes_to_consider, null);
-	    clSetKernelArg(kernel, 6, 
-            Sizeof.cl_mem, Pointer.to(memObjects[6]));
+	    clSetKernelArg(kernel, 4, 
+            Sizeof.cl_mem, Pointer.to(memObjects[4]));
 
     
-	    memObjects[7] = clCreateBuffer(context, 
+	    memObjects[5] = clCreateBuffer(context, 
 		        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 		        Sizeof.cl_int * 1, src_nodes_to_consider_length, null);    	
 
-	        clSetKernelArg(kernel, 7, 
-	            Sizeof.cl_mem, Pointer.to(memObjects[7]));
+	        clSetKernelArg(kernel, 5, 
+	            Sizeof.cl_mem, Pointer.to(memObjects[5]));
 
 
 
 	
     // Set the work-item dimensions
-
+    
     // Execute the kernel
     clEnqueueNDRangeKernel(commandQueue, kernel, 1, null,
         global_work_size, local_work_size, 0, null, null);
     
     // Read the output data
-    clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0,
-        square_size * Sizeof.cl_int, src_check_set, 0, null, null);
-    clEnqueueReadBuffer(commandQueue, memObjects[1], CL_TRUE, 0,
-        nodes[0] * Sizeof.cl_int, src_check_set_length, 0, null, null);
+//    clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0,
+//        square_size * Sizeof.cl_int, src_check_set, 0, null, null);
+//    clEnqueueReadBuffer(commandQueue, memObjects[1], CL_TRUE, 0,
+//        nodes[0] * Sizeof.cl_int, src_check_set_length, 0, null, null);
     clEnqueueReadBuffer(commandQueue, memObjects[2], CL_TRUE, 0,
         square_size * Sizeof.cl_int, src_results, 0, null, null);
     clEnqueueReadBuffer(commandQueue, memObjects[3], CL_TRUE, 0,
         nodes[0] * Sizeof.cl_int, src_results_length, 0, null, null);
     
     // Release kernel, program, and memory objects
-    clReleaseMemObject(memObjects[6]);
-    clReleaseMemObject(memObjects[7]);
-    clReleaseMemObject(memObjects[0]);
-    clReleaseMemObject(memObjects[1]);
-    clReleaseMemObject(memObjects[2]);
-    clReleaseMemObject(memObjects[3]);
-    clReleaseMemObject(memObjects[4]);
-    clReleaseMemObject(memObjects[5]);
-    clReleaseKernel(kernel);
+//    clReleaseMemObject(memObjects[6]);
+//    clReleaseMemObject(memObjects[7]);
+//    clReleaseMemObject(memObjects[0]);
+//    clReleaseMemObject(memObjects[1]);
+//    clReleaseMemObject(memObjects[2]);
+//    clReleaseMemObject(memObjects[3]);
+//    clReleaseMemObject(memObjects[4]);
+//    clReleaseMemObject(memObjects[5]);
+//    clReleaseKernel(kernel);
 //    clReleaseProgram(program);
 //    clReleaseCommandQueue(commandQueue);
 //    clReleaseContext(context);
@@ -481,128 +531,66 @@ public void run_it(node2 ntc){
 public void run_it_self_contained(node2 ntc){
 
 	
-	nodes_to_consider.copy_array(ntc);//.get_full_array();
+	nodes_to_consider = ntc;
 	nodes_to_consider_length[0] = ntc.get_length();
 
-	
-/*  	for(int i = 0; i<ntc.get_length(); i++){
-	this.is_there_another(check_set, check_set_length, results, results_length, nodes, graph, nodes_to_consider, nodes_to_consider_length[0], i);
- 	}	
-/*  	int[] resultsa = new int[nodes[0]];
-  	int[] rsla = new int[1];
-  	Bochert_neighbor(resultsa, 0, rsla, 0, nodes, graph, 28, nodes_to_consider, 0, nodes_to_consider_length[0]);
-  	System.out.println("28 is connected to: ");
-  	for(int i = 0; i<rsla[0]; i++)
-  		System.out.print(resultsa[i]+" ");
-  	System.out.println();
-  	Bochert_neighbor(resultsa, 0, rsla, 0, nodes, graph, 29, nodes_to_consider, 0, nodes_to_consider_length[0]);
-  	System.out.println("29 is connected to: ");
-  	for(int i = 0; i<rsla[0]; i++)
-  		System.out.print(resultsa[i]+" ");
-  	System.out.println();
-  	Bochert_neighbor(resultsa, 0, rsla, 0, nodes, graph, 30, nodes_to_consider, 0, nodes_to_consider_length[0]);
-  	System.out.println("30 is connected to: ");
-  	for(int i = 0; i<rsla[0]; i++)
-  		System.out.print(resultsa[i]+" ");
-  	System.out.println();
-// 	private void Bochert_neighbor(int[] results, int results_start, int[] results_length, int results_length_index, int[] nodes, int[] graph, int n, int[] array, int array_start, int array_length){
-*/
-  	
-//  	if(1!=2)
-//  		return;
-	
-    // Create the kernel
-    kernel = clCreateKernel(program, "is_there_another_self_contained", null);
+    global_work_size = new long[]{nodes_to_consider_length[0]};
+    local_work_size = new long[]{nodes_to_consider_length[0]};
 
-	
-	src_check_set = Pointer.to(check_set);
-	src_check_set_length= Pointer.to(check_set_length);
-    src_results = Pointer.to(results);
-    src_results_length = Pointer.to(results_length);
-    src_nodes = Pointer.to(nodes);
-	src_graph = Pointer.to(graph);
 	src_nodes_to_consider = Pointer.to(nodes_to_consider.get_full_array());
 	src_nodes_to_consider_length = Pointer.to(nodes_to_consider_length);
 
 	
-    // Allocate the memory objects for the input- and output data
-    memObjects = new cl_mem[8];
-    memObjects[0] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_check_set, null);
-    memObjects[1] = clCreateBuffer(context, 
-         CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-         Sizeof.cl_int * nodes[0], src_check_set_length, null);
-    memObjects[2] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_results, null);
-    memObjects[3] = clCreateBuffer(context, 
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0], src_results_length, null);
-    memObjects[4] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * 1, src_nodes, null);
-    memObjects[5] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes[0] * nodes[0], src_graph, null);
-    memObjects[6] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * nodes_to_consider.get_length(), src_nodes_to_consider, null);
-    memObjects[7] = clCreateBuffer(context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_int * 1, src_nodes_to_consider_length, null);
+    	memObjects[4] = clCreateBuffer(context, 
+                CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+	        Sizeof.cl_int * nodes[0], src_nodes_to_consider, null);
+	    clSetKernelArg(kernel, 4, 
+            Sizeof.cl_mem, Pointer.to(memObjects[4]));
+
+    
+	    	memObjects[5] = clCreateBuffer(context, 
+	                CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+		        Sizeof.cl_int * 1, src_nodes_to_consider_length, null);    	
+	        clSetKernelArg(kernel, 5, 
+	            Sizeof.cl_mem, Pointer.to(memObjects[5]));
+
+
 
 	
-    // Set the arguments for the kernel
-    clSetKernelArg(kernel, 0, 
-        Sizeof.cl_mem, Pointer.to(memObjects[0]));
-    clSetKernelArg(kernel, 1, 
-        Sizeof.cl_mem, Pointer.to(memObjects[1]));
-    clSetKernelArg(kernel, 2, 
-        Sizeof.cl_mem, Pointer.to(memObjects[2]));
-    clSetKernelArg(kernel, 3, 
-        Sizeof.cl_mem, Pointer.to(memObjects[3]));
-    clSetKernelArg(kernel, 4, 
-        Sizeof.cl_mem, Pointer.to(memObjects[4]));
-    clSetKernelArg(kernel, 5, 
-        Sizeof.cl_mem, Pointer.to(memObjects[5]));
-    clSetKernelArg(kernel, 6, 
-        Sizeof.cl_mem, Pointer.to(memObjects[6]));
-    clSetKernelArg(kernel, 7, 
-        Sizeof.cl_mem, Pointer.to(memObjects[7]));
-    
     // Set the work-item dimensions
-    global_work_size = new long[]{nodes_to_consider.get_length()};
-    local_work_size = new long[]{nodes_to_consider.get_length()};
     
     // Execute the kernel
     clEnqueueNDRangeKernel(commandQueue, kernel, 1, null,
         global_work_size, local_work_size, 0, null, null);
     
     // Read the output data
-    clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0,
-        square_size * Sizeof.cl_int, src_check_set, 0, null, null);
-    clEnqueueReadBuffer(commandQueue, memObjects[1], CL_TRUE, 0,
-        nodes[0] * Sizeof.cl_int, src_check_set_length, 0, null, null);
+//    clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0,
+ //       square_size * Sizeof.cl_int, src_check_set, 0, null, null);
+  //  clEnqueueReadBuffer(commandQueue, memObjects[1], CL_TRUE, 0,
+   //     nodes[0] * Sizeof.cl_int, src_check_set_length, 0, null, null);
     clEnqueueReadBuffer(commandQueue, memObjects[2], CL_TRUE, 0,
         square_size * Sizeof.cl_int, src_results, 0, null, null);
     clEnqueueReadBuffer(commandQueue, memObjects[3], CL_TRUE, 0,
         nodes[0] * Sizeof.cl_int, src_results_length, 0, null, null);
+    clEnqueueReadBuffer(commandQueue, memObjects[4], CL_TRUE, 0,
+    	nodes[0] * Sizeof.cl_int, src_nodes_to_consider, 0, null, null);
+    clEnqueueReadBuffer(commandQueue, memObjects[5], CL_TRUE, 0,
+        Sizeof.cl_int, src_nodes_to_consider_length, 0, null, null);
     
-/*    // Release kernel, program, and memory objects
-    clReleaseMemObject(memObjects[0]);
-    clReleaseMemObject(memObjects[1]);
-    clReleaseMemObject(memObjects[2]);
-    clReleaseMemObject(memObjects[3]);
-    clReleaseMemObject(memObjects[4]);
-    clReleaseMemObject(memObjects[5]);
-    clReleaseMemObject(memObjects[6]);
-    clReleaseMemObject(memObjects[7]);
-    clReleaseKernel(kernel);
-    clReleaseProgram(program);
-    clReleaseCommandQueue(commandQueue);
-    clReleaseContext(context);
-*/    
+    // Release kernel, program, and memory objects
+//    clReleaseMemObject(memObjects[6]);
+//    clReleaseMemObject(memObjects[7]);
+//    clReleaseMemObject(memObjects[0]);
+//    clReleaseMemObject(memObjects[1]);
+//    clReleaseMemObject(memObjects[2]);
+//    clReleaseMemObject(memObjects[3]);
+//    clReleaseMemObject(memObjects[4]);
+//    clReleaseMemObject(memObjects[5]);
+//    clReleaseKernel(kernel);
+//    clReleaseProgram(program);
+//    clReleaseCommandQueue(commandQueue);
+//    clReleaseContext(context);
+    
     // Verify the result
 
     
@@ -652,7 +640,12 @@ protected void finalize ()  {
         
     	gpu paralyze = new gpu(graph,10);
 
-    	paralyze.run_it(nodes_to_consider);
+    	System.out.println("start");
+    	
+    	paralyze.run_it_self_contained(nodes_to_consider);
+
+		System.out.print("ntc before is: "+nodes_to_consider.print_list());
+
     	for(int i = 0; i<nodes_to_consider.get_length(); i++){
     		System.out.print("result for node: "+(i+1)+" is: ");
     		for(int j=0; j<paralyze.results_length[i]; j++){
@@ -662,20 +655,14 @@ protected void finalize ()  {
     		System.out.println();
     	}
 
-    	for(int i = 0; i<nodes_to_consider.get_length(); i++){
-    		System.out.print("check_set for node: "+(i+1)+" is: ");
-    		for(int j=0; j<paralyze.check_set_length[i]; j++){
-    			System.out.print(paralyze.check_set[paralyze.nodes[0]*i+j]+" ");
-    			 			
-    		}
-    		System.out.println();
-    	}    
 
-    		System.out.print("ntc is: "+nodes_to_consider.print_list());
+    		System.out.print("ntc after is: "+nodes_to_consider.print_list());
     		System.out.println();
     		System.out.println();
 
-    	paralyze.run_it(nodes_to_consider2);
+    	paralyze.run_it_self_contained(nodes_to_consider2);
+
+		System.out.print("ntc be is: "+nodes_to_consider.print_list());
 
     	for(int i = 0; i<nodes_to_consider2.get_length(); i++){
     		System.out.print("result for node: "+(i+1)+" is: ");
@@ -686,14 +673,6 @@ protected void finalize ()  {
     		System.out.println();
     	}
 
-    	for(int i = 0; i<nodes_to_consider2.get_length(); i++){
-    		System.out.print("check_set for node: "+(i+1)+" is: ");
-    		for(int j=0; j<paralyze.check_set_length[i]; j++){
-    			System.out.print(paralyze.check_set[paralyze.nodes[0]*i+j]+" ");
-    			 			
-    		}
-    		System.out.println();
-    	}    
     	
     	int nodes_to_consider_length = 10;
     	int[] check_set = new int[paralyze.nodes[0]*paralyze.nodes[0]];
