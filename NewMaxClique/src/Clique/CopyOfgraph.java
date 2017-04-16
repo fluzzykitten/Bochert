@@ -4,7 +4,7 @@ import java.io.*;
 
 
 
-public class graph {
+public class CopyOfgraph {
 
 	private int[][] graph; // the adjacency matrix
 	private int nodes; // total number of nodes
@@ -899,10 +899,10 @@ if (optimize_all_set_memory == true){
 	}
 
 
-	public graph() {
+	public CopyOfgraph() {
 	}
 
-	public graph(int n, int ms) {
+	public CopyOfgraph(int n, int ms) {
 		if (ms > n){
 			System.out.println("!!! max clique is larger than number of nodes???? That's crazyness...");
 			return;
@@ -935,7 +935,7 @@ if (optimize_all_set_memory == true){
 
 	}
 
-	public graph(String file_name){
+	public CopyOfgraph(String file_name){
 
 		try {
 
@@ -1030,7 +1030,7 @@ if (optimize_all_set_memory == true){
 	}
 
 
-	public graph(int[][] g){
+	public CopyOfgraph(int[][] g){
 		graph = g;
 		nodes = graph.length;
 		node_edge_count = new int[nodes];
@@ -1128,8 +1128,8 @@ if (optimize_all_set_memory == true){
 		
 		
 		//graph g = new graph(15,5);
-		//	graph g = new graph("brock200_1.clq");
-		  graph g = new graph("hamming6-2.clq"); // good small testing graph
+			CopyOfgraph g = new CopyOfgraph("brock200_1.clq");
+		//  graph g = new graph("hamming6-2.clq"); // good small testing graph
 		//	graph g = new graph("c-fat500-1.clq");
 		//	graph g = new graph("keller6.clq");		int[] r = null, x = null, p = g.find_P();
 
