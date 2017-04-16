@@ -31,7 +31,7 @@ public class graph {
 	//private int[] nodes_with_over_half_edges; // edges with nodes that have over half edges needed to be considered for ind sets
 	//	private boolean use_node_edge_count = true; // if the sorting mechanism is looking at edge count, or actual array values
 	//	private boolean use_ind_sets = false; // so that bochert can first find the ind sets without getting confused and trying to use them in bochert
-	//private node[] memory = new node[1];
+	private node memory = new node();
 	//private boolean optimize_all_set_memory = false;
 	//private boolean optimize_ind_sets = true;
 	private int deepest = 0;
@@ -39,7 +39,6 @@ public class graph {
 	private int level1nodefinder = -1;
 	private int levelneg1nodefinder = -1;
 	boolean start_showing_crap = false;
-	private int current_level = 1;
 
 
 
@@ -56,45 +55,43 @@ public class graph {
 	}
 
 
-	private void add_imemory(node new_element,node imemory, int new_head){
+	private void add_imemory(node new_element,node imemory){
 		//Now, it's important to note that this function being run, presupposes that
 		//the find_memory() function has already been run and found that not only 
 		//does this set need to be looked at, but it already has removed all sets 
 		//that are contained in this set
 
 		node temp = imemory.memory_next;
-		node copy_new_element = new_element.copy();
-		copy_new_element.set_head(new_head);
+		//node new_element = new_element.copy();
 		imemory.incriment_length();
 
 
 		if(temp == null){
-			imemory.set_memory_next(copy_new_element);
+			imemory.set_memory_next(new_element);
 			return;
 		}
-		else if(temp.get_length() <= copy_new_element.get_length()){
-			copy_new_element.set_memory_next(temp);
-			imemory.set_memory_next(copy_new_element);
+		else if(temp.get_length() <= new_element.get_length()){
+			new_element.set_memory_next(temp);
+			imemory.set_memory_next(new_element);
 			return;
 		}
 
-		while ((temp.get_memory_next()!=null)&&(temp.get_memory_next().get_length() > copy_new_element.get_length())){
+		while ((temp.get_memory_next()!=null)&&(temp.get_memory_next().get_length() > new_element.get_length())){
 			temp = temp.get_memory_next(); 
 		}
-		copy_new_element.set_memory_next(temp.get_memory_next());
-		temp.set_memory_next(copy_new_element);
+		new_element.set_memory_next(temp.get_memory_next());
+		temp.set_memory_next(new_element);
 
 
 	}
 
-	private boolean find_imemory(node imemory, node element, node pergatory, int toptop/*, int[] who_was_bigger*/){
+	private boolean find_imemory(node imemory, node element, int toptop/*, int[] who_was_bigger*/){
 		//true means the memory was found, don't add it
 		//false means add the element, it isn't currently in memory
 
 		
 		node temp = imemory;
-		int[] new_toptop = new int[1];
-
+		
 		if (temp.get_memory_next() == null){
 			if (start_showing_crap)
 				System.out.println(toptop+" Contains: BLANK");			
@@ -106,8 +103,6 @@ public class graph {
 			if (start_showing_crap)
 			System.out.println(toptop+" (being empty) is cOntained in: "+temp.get_memory_next().get_head());			
 
-			new_toptop[0] = toptop;
-			pergatory.add(new node(new_toptop));
 
 //			who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
 
@@ -129,8 +124,6 @@ public class graph {
 
 				
 				imemory.decriment_length();
-				new_toptop[0] = temp.get_memory_next().get_head();
-				pergatory.add(new node(new_toptop));
 
 //				who_was_bigger[new_toptop[0]-1] = toptop;
 
@@ -150,8 +143,6 @@ public class graph {
 					if (start_showing_crap)
 					System.out.println(toptop+" is conTained in: "+temp.get_memory_next().get_head());			
 					//					System.out.println("B");
-					new_toptop[0] = toptop;
-					pergatory.add(new node(new_toptop));
 
 //					who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
 
@@ -171,8 +162,6 @@ public class graph {
 						
 						imemory.decriment_length();
 
-						new_toptop[0] = temp.get_memory_next().get_head();
-						pergatory.add(new node(new_toptop));
 
 //						who_was_bigger[new_toptop[0]-1] = toptop;
 
@@ -201,8 +190,6 @@ public class graph {
 					if (start_showing_crap)
 					System.out.println(toptop+" is contaIned in: "+temp.get_memory_next().get_head());			
 					
-					new_toptop[0] = toptop;
-					pergatory.add(new node(new_toptop));
 
 //					who_was_bigger[new_toptop[0]-1] = temp.get_memory_next().get_head();
 
@@ -219,8 +206,6 @@ public class graph {
 						System.out.println(toptop+" contaiNs: "+temp.get_memory_next().get_head());			
 												
 						imemory.decriment_length();
-						new_toptop[0] = temp.get_memory_next().get_head();
-						pergatory.add(new node(new_toptop));
 
 //						who_was_bigger[new_toptop[0]-1] = toptop;
 
@@ -241,12 +226,22 @@ public class graph {
 
 	public int[] pre_Bochert(){
 
-//		sort_nodes();
-//		reorganize_nodes();
-//		return unreorganize_nodes(Bochert(all_neighbors(-1), 0));
 
+	int result[] = null;
+	node initial = new node(all_neighbors(-1));
+	initial.set_previous(new node());
+	memory.set_memory_next(initial);
+	memory.incriment_length();
+	int gogo = 1;
 		
-		return Bochert(all_neighbors(-1), 0);
+	do{
+		System.out.println("In Pre_Bochert, run #"+gogo+" and has length of: "+memory.get_length());
+		result = Bochert();
+		gogo++;
+
+	}while (result == null);
+
+		return result;
 	}
 
 
@@ -357,342 +352,93 @@ public class graph {
 
 
 
-	private int[] Bochert(int[] nodes, int current_max){
+	private int[] Bochert(){
 		//not original Bochert
 
 
-//		System.out.println("SH*T SH*T!! Fire the MISILES!!");
-
-		int[] temp_connected_nodes = null;
-		int[] max_star = null;
-		int[] temp_max = null;
-		int temp_current_max = current_max;
-		int current_node;
-		int node_that_found_max_star = -1;
-
 
 		B_calls++;
-		B_iteration_deep++;
 
-
-
-		//		if (B_iteration_deep < 4){
-		//			System.out.println("B_iteration_deep: "+B_iteration_deep+" B_calls: "+B_calls);
-		//		}
-
-		node nodes_to_consider = new node(nodes);
-
-		node head_max_star = new node();
 
 		node imemory = new node();
 
-		//		int length_nodes_left = nodes.length; 
 
-
-		boolean found_new_set = true;
-		node pergatory = new node();
 		node dantes_inferno = new node();
 		int[] index_dante = null;
-		node pergatory_and_max_star = new node();
+
 		node memory_element = new node();
-		int[] delete_this = new int[1];
-		node index_imemory = imemory;
-		node deleted_nodes = new node();
-		int[] cesspool = null;
-//		int[] where_is_that_darn_node = new int[this.nodes];//BAD BAD BAD!!! YOU SHOULD BE ASHAMED OF YOURSELF... don't forget to go back and use the enumerated values instead of indexes because this wastes so much space
-		//0 means it's nowhere
-		//-1 means it's in purgatory
-		//1 means it's in imemory
-//		int[] who_was_bigger = new int[this.nodes];//BAD BAD BAD!!! YOU SHOULD BE ASHAMED OF YOURSELF... don't forget to go back and use the enumerated values instead of indexes because this wastes so much space
+
+		node index_memory = memory;
 		
-//		if (B_calls > 17)
-//			start_showing_crap = true;
+		int counter = 1;
 		
-		do{
+		if (index_memory.get_memory_next().get_length() == 0)
+			return index_memory.get_memory_next().get_previous().print_array();
+		
+		while(index_memory.get_memory_next() != null){
 
 			//////////////////////////////////////////////////
 			/**************** check function ****************/
 			//////////////////////////////////////////////////
-
-			if (found_new_set == true){
 				
-				dantes_inferno = nodes_to_consider;
-				pergatory = new node(); //this is a waste... oh well... I'm trying this out quick, not really worth the effort
-				// so now all the nodes are in temp, and pergatory and nodes to consider are empty
+				dantes_inferno = index_memory.get_memory_next();
+
 				index_dante = dantes_inferno.print_array();
-				index_imemory = imemory;
-
-				//this function cycles through imemory and pulls out all the nodes that haven't be checked yet to decide if they should still be in imemory
-				while (index_imemory.get_memory_next() != null){
-					if (index_imemory.get_memory_next().get_meta_data() == 0){//if it hasn't been checked yet
-//						where_is_that_darn_node[index_imemory.get_memory_next().get_head()-1] = 0;
-						index_imemory.set_memory_next(index_imemory.get_memory_next().get_memory_next());
-						imemory.decriment_length();
-					}
-					else{
-						index_imemory = index_imemory.get_memory_next();
-					}
-				}
-
-
-				cesspool = head_max_star.combine(dantes_inferno);
+				
+				if ((memory.get_length()>100)&&(counter%(memory.get_length()/100)==0))
+					System.out.print(counter+" ");
+				if(start_showing_crap)
+				System.out.println("currently on element in memory: "+index_memory.get_memory_next().print_list()+" with finding nodes of: "+index_memory.get_memory_next().get_previous().print_list());
 
 				for (int i = 0; i < index_dante.length; i++){
 
-//					System.out.print("index_dante[i]: "+index_dante[i]);
-//					System.out.print(" who_was_bigger[~-1]: "+who_was_bigger[index_dante[i]-1]);
-//					if (who_was_bigger[index_dante[i]-1]!=0)
-//						System.out.println(" where_is_that_darn_node[~-1]: "+where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1]);
-//					else
-//						System.out.println();
-					
-//					if (false || ((who_was_bigger[index_dante[i]-1] == 0) || (where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1] < 1))){
-						//ie. the node that was found to bigger than this node last time we went through this, isn't currently in imemory so it's worth looking into
+					if(start_showing_crap)
+					System.out.println("currently on node: "+index_dante[i]);
 
-						memory_element = new node(Bochert_neighbor(index_dante[i], head_max_star.combine(dantes_inferno)));
-//						memory_element = new node(Bochert_neighbor(index_dante[i], head_max_star.combine(dantes_inferno)),index_dante[i]);
-
-						if (!this.find_imemory(imemory, memory_element, pergatory, index_dante[i]/*,who_was_bigger*/)){
-							this.add_imemory(memory_element, imemory, index_dante[i]);
-//							where_is_that_darn_node[index_dante[i]-1] = 1;
+						memory_element = new node(Bochert_neighbor(index_dante[i], dantes_inferno.print_array()));
+						memory_element.set_previous(index_memory.get_memory_next().get_previous().copy());
+						memory_element.get_previous().add_to_end(index_dante[i]);
+						
+						if(start_showing_crap)
+						System.out.println("new element: "+memory_element.print_list()+" finders: "+memory_element.get_previous().print_list());
+						
+						if (!this.find_imemory(imemory, memory_element, index_dante[i])){
+							this.add_imemory(memory_element, imemory);
 							if(start_showing_crap)
-							System.out.println("added to imemory: "+index_dante[i]+" connected to: "+memory_element.print_list());
+							System.out.println("added");
 						}
 						else {
-//							where_is_that_darn_node[index_dante[i]-1] = -1;
+							if(start_showing_crap)
+							System.out.println("NOT added");
 						}
 
-/*					}
-					else {
-						if(start_showing_crap)
-							System.out.println(index_dante[i]+" was contained in "+who_was_bigger[index_dante[i]-1]+" (which is currently in: "+where_is_that_darn_node[who_was_bigger[index_dante[i]-1]-1]+")");
-
-						delete_this[0] = index_dante[i];
-						pergatory.add(new node(delete_this));
-
-						//the node that was bigger last time is still in memory, so don't bother looking again, because you'll find it again
-						where_is_that_darn_node[index_dante[i]-1] = -1;
-					}
-*/					
 					dantes_inferno.delete(index_dante[i]);
 				}
 
-				pergatory_and_max_star = pergatory.copy();
-				pergatory_and_max_star.add(head_max_star.copy());
-				nodes_to_consider = imemory.print_memory_to_consider();
-				found_new_set = false;
-				index_imemory = imemory;
-
-				while((index_imemory.get_memory_next() != null)&&(index_imemory.get_memory_next().get_meta_data() == 1)){
-					index_imemory = index_imemory.get_memory_next();
-				}
-
-				if (start_showing_crap){
-					System.out.println("******************************************************************");
-					this.insert_spaces_for_iteration("B");
-					System.out.println();
-					System.out.println("nodes was originally: "+array2string(nodes));
-					System.out.println("nodes to consider is: "+nodes_to_consider.print_list());
-					System.out.println("pergatory is:         "+pergatory.print_list());
-					System.out.println("maxstar is:           "+head_max_star.print_list());
-					System.out.println("pergatory+maxstar is: "+pergatory_and_max_star.print_list());
-					System.out.println("node_that_found_max : "+node_that_found_max_star);
-					System.out.println("a ref list of nodes : "+array2string(this.all_neighbors(-1)));
-//					System.out.println("where_is_that_darn_n: "+array2string(where_is_that_darn_node));					
-//					System.out.println("who_was_bigger:       "+array2string(who_was_bigger));
-					System.out.println("******************************************************************");
-					
-				}
-
-				
-				
-			}
+				index_memory = index_memory.get_memory_next();
+				counter++;
+			
 
 			///////////////////////////////////////////////////////////
 			//               	END CHECK FUNCTION                   //
 			///////////////////////////////////////////////////////////
 
 
-			if (((nodes_to_consider.get_length()+pergatory.get_length()) <= current_max)||(index_imemory.get_memory_next() == null)){
-				//this.insert_spaces_for_iteration("B");
-				//System.out.println("returning null");
-				//B_iteration_deep--;
-				//return null; //that is to say there aren't enough nodes left to make a star big enough to beat the current max
-
-				if (node_that_found_max_star == -1){
-					//			this.insert_spaces_for_iteration("B");
-					//			System.out.println("Returning null");
-					B_iteration_deep--;		
-					return null;
-				}
-
-
-				int[] temp_finder = {node_that_found_max_star};
-				node finder = new node(temp_finder);
-
-				head_max_star.add(finder);
-
-				B_iteration_deep--;
-
-				//				this.insert_spaces_for_iteration("B");
-				//				System.out.println("Returning: "+head_max_star.print_list());
-
-				return head_max_star.print_array();
-
-			}
-
-
-			current_node = index_imemory.get_memory_next().get_value();
-			temp_connected_nodes = Bochert_neighbor(current_node, nodes_to_consider.combine(pergatory_and_max_star));
-			//			insert_spaces_for_iteration("B");
-			//			System.out.println("nodes_to_consider: "+array2string(nodes_to_consider.print_array())+" perg&maxS: "+array2string(pergatory_and_max_star.print_array()));
-			//			insert_spaces_for_iteration("B");
-			//			System.out.println("the neighbors of "+current_node+" were found to be: "+array2string(temp_connected_nodes));
-
-			if(current_level > B_iteration_deep){
-				System.out.println();
-				System.out.print("*"+B_iteration_deep+"* ");
-			}
-			
-			if(B_iteration_deep < 10){//this.nodes/100){
-				if(current_level < B_iteration_deep){
-					System.out.println();
-					System.out.print("*"+B_iteration_deep+"* ");					
-				}				
-				current_level = B_iteration_deep;
-				
-//				imemory.print_memory();
-			}
-			
-			if(B_iteration_deep < 18){//this.nodes/100){
-//				this.insert_spaces_for_iteration("B");
-				System.out.print(current_node+" ");			
-			}
-//				if(B_calls > 200)
-//					pause();
-
-
-			if (temp_connected_nodes.length == 0 && temp_current_max == 0 && node_that_found_max_star == -1){
-				node_that_found_max_star = current_node;
-				temp_current_max = 1;
-				max_star = null;
-			}
-			else if ((temp_connected_nodes.length >= temp_current_max) && (temp_connected_nodes.length != 0)) {
-
-				if (temp_connected_nodes.length == 1) {
-					temp_max = temp_connected_nodes;
-				}
-				else{
-
-					if (temp_current_max == 0){
-						//	insert_spaces_for_iteration("B");
-						//	System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
-						temp_max = Bochert(temp_connected_nodes, temp_current_max);
-					}
-					else{
-						//	insert_spaces_for_iteration("B");
-						//	System.out.println("sending to Bochert temp_connected_nodes of: "+array2string(temp_connected_nodes)+" and temp_max of: "+temp_current_max);
-						temp_max = Bochert(temp_connected_nodes, temp_current_max-1);
-					}
-				}
-				if ((temp_max != null) && (temp_max.length >= temp_current_max)){
-
-					
-					nodes_to_consider.add(pergatory);
-					nodes_to_consider.add(head_max_star);
-					node_that_found_max_star = current_node;
-					max_star = temp_max;
-					temp_current_max = max_star.length+1;
-
-					if(start_showing_crap)
-					System.out.println("JUST FOUND A NEW MAX STAR: "+node_that_found_max_star+" is attached to: "+array2string(max_star));
-					head_max_star = nodes_to_consider.split_nodes(max_star);
-
-					found_new_set = true;
-
-
-
-
-				}
-			}
-
-
-			//			length_nodes_left--;
-			delete_this[0] = index_imemory.get_memory_next().get_value();
-
-			deleted_nodes.add(nodes_to_consider.split_nodes(delete_this));// .delete(index_imemory.get_memory_next().get_value());
-			
-			//so update imemory with what nodes the checked node was actually connected to, no need to leave that ghost of a connection set
-			memory_element = new node(temp_connected_nodes);//new_element.copy();
-			memory_element.set_head(current_node);
-			memory_element.set_meta_data(1);
-			memory_element.set_memory_next(index_imemory.get_memory_next().get_memory_next());		
-			index_imemory.set_memory_next(memory_element);
-			
-//			index_imemory.get_memory_next().set_meta_data(1)
-
-
-			while((index_imemory.get_memory_next() != null)&&(index_imemory.get_memory_next().get_meta_data() == 1)){
-				index_imemory = index_imemory.get_memory_next();
-			}
-
-			imemory.decriment_length();
-
-			/*			this.insert_spaces_for_iteration("B");
-			System.out.println("**EndLoop: NtoC: "+array2string(nodes_to_consider.print_array())+" and pergatory: "+array2string(pergatory.print_array())+" and max star: "+array2string(head_max_star.print_array())+" and deleted nodes: "+deleted_nodes.print_list());
-
-			temp = new node();
-			if (nodes_to_consider.get_length() != 0)
-				temp = new node(temp.combine(nodes_to_consider));
-			if (deleted_nodes.get_length() != 0)
-				temp = new node(temp.combine(deleted_nodes));
-			if (head_max_star.get_length() != 0)
-				temp = new node(temp.combine(head_max_star));
-			if (pergatory.get_length() != 0)
-				temp = new node(temp.combine(pergatory));
-			if (node_that_found_max_star != -1){				
-				delete_this[0] = node_that_found_max_star;
-				dantes_inferno = new node(delete_this);
-				temp = new node(temp.combine(dantes_inferno));
-			}
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("!!!!!!!!!!!all nodes: "+array2string(nodes));
-			this.insert_spaces_for_iteration("B");
-			System.out.println("!SHOULD BE!all nodes: "+temp.print_list());
-			 */		
-
-		}while (index_imemory.get_memory_next() != null);
-
-
-
-		if (node_that_found_max_star == -1){
-			//	this.insert_spaces_for_iteration("B");
-			//	System.out.println("Returning null");
-			B_iteration_deep--;		
-			return null;
 		}
 
-
-		int[] temp_finder = {node_that_found_max_star};
-		node finder = new node(temp_finder);
-
-		head_max_star.add(finder);
-
-		B_iteration_deep--;
-
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("Returning: "+head_max_star.print_list());
+		if(start_showing_crap){
+		System.out.println("about to end Bochert, printing imemory:");
+		index_memory = imemory;
 		
-		if (B_iteration_deep == -1)
-			levelneg1nodefinder = node_that_found_max_star;
-		else if (B_iteration_deep == 0)
-			level0nodefinder = node_that_found_max_star;
-		else if (B_iteration_deep == 1)
-			level1nodefinder = node_that_found_max_star;
+		while (index_memory.get_memory_next() != null){
+			System.out.println("element in imemory: "+index_memory.get_memory_next().print_list()+" with finding nodes of: "+index_memory.get_memory_next().get_previous().print_list());
+			index_memory = index_memory.get_memory_next();
+		}
+		}
+				
+		memory = imemory;
 		
-		
-		return head_max_star.print_array();
+		return null;
 
 	}
 
@@ -1437,11 +1183,8 @@ public class graph {
 		//graph g = new graph("c-fat200-5.clq.b"); //dne
 		//	graph g = new graph("keller6.clq");	
 		graph g;
-
 		
-
-		
-		String s[] = new String[34];
+		String s[] = new String[35];
 		
 s[0] = "brock200_1.clq";
 s[1] = "brock200_2.clq";
@@ -1477,15 +1220,19 @@ s[30] = "p_hat1500-1.clq";
 s[31] = "san400_0.5_1.clq";
 s[32] = "sanr200_0.7.clq";
 s[33] = "sanr400_0.5.clq";
+s[34] = "";
 			
 
 for(int i = 0; i<s.length; i++){
 	
-	if ((i == 20) && (i != 18) && (i != 19) && (i != 21) && (i != 22)){
+	if ((i<1) && (i != 18) && (i != 19) && (i != 21) && (i != 22)){
 	
 		System.out.println("***********************************************************************************************************");
 		System.out.println(i+" "+s[i]);
-		g = new graph(s[i]);
+		if (i != 34)
+			g = new graph(s[i]);
+		else
+			g = new graph(testie);
 	
 		
 		System.out.println("Number of nodes: "+g.nodes);

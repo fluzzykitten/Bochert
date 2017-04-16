@@ -83,105 +83,6 @@ public class node {
 
 	}
 
-	public node(int[] n, int toptop){
-//come on, don't try to break this - it assumes toptop is a node, and it's not already in n
-		node = -1;
-		next = null;
-		previous = null;
-		head = this;
-		boolean added = false;
-
-
-		if ((n == null)|| (n.length == 0)){		
-			length = new node(1);
-			length.head = this;
-			length.length = length;
-			length.next = null;
-			length.previous = null;
-
-			next = new node(toptop);
-			next.head = this;
-			next.length = length;
-		
-		}
-		else{
-			length = new node(n.length+1);
-			length.head = this;
-			length.length = length;
-			length.next = null;
-			length.previous = null;
-			node currentnode;
-			node previousnode; 
-			
-			if(toptop > n[0]){			
-				currentnode = new node(n[0]);
-				next = currentnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;						
-			}
-			else{
-				currentnode = new node(toptop);
-				next = currentnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;
-				added = true;
-
-				currentnode = new node(n[0]);
-				previousnode.next = currentnode;
-				currentnode.previous = previousnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;						
-			}
-			
-			for(int i = 1; i<n.length ; i++){
-
-				if((toptop > n[i])||(added)){
-					currentnode = new node(n[i]);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;						
-				}
-				else{
-					currentnode = new node(toptop);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;
-					added = true;
-
-					currentnode = new node(n[i]);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;						
-				}
-
-			}
-
-			if(!added){
-				currentnode = new node(toptop);
-				previousnode.next = currentnode;
-				currentnode.previous = previousnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;
-			}
-
-			
-			next.previous = currentnode;
-			currentnode.next = next;
-		}
-
-	}
-
-	
 	public void decriment_length(){
 		length.node--;
 	}
@@ -203,6 +104,10 @@ public class node {
 		memory_next = mem;
 	}
 
+	public void set_previous(node prev){
+		previous = prev;
+	}
+	
 	public node get_memory_next(){
 		return memory_next;
 	}
@@ -233,7 +138,7 @@ public class node {
 		return previous;
 	}
 
-	public void print_memory_old(){
+	public void print_memory(){
 		System.out.println("Head: "+head.node+" Lenght: "+length.node+" and contents: "+print_list());
 		
 		node mem_next = memory_next;
@@ -794,20 +699,4 @@ public class node {
 		return head;
 	}
 
-	public void print_memory(){
-		System.out.println("Printing Memory:");
-		
-		node index = this;
-				
-		while (index != null){
-			if (index.next == null)
-				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: NULL");
-			else
-				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: "+index.print_list());
-
-			index = index.memory_next;
-		}
-		
-	}
-	
 }
