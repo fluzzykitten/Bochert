@@ -25,7 +25,7 @@ public class node3 {
 			for(int j = 31; j>= 0; j--){
 				
 				if(index_array < 0){
-					//i = -1;
+				//	i = -1;
 				}
 				else if((i*32+j)==(input[index_array]-1)){
 					
@@ -83,7 +83,7 @@ public class node3 {
 			for(int j = 31; j>= 0; j--){
 				
 				if(index_array < 0){
-					//i = -1;
+				//	i = -1;
 				}
 				else if((i*32+j)==(input.get_full_array()[index_array]-1)){
 					
@@ -123,17 +123,6 @@ public class node3 {
 		return result;
 	}
 	
-	public void use_me_and_not_first(node3 a, node3 b){
-		//use the smaller size
-		
-		for(int i = array.length-1; i>=0; i--){
-			array[i] = (~a.array[i])&b.array[i];
-		}
-
-		length = find_new_length();
-		
-	}
-
 
 	public void use_me_and(node3 a, node3 b){
 		//use the smaller size
@@ -146,6 +135,18 @@ public class node3 {
 		
 	}
 
+	public void use_me_and_not_first(node3 a, node3 b){
+		//use the smaller size
+		
+		for(int i = array.length-1; i>=0; i--){
+			array[i] = (~a.array[i])&b.array[i];
+		}
+
+		length = find_new_length();
+		
+	}
+
+	
 	public void use_me_or(node3 a, node3 b){
 		//use the biggest
 		
@@ -310,6 +311,7 @@ public class node3 {
 	public node3 copy_by_erasing(){
 		node3 result = new node3();
 		result.memory_next = memory_next;
+		result.memory_previous = memory_previous;
 		result.length = length;
 		result.array = new int[array.length];
 		System.arraycopy(array, 0, result.array, 0, array.length);

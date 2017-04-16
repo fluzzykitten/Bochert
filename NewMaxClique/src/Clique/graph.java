@@ -40,6 +40,8 @@ public class graph {
 	private long after = 0;
 	private long[] timings = new long[10];
 	private String[] timings2 = new String[10];
+	private boolean sort_smallest_first = true;
+	private boolean sort = true;
 
 
 	private void pause() 
@@ -57,7 +59,7 @@ public class graph {
 
 
 
-/*	private boolean is_there_another(final node2 check_set, final node2 nodes_to_consider, final node2 dont_consider_connected, node2 result, boolean display){
+	/*	private boolean is_there_another(final node2 check_set, final node2 nodes_to_consider, final node2 dont_consider_connected, node2 result, boolean display){
 
 		//		Bochert_neighbor(result,node,nodes_a, nodes_b, internal_connected);
 
@@ -92,7 +94,7 @@ public class graph {
 
 		return true;
 	}
-*/
+	 */
 
 
 	private boolean already_checked_with_out_memory(node2 already_checked, node2 array, node2 putty){
@@ -190,7 +192,7 @@ public class graph {
 		//	while (numnum != next_uniq.get_length()){
 		for(int n = 0; n < next_uniq.get_length(); n++){
 
-			
+
 			this.Bochert_neighbor(next_temp, next_uniq.get_index(n), empty_node, next);
 
 			for(int i = 0; i<base_uniq.get_length(); i++){
@@ -322,7 +324,7 @@ return true;
 
 	}
 
-	public int[] pre_New_Bochert(boolean display){
+	public int[] pre_New_Bochert(boolean display, int stop){
 
 
 		int[] all_nodes = all_neighbors(-1);
@@ -354,92 +356,20 @@ return true;
 			graph3[i] = new node3(graph[i],nodes,true);
 		}
 
-		node3 send = new node3(all_nodes, nodes);
-		node3 base = new node3(all_nodes, nodes);
-		node3 tempsend = new node3(all_nodes, nodes);
-		Bochert_neighbor(base,2,base,empty_node);
-		
-//		14 16 28 33 41 45 47 53 69 71 77 80 89 109 117 129 137
+		//		this.New_Bochert(nodesA, current_max, current_max_starA, nodesB, current_max_starB, display)
+		return merge_sort(unreorganize_nodes(New_Bochert(new node3(all_nodes, nodes), 0, new node3(nodes),new node3(nodes), new node3(nodes),display,stop)), all_neighbors(-1));
 
-		int[] connected = {2, 155};
-		int[] not_connected = {6};
-		
-		tempsend = connected_or_not(send, connected, not_connected);
-		System.out.println("DCC 2,155/6: "+tempsend.print_list());
-	
-		int[] a = {74,82,97,152,158};
-		node3 set = new node3(a, nodes);
-		
-		System.out.println("set: "+set.print_list());
-		
-		for(int i = 0; i<a.length; i++){
-			this.Bochert_neighbor(base, a[i], set, empty_node);
-			System.out.println(a[i]+" is connected to: "+base.print_list());
-		}
 
-		
-//		int[] find = {22,24,90,92};
-//		send = new node3(find,nodes);
-		
-//		Bochert_neighbor(send,18,send,empty_node);		
-//		Bochert_neighbor(send,2,send,empty_node);
-//		Bochert_neighbor(send,1,send,empty_node);
-//		Bochert_neighbor(send,4,send,empty_node);
-//		Bochert_neighbor(send,6,send,empty_node);
-//		Bochert_neighbor(send,16,send,empty_node);
-//		Bochert_neighbor(send,45,send,empty_node);
-//		Bochert_neighbor(send,51,send,empty_node);
-//		Bochert_neighbor(send,49,send,empty_node);
-		
-		
-//		send.delete(45);
-//		send.delete(54);
-		
-//		Bochert_neighbor(send,8,send,empty_node);
-//		Bochert_neighbor(send,21,send,empty_node);
-//		Bochert_neighbor(send,1,send,empty_node);
-//		System.out.println("1 is connected to("+send.get_length()+"): "+send.print_list());
-//		send.add(18);
-//		send.add(2);
-//		send.add(1);
-//		send.add(4);
-//		send.add(6);
-//		send.add(16);
-//		send.add(45);
-//		send.add(51);
-//		send.add(49);
-//		send.add(31);
-//		send.add(34);
-//		send.add(37);
-//		send.add(40);
-
-		
-//				send = New_Bochert(send, 0, new node3(nodes),new node3(nodes), new node3(nodes),display);
-		send = New_Bochert(send, 0, new node3(nodes),new node3(nodes), new node3(nodes),display);
-//		System.out.println("result was: "+send.print_list());
-		//return send.to_int();
-
-		return merge_sort(unreorganize_nodes(send), all_neighbors(-1));
-		
-		
-
-		
-//		return merge_sort(unreorganize_nodes(New_Bochert(new node3(all_nodes, nodes), 0, new node3(nodes),new node3(nodes), new node3(nodes),display)), all_neighbors(-1));
-		
 	}
 
-	private node3 connected_or_not(node3 set_orig, int[] connected, int[] not_connected){
-		node3 set = set_orig.copy_by_erasing();
-		
-		for(int i = 0; i<connected.length; i++){
-			set.use_me_and(graph3[connected[i]-1], set);
+	private int[] translate_real_to_sorted(int a[]){
+		int[] b = new int[a.length];
+
+		for(int i = 0; i<a.length; i++){
+			b[i] = nodes_ordered_increasing[a[i]-1];
 		}
-		
-		for(int i = 0; i<not_connected.length; i++){
-			set.use_me_and_not_first(graph3[not_connected[i]-1], set);
-		}
-		
-		return set;
+
+		return b;
 	}
 
 
@@ -457,16 +387,6 @@ return true;
 
 		//		pause();
 
-	}
-	
-	private int[] translate_real_to_sorted(int a[]){
-		int[] b = new int[a.length];
-		
-		for(int i = 0; i<a.length; i++){
-			b[i] = nodes_ordered_increasing[a[i]-1];
-		}
-		
-		return b;
 	}
 
 	private void reorganize_nodes(){
@@ -487,11 +407,11 @@ return true;
 	private int[] unreorganize_nodes(node3 result){
 		//find out what the real nodes are
 
-//		System.out.println("result was: "+result.print_list());
-		
+		//		System.out.println("result was: "+result.print_list());
+
 		int[] real_result = new int[result.get_length()];
 		int[] fake_result = result.to_int();
-		
+
 		for(int i = 0; i<result.get_length(); i++)
 			real_result[i] = nodes_ordered_increasing[fake_result[i]-1];
 
@@ -502,6 +422,10 @@ return true;
 
 	private int[] merge_sort(int[] list, int[] weight)
 	{
+		if(weight == null){
+			weight = this.all_neighbors(-1);			
+		}
+
 		if (list.length <= 1)
 			return list;
 		int[] left, right, result;
@@ -534,7 +458,7 @@ return true;
 
 
 		while ((lefti < leftl) && (righti < rightl)){
-			if (weight[left[lefti]-1] >= weight[right[righti]-1]){ 
+			if (sort_smallest_first?(weight[left[lefti]-1] <= weight[right[righti]-1]):(weight[left[lefti]-1] >= weight[right[righti]-1])){
 				result[resulti] = left[lefti];
 				resulti++;
 				lefti++;
@@ -573,24 +497,24 @@ return true;
 	}
 
 	private boolean deleteme(node3 deleteme, node3 compare, node3 deleted){
-		
+
 		node3 result = deleteme.copy_by_erasing();
-		
-//		node3 new_deleteme = new node3(nodes);
-//		node3 new_compare = new node3(nodes);
-//		new_deleteme.copy_array(deleteme);
-//		new_compare.copy_array(deleteme);
-	
+
+		//		node3 new_deleteme = new node3(nodes);
+		//		node3 new_compare = new node3(nodes);
+		//		new_deleteme.copy_array(deleteme);
+		//		new_compare.copy_array(deleteme);
+
 		result.delete(compare);
 		result.delete(deleted);
-		
+
 		if(result.get_length() == 0)
 			return true;
-		
+
 		return false;
 	}
 
-	
+
 	private boolean deleteme(node2 deleteme, node2 compare, node2 deleted){
 
 		int index_deleteme = 0;
@@ -624,10 +548,10 @@ return true;
 		if(index_compare == compare.get_length()){
 
 			while(index_deleteme < deleteme.get_length()){
-			
-			while((index_deleted < deleted.get_length())&&(deleted.get_full_array()[index_deleted] < deleteme.get_full_array()[index_deleteme])){
-				index_deleted++;
-			}
+
+				while((index_deleted < deleted.get_length())&&(deleted.get_full_array()[index_deleted] < deleteme.get_full_array()[index_deleteme])){
+					index_deleted++;
+				}
 
 				if((index_deleted < deleted.get_length())&&(deleted.get_full_array()[index_deleted] == deleteme.get_full_array()[index_deleteme])){
 					index_deleted++;
@@ -638,7 +562,7 @@ return true;
 				}
 
 			}
-			
+
 			/*while((index_deleteme < deleteme.get_length())&&((index_deleted < deleted.get_length())&&(deleted.get_full_array()[index_deleted] == deleteme.get_full_array()[index_deleteme]))){
 				index_deleted++;
 				index_deleteme++;
@@ -652,8 +576,8 @@ return true;
 
 	}
 
-	
-	
+
+
 	public boolean ox_redux(node3 memory_elementA, node2 relic_node2){
 
 		boolean found_deletions = false;
@@ -662,7 +586,7 @@ return true;
 		populate_results_array(memory_elementA);
 		results_array_length=memory_elementA.get_length();
 		memory_elementA.to_old_node2(relic_node2);
-		
+
 		for(int i = 0; i<relic_node2.get_length(); i++){
 			for(int j = 0; j<relic_node2.get_length(); j++){
 				if((i!=j)&&(!deleted_nodes.find(relic_node2.get_full_array()[j]))){
@@ -684,8 +608,8 @@ return true;
 
 		return found_deletions;
 	}	
-	
-	
+
+
 	public boolean ox_redux_new(node3 memory_elementA, node3 puttyA, node3 puttyB, node2 relic_node2){
 
 		boolean found_deletions = false;
@@ -696,12 +620,12 @@ return true;
 
 		memory_elementA.to_old_node2(relic_node2);
 
-		
+
 		for(int i = 0; i<relic_node2.get_length(); i++){
 			for(int j = i; j<relic_node2.get_length(); j++){
-				
+
 				results_array[i].similar_differences(results_array[j], puttyA, puttyB, deleted_nodes);
-				
+
 				if(puttyB.get_length() == 0){
 					deleted_nodes.add(relic_node2.get_full_array()[j]);
 					found_deletions = true;					
@@ -712,7 +636,7 @@ return true;
 					j = relic_node2.get_length();
 				}
 
-				
+
 
 			}
 
@@ -725,6 +649,84 @@ return true;
 		return found_deletions;
 	}	
 
+	private void add_to_memory_end(node3 TOP, node3 element){
+
+		if(TOP.memory_previous == null){
+			TOP.memory_next = element;
+			TOP.memory_previous = element;
+			element.memory_next = element;
+			element.memory_previous = element;
+		}
+		else{
+			element.memory_next = TOP.memory_next;
+			element.memory_previous = TOP.memory_previous;
+			TOP.memory_previous.memory_next = element;
+			TOP.memory_next.memory_previous = element;
+			TOP.memory_previous = element;
+		}
+
+	}
+
+	private void add_to_memory_end(node2 TOP, node2 element){
+
+		if(TOP.memory_previous == null){
+			TOP.memory_next = element;
+			TOP.memory_previous = element;
+			element.memory_next = element;
+			element.memory_previous = element;
+		}
+		else{
+			element.memory_next = TOP.memory_next;
+			element.memory_previous = TOP.memory_previous;
+			TOP.memory_previous.memory_next = element;
+			TOP.memory_next.memory_previous = element;
+			TOP.memory_previous = element;
+		}
+
+	}
+
+
+	private void find_remnant(node2 TOP_remnant, node3 TOP_remnant_connected, node3 nodes_stationary, node3 nodes_transitory, int current_node){
+
+		node3 stationary_uniq = new node3(nodes);
+		node3 transitory_uniq = new node3(nodes);
+
+		node2 new_remnant = new node2(nodes); 
+		new_remnant.add_to_end(current_node);
+
+		node3 new_remnant_connected = new node3(nodes);
+
+
+		nodes_stationary.similar_differences(nodes_transitory, stationary_uniq, transitory_uniq);
+
+
+
+
+	}
+
+	private void reduce_consideration2(node3 nodes_to_considerA, node3 dont_consider_connectedA, node3 temp_elementA, node3 memory_elementA, node3 run_meA, node2 relic_node2){
+
+		node2 TOP_remnant = new node2();
+		node3 TOP_remnant_connected = new node3();
+
+		run_meA.add(nodes_to_considerA.pop_first());
+		int current_node = 0;
+
+		while(nodes_to_considerA.get_length() > 0){//first one already pulled off
+
+			current_node = nodes_to_considerA.pop_first();
+			this.Bochert_neighbor(memory_elementA, current_node, nodes_to_considerA, dont_consider_connectedA);
+			find_remnant(TOP_remnant, TOP_remnant_connected, dont_consider_connectedA, memory_elementA, current_node);
+
+		}
+
+
+
+
+
+	}
+
+
 
 
 	private void reduce_consideration(node3 nodes_to_considerA, node3 dont_consider_connectedA, node3 temp_elementA, node3 memory_elementA, node3 run_meA, node2 relic_node2){
@@ -735,17 +737,17 @@ return true;
 		int result;
 		int temp_numnum;
 
-		
-		
+
+
 		while (nodes_to_considerA.get_length() > 0){
-			
+
 			current_nodeA = nodes_to_considerA.pop_first();
-			
+
 			Bochert_neighbor(memory_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA);
 
 			//System.out.println("outer loop looking at cnA: "+current_nodeA+" and ntcA.l: "+nodes_to_considerA.get_length()+" and meA: "+memory_elementA.get_length());
 
-			
+
 			another = false;
 
 			numnum = 0;
@@ -763,7 +765,7 @@ return true;
 
 				//System.out.println("inner loop looking at numnum: "+numnum+" and tnn: "+temp_numnum+" and teA("+temp_elementA.get_length()+"): "+temp_elementA.print_list()+" result: "+result+" ntcA("+nodes_to_considerA.get_length()+"): "+nodes_to_considerA.print_list()+" dccA("+dont_consider_connectedA.get_length()+"): "+dont_consider_connectedA.print_list());
 
-				
+
 				if(result == 3){
 					if(graph[current_nodeA-1][temp_numnum-1] == 0){
 						nodes_to_considerA.delete(temp_numnum);
@@ -781,20 +783,20 @@ return true;
 					numnum = 0;
 
 					Bochert_neighbor(memory_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA);
-//					dont_consider_connectedA.copy_array(memory_elementA);
-					
+					//					dont_consider_connectedA.copy_array(memory_elementA);
+
 					memory_elementA.invert();
 					temp_elementA.use_me_or(dont_consider_connectedA, nodes_to_considerA);
 					temp_elementA.use_me_and(temp_elementA, memory_elementA);
 					memory_elementA.invert();
-					
-					//System.out.println("meA("+memory_elementA.get_length()+"): "+memory_elementA.print_list()+" teA("+temp_elementA.get_length()+"): "+temp_elementA.print_list()+" ntcA("+nodes_to_considerA.get_length()+"): "+nodes_to_considerA.print_list()+" dcc("+dont_consider_connectedA.get_length()+"): "+nodes_to_considerA.print_list());
-					
-//					temp_elementA.add(current_nodeA);
 
-					
-//					Bochert_neighbor(memory_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA);
-//					Bochert_neighbor(temp_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA, internal_not_connected);
+					//System.out.println("meA("+memory_elementA.get_length()+"): "+memory_elementA.print_list()+" teA("+temp_elementA.get_length()+"): "+temp_elementA.print_list()+" ntcA("+nodes_to_considerA.get_length()+"): "+nodes_to_considerA.print_list()+" dcc("+dont_consider_connectedA.get_length()+"): "+nodes_to_considerA.print_list());
+
+					//					temp_elementA.add(current_nodeA);
+
+
+					//					Bochert_neighbor(memory_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA);
+					//					Bochert_neighbor(temp_elementA, current_nodeA, dont_consider_connectedA, nodes_to_considerA, internal_not_connected);
 					if(nodes_to_considerA.get_length() > temp_elementA.get_length()){
 
 						dont_consider_connectedA.copy_array(memory_elementA);
@@ -848,7 +850,7 @@ return true;
 				Bochert_neighbor(memory_elementB, run_meB.get_index(current_nodeB), dont_consider_connectedB, run_meB);
 
 				result = check_extra_nodes(memory_elementA, memory_elementB,false,0);
-				
+
 				if(result == 3){//delete next
 					run_meB.delete(run_meB.get_index(current_nodeB));
 				}
@@ -870,23 +872,23 @@ return true;
 
 
 	private boolean find_next_set_to_examine(node3 nodes_to_considerA, node3 nodes_to_considerB, node2 current_nodeA, node3 memory_elementA, node3 temp_connected_starA, node3 temp_connected_nodesA, node3 dont_consider_connectedA, node3 dont_consider_connectedB, node3 current_max_starA, node3 current_max_starB, node3 head_max_star, boolean first, node2 relic_node2, node3 puttyA, node3 puttyB){
-			
-/*		this.insert_spaces_for_iteration("B");
+
+		/*		this.insert_spaces_for_iteration("B");
 		if(first){
 			System.out.print(" top first ");
 		}else{
 			System.out.print(" top second ");
 		}
 		System.out.println("ntcA: "+nodes_to_considerA.print_list()+" ntcB: "+nodes_to_considerB.print_list()+" cn: "+current_nodeA.get_last()+" me: "+memory_elementA.print_list()+" tcn: "+temp_connected_nodesA.print_list()+" tcs: "+temp_connected_starA.print_list()+" dccA: "+dont_consider_connectedA.print_list()+" dccB: "+dont_consider_connectedB.print_list());
-*/		
+		 */		
 		if(((nodes_to_considerA == null) || (nodes_to_considerA.get_length() == 0))&&((nodes_to_considerB == null) || (nodes_to_considerB.get_length() == 0))){
 			//should be dead code, just so code would correctly match inverse that is in the next chunk
-			
+
 			current_nodeA.add_to_end(-1);
 			memory_elementA.zero();//.set_length(0);
 			temp_connected_nodesA.zero();//.set_length(0);
 			temp_connected_starA.zero();//.set_length(0);
-			
+
 			return false;
 
 		}
@@ -894,15 +896,15 @@ return true;
 			if((nodes_to_considerA != null) && (nodes_to_considerA.get_length() > 0)){
 
 				current_nodeA.add_to_end(nodes_to_considerA.pop_first());
-//				nodes_to_considerA.delete(current_nodeA.get_last());
+				//				nodes_to_considerA.delete(current_nodeA.get_last());
 
 				Bochert_neighbor(memory_elementA, current_nodeA.get_last(), dont_consider_connectedA, nodes_to_considerA);
-				
+
 				if(first)
-				memory_elementA.meta_data = 1;
+					memory_elementA.meta_data = 1;
 				else
-				memory_elementA.meta_data = 2;
-					
+					memory_elementA.meta_data = 2;
+
 				memory_elementA.side = 'A';
 
 			}
@@ -910,49 +912,49 @@ return true;
 			else{
 
 				current_nodeA.add_to_end(nodes_to_considerB.pop_first());
-	//			nodes_to_considerB.delete(current_nodeA.get_last());
+				//			nodes_to_considerB.delete(current_nodeA.get_last());
 
 				Bochert_neighbor(memory_elementA, current_nodeA.get_last(), dont_consider_connectedB, nodes_to_considerB);
 				if(first)
-				memory_elementA.meta_data = 1;
+					memory_elementA.meta_data = 1;
 				else
-				memory_elementA.meta_data = 2;
+					memory_elementA.meta_data = 2;
 
 				memory_elementA.side = 'B';
 
 			}
 
 
-/*			this.insert_spaces_for_iteration("B");
+			/*			this.insert_spaces_for_iteration("B");
 			if(first){
 				System.out.print(" midA first ");
 			}else{
 				System.out.print(" midA second ");
 			}
 			System.out.println("ntcA: "+nodes_to_considerA.print_list()+" ntcB: "+nodes_to_considerB.print_list()+" cn: "+current_nodeA.get_last()+" me: "+memory_elementA.print_list()+" tcn: "+temp_connected_nodesA.print_list()+" tcs: "+temp_connected_starA.print_list()+" dccA: "+dont_consider_connectedA.print_list()+" dccB: "+dont_consider_connectedB.print_list());
-*/
-			
-			ox_redux(memory_elementA,relic_node2);
-//			ox_redux_new(memory_elementA,puttyA,puttyB,relic_node2);
+			 */
 
-/*			this.insert_spaces_for_iteration("B");
+			ox_redux(memory_elementA,relic_node2);
+			//			ox_redux_new(memory_elementA,puttyA,puttyB,relic_node2);
+
+			/*			this.insert_spaces_for_iteration("B");
 			if(first){
 				System.out.print(" midB first ");
 			}else{
 				System.out.print(" midB second ");
 			}
 			System.out.println("ntcA: "+nodes_to_considerA.print_list()+" ntcB: "+nodes_to_considerB.print_list()+" cn: "+current_nodeA.get_last()+" me: "+memory_elementA.print_list()+" tcn: "+temp_connected_nodesA.print_list()+" tcs: "+temp_connected_starA.print_list()+" dccA: "+dont_consider_connectedA.print_list()+" dccB: "+dont_consider_connectedB.print_list());
-*/
-			
+			 */
+
 
 			if(memory_elementA.get_length() < head_max_star.meta_data){
-				
+
 				memory_elementA.zero();//.set_length(0);
 				temp_connected_nodesA.zero();//.set_length(0);
 				temp_connected_starA.zero();//.set_length(0);		
-								
+
 				return false;
-				
+
 			}
 			else{
 
@@ -964,9 +966,9 @@ return true;
 					nodes_to_considerB.side = memory_elementA.side;
 				//temp_connected_nodesA = memory_elementA.copy_by_erasing();
 
-				
+
 				if(memory_elementA.side == head_max_star.side){
-					Bochert_neighbor(temp_connected_starA, current_nodeA.get_last(), empty_node, head_max_star);
+					Bochert_neighbor(temp_connected_starA, current_nodeA.get_last(), empty_node, head_max_star.memory_previous);
 				}
 				if(memory_elementA.side == 'A'){
 					Bochert_neighbor(temp_connected_starA, current_nodeA.get_last(), empty_node, current_max_starA);
@@ -979,22 +981,22 @@ return true;
 				temp_connected_nodesA.delete(temp_connected_starA);
 
 			}
-			
+
 		}
-		
-/*		this.insert_spaces_for_iteration("B");
+
+		/*		this.insert_spaces_for_iteration("B");
 		if(first){
 			System.out.print(" bot first ");
 		}else{
 			System.out.print(" bot second ");
 		}
 		System.out.println("ntcA: "+nodes_to_considerA.print_list()+" ntcB: "+nodes_to_considerB.print_list()+" cn: "+current_nodeA.get_last()+" me: "+memory_elementA.print_list()+" tcn: "+temp_connected_nodesA.print_list()+" tcs: "+temp_connected_starA.print_list()+" dccA: "+dont_consider_connectedA.print_list()+" dccB: "+dont_consider_connectedB.print_list());
-*/
-		
+		 */
+
 		return true;
 	}
 
-	private node3 New_Bochert(node3 nodesA, int current_max, node3 current_max_starA_ext, node3 nodesB, node3 current_max_starB_ext, boolean display){
+	private node3 New_Bochert(node3 nodesA, int current_max, node3 current_max_starA_ext, node3 nodesB, node3 current_max_starB_ext, boolean display, int stop){
 
 		//not original Bochert
 
@@ -1003,9 +1005,9 @@ return true;
 			return (current_max_starA_ext.get_length()>=current_max_starB_ext.get_length()?current_max_starA_ext:current_max_starB_ext);
 
 
-		node3 head_max_star;
-		if ((current_max_starA_ext.get_length() == 0)&&(current_max_starB_ext.get_length() == 0)){
-			head_max_star = new node3(nodes);
+		node3 head_max_star = new node3(nodes);
+		/*		if ((current_max_starA_ext.get_length() == 0)&&(current_max_starB_ext.get_length() == 0)){
+			head_max_star = new node3();
 		}
 		else{
 			if(current_max_starA_ext.get_length()>=current_max_starB_ext.get_length()){
@@ -1017,21 +1019,21 @@ return true;
 				head_max_star.side = 'B';
 			}
 
-		}
+		}*/
 		head_max_star.meta_data = current_max;
 
-		node3 TOP_nodes_to_considerA = new node3(nodes);
-		node3 TOP_nodes_to_considerB = new node3(nodes);
-		node3 TOP_dont_consider_connectedA = new node3(nodes);
-		node3 TOP_dont_consider_connectedB = new node3(nodes);
+		node3 TOP_nodes_to_considerA = new node3();
+		node3 TOP_nodes_to_considerB = new node3();
+		node3 TOP_dont_consider_connectedA = new node3();
+		node3 TOP_dont_consider_connectedB = new node3();
 		//		node2 TOP_puttyA = new node2();
 		//		node2 TOP_puttyB = new node2();
 		//node2 TOP_temp_max = new node2();
 		node3 TOP_head_max_star = new node3(nodes);
 		node2 current_nodeA = new node2(nodes);
 		node2 current_nodeB = new node2(nodes);
-		node3 TOP_current_max_starA = new node3(nodes);
-		node3 TOP_current_max_starB = new node3(nodes);
+		node3 TOP_current_max_starA = new node3();
+		node3 TOP_current_max_starB = new node3();
 
 		TOP_current_max_starA.memory_next = current_max_starA_ext;
 		TOP_current_max_starB.memory_next = current_max_starB_ext;
@@ -1039,10 +1041,10 @@ return true;
 		node3 current_max_starA = TOP_current_max_starA.memory_next;
 		node3 current_max_starB = TOP_current_max_starB.memory_next;
 
-		
 
-		node3 temp_max = new node3(nodes);
-		
+
+		node3 temp_max = new node3();
+
 		node2 relic_node2 = new node2(nodes);
 		//int temp_current_max = current_max;
 		//		int current_nodeA;
@@ -1065,8 +1067,8 @@ return true;
 		node3 temp_elementB;
 		node3 puttyA;
 		node3 puttyB;
-		node3 temp_connected_nodesA = new node3(nodes); //will be passed down the chain and thus might be corrupted
-		node3 temp_connected_nodesB = new node3(nodes); //will be passed down the chain and thus might be corrupted
+		node3 temp_connected_nodesA = new node3(); //will be passed down the chain and thus might be corrupted
+		node3 temp_connected_nodesB = new node3(); //will be passed down the chain and thus might be corrupted
 		node3 temp_connected_starA;//= new node2(nodesA.get_length()+current_max_starA.get_length()); //will be passed down the chain but won't be corrupted
 		node3 temp_connected_starB;//= new node2(nodesA.get_length()+current_max_starA.get_length()); //will be passed down the chain but won't be corrupted
 
@@ -1082,7 +1084,7 @@ return true;
 
 		node3 dont_consider_connectedA = current_max_starA.copy_by_erasing();
 		node3 dont_consider_connectedB = current_max_starB.copy_by_erasing();
-		
+
 		int current = 0;
 
 		//		int[] super_star = {108,20,73,18,93,178,90,94,142,135,186,87,81,150,92,39,68,102,85,136,134};
@@ -1104,10 +1106,10 @@ return true;
 		if(nodes_to_considerA.get_length() > 0){
 
 			current = nodes_to_considerA.pop_first();
-			
+
 			Bochert_neighbor(memory_elementA, current, dont_consider_connectedA, nodes_to_considerA);
 			dont_consider_connectedA.copy_array(memory_elementA);
-			
+
 			memory_elementA.invert();
 			temp_elementA.use_me_or(dont_consider_connectedA, nodes_to_considerA);
 			temp_elementA.use_me_and(temp_elementA, memory_elementA);
@@ -1121,10 +1123,10 @@ return true;
 
 		if(nodes_to_considerB.get_length() > 0){
 			current = nodes_to_considerB.pop_first();
-			
+
 			Bochert_neighbor(memory_elementB, current, dont_consider_connectedB, nodes_to_considerB);
 			dont_consider_connectedB.copy_array(memory_elementB);
-			
+
 			memory_elementB.invert();
 			temp_elementB.use_me_or(dont_consider_connectedB, nodes_to_considerB);
 			temp_elementB.use_me_and(temp_elementB, memory_elementB);
@@ -1146,7 +1148,7 @@ return true;
 		node3 run_meB = new node3(nodes);
 
 
-		
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1170,7 +1172,7 @@ return true;
 		after = System.nanoTime();
 		timings[1] = timings[1] + (after-before);
 		timings2[1] = "running reduce_consideration and cross check";
-		
+
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1182,32 +1184,32 @@ return true;
 		//TOP_temp_max.set_memory_next(temp_max);
 		TOP_head_max_star.set_memory_next(head_max_star);
 		head_max_star.memory_previous = TOP_head_max_star;
-		
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
 
 
 
 		//		while((nodes_to_considerA.get_length() != 0)||(nodes_to_considerB.get_length() != 0)){
-//		while((!((TOP_nodes_to_considerA.get_memory_next().get_length() == 0)&&(TOP_nodes_to_considerB.get_memory_next().get_length() == 0))&&(TOP_head_max_star != head_max_star))){//((current_nodeA.get_length() == 0)&&(current_nodeB.get_length() == 0)))){
+		//		while((!((TOP_nodes_to_considerA.get_memory_next().get_length() == 0)&&(TOP_nodes_to_considerB.get_memory_next().get_length() == 0))&&(TOP_head_max_star != head_max_star))){//((current_nodeA.get_length() == 0)&&(current_nodeB.get_length() == 0)))){
 		while(TOP_head_max_star != head_max_star){
 
-/*			System.out.println("ntcA("+nodes_to_considerA.get_length()+"): "+nodes_to_considerA.print_list());
+			/*			System.out.println("ntcA("+nodes_to_considerA.get_length()+"): "+nodes_to_considerA.print_list());
 			System.out.println("dccA("+dont_consider_connectedA.get_length()+"): "+dont_consider_connectedA.print_list());
 			System.out.println("ntcB("+nodes_to_considerB.get_length()+"): "+nodes_to_considerB.print_list());
 			System.out.println("dccB("+dont_consider_connectedB.get_length()+"): "+dont_consider_connectedB.print_list());
 			System.out.println("run_meA("+run_meA.get_length()+"): "+run_meA.print_list()+" run_meB("+run_meB.get_length()+"): "+run_meB.print_list());
 //			pause();
-*/
-			
-			
+			 */
+
+
 			if(current_nodeA.get_length() > B_iteration_deep){
 				this.insert_spaces_for_iteration("B");
 				System.out.println("It has exceeded expectation: "+current_nodeA.get_length());
-				pause();
+				//pause();
 			}
-				
-			
+
+
 			if (((nodes_to_considerA.get_length()+dont_consider_connectedA.get_length()) <= current_max)){
 				nodes_to_considerA.zero();//.set_length(0);
 			}
@@ -1222,60 +1224,90 @@ return true;
 			//				return head_max_star;
 
 			//			}
-			
+
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-if((nodes_to_considerA.get_length() != 0)||(nodes_to_considerB.get_length() != 0)){	
 
-	before = System.nanoTime();
+			if((nodes_to_considerA.get_length() != 0)||(nodes_to_considerB.get_length() != 0)){	
 
-	
-next_set1 = find_next_set_to_examine(nodes_to_considerA, nodes_to_considerB, current_nodeA, memory_elementA, temp_connected_starA, temp_connected_nodesA, dont_consider_connectedA, dont_consider_connectedB, current_max_starA, current_max_starB, head_max_star, true, relic_node2, puttyA, puttyB);
+				before = System.nanoTime();
 
-next_set2 = find_next_set_to_examine(nodes_to_considerA, nodes_to_considerB, current_nodeB, memory_elementB, temp_connected_starB, temp_connected_nodesB, dont_consider_connectedA, dont_consider_connectedB, current_max_starA, current_max_starB, head_max_star, false, relic_node2, puttyA, puttyB);
 
-after = System.nanoTime();
-timings[2] = timings[2] + (after-before);
-timings2[2] = "find_next_set_to_examine";
+				next_set1 = find_next_set_to_examine(nodes_to_considerA, nodes_to_considerB, current_nodeA, memory_elementA, temp_connected_starA, temp_connected_nodesA, dont_consider_connectedA, dont_consider_connectedB, current_max_starA, current_max_starB, head_max_star, true, relic_node2, puttyA, puttyB);
 
-if((!next_set1)&&(!next_set2)){
-	
-	current_nodeA.delete_last();
-	current_nodeB.delete_last();
-//	this.insert_spaces_for_iteration("B");
-//	System.out.println("deleted due to unnecessary creation");
-}
+				next_set2 = find_next_set_to_examine(nodes_to_considerA, nodes_to_considerB, current_nodeB, memory_elementB, temp_connected_starB, temp_connected_nodesB, dont_consider_connectedA, dont_consider_connectedB, current_max_starA, current_max_starB, head_max_star, false, relic_node2, puttyA, puttyB);
 
-}
+				after = System.nanoTime();
+				timings[2] = timings[2] + (after-before);
+				timings2[2] = "find_next_set_to_examine";
+
+				if((!next_set1)&&(!next_set2)){
+
+					current_nodeA.delete_last();
+					current_nodeB.delete_last();
+					//	this.insert_spaces_for_iteration("B");
+					//	System.out.println("deleted due to unnecessary creation");
+				}
+				//				if (!((memory_elementA.get_length() == 0) && (memory_elementB.get_length() == 0) && head_max_star.meta_data == 0))
+				else if(((head_max_star.meta_data != 0)&&((head_max_star.meta_data+B_iteration_deep) >= stop))||
+						((head_max_star.meta_data == 0)&&((head_max_star.meta_data+B_iteration_deep+1) >= stop))){
+					//					pause();
+					//					temp_connected_nodesA.length = 0;
+					//					temp_connected_nodesB.length = 0;
+					memory_elementA.length = 0;
+					memory_elementB.length = 0;
+
+					temp_connected_nodesA.zero();//.set_length(0);
+					temp_connected_starA.zero();//.set_length(0);
+					temp_connected_nodesB.zero();//.set_length(0);
+					temp_connected_starB.zero();//.set_length(0);
+
+					nodes_to_considerA.length = 0;
+					nodes_to_considerB.length = 0;
+
+					if (!((memory_elementA.get_length() == 0) && (memory_elementB.get_length() == 0) && head_max_star.meta_data == 0)){
+						//						System.out.println(" deleting");
+						current_nodeA.delete_last();
+						current_nodeB.delete_last();
+
+					}
+
+
+				}
+
+			}
+
+
+
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//			if((B_iteration_deep != 0)&&(current_nodeB.get_full_array()[B_iteration_deep-1] == 500))
-//				display = true;
-//			else
-//				display = false;
-	
+			//			if((B_iteration_deep != 0)&&(current_nodeB.get_full_array()[B_iteration_deep-1] == 500))
+			//				display = true;
+			//			else
+			//				display = false;
+
 			if((display)||(B_iteration_deep <= display_level)){
 				System.out.print(">>");
 				this.insert_spaces_for_iteration("B");
-				
+
 				if((!next_set1)&&(!next_set2))
 					System.out.println(" cnA and cnB were deleted B_calls: "+B_calls+" meA: "+memory_elementA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" ntcA: "+nodes_to_considerA.get_length()+" dcA: "+dont_consider_connectedA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" meB: "+memory_elementB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" ntcB: "+nodes_to_considerB.get_length()+" dcB: "+dont_consider_connectedB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" hms.gl: "+head_max_star.get_length()+" hms.md: "+head_max_star.meta_data);
 				else
-				System.out.println(" cnA: "+current_nodeA.get_last()+" cnB: "+current_nodeB.get_last()+" B_calls: "+B_calls+" meA: "+memory_elementA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" ntcA: "+nodes_to_considerA.get_length()+" dcA: "+dont_consider_connectedA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" meB: "+memory_elementB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" ntcB: "+nodes_to_considerB.get_length()+" dcB: "+dont_consider_connectedB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" hms.gl: "+head_max_star.get_length()+" hms.md: "+head_max_star.meta_data);
-//				System.out.println("adding to hms, cnA: "+current_nodeA.print_list());
+					System.out.println(" cnA: "+current_nodeA.get_last()+" cnB: "+current_nodeB.get_last()+" B_calls: "+B_calls+" meA: "+memory_elementA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" ntcA: "+nodes_to_considerA.get_length()+" dcA: "+dont_consider_connectedA.get_length()+" tcsA: "+temp_connected_starA.get_length()+" tcnA: "+temp_connected_nodesA.get_length()+" meB: "+memory_elementB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" ntcB: "+nodes_to_considerB.get_length()+" dcB: "+dont_consider_connectedB.get_length()+" tcsB: "+temp_connected_starB.get_length()+" tcnB: "+temp_connected_nodesB.get_length()+" hms.gl: "+head_max_star.get_length()+" hms.md: "+head_max_star.meta_data);
+				//				System.out.println("adding to hms, cnA: "+current_nodeA.print_list());
 			}
-//			display = false;
+			//			display = false;
 
-//			if(B_calls > 20)
-//				pause();
-			
+			//			if(B_calls > 20)
+			//				pause();
+
 
 			/////////////////////////////////////////////////////////////
 			//      pass it down the chain?
@@ -1283,22 +1315,24 @@ if((!next_set1)&&(!next_set2)){
 
 
 			if ((memory_elementA.get_length() == 0) && (memory_elementB.get_length() == 0) && head_max_star.meta_data == 0){// && node_that_found_max_star == -1){
+				System.out.println("meA.l and meB.l == 0");
+
 				head_max_star.add(current_nodeA.get_last());
 				head_max_star.meta_data = 1;
 				head_max_star.side = memory_elementA.side;
 
 				current_nodeA.delete_last();
 				current_nodeB.delete_last();
-//				this.insert_spaces_for_iteration("B");
-//				System.out.println("singularity deleted");
+				//				this.insert_spaces_for_iteration("B");
+				//				System.out.println("singularity deleted");
 			}			
 			else{
 
-				
+
 				puttyA.zero();//.set_length(0);
 				puttyB.zero();//.set_length(0);
-//				puttyA.side = memory_elementA.side;
-//				puttyB.side = memory_elementB.side;
+				//				puttyA.side = memory_elementA.side;
+				//				puttyB.side = memory_elementB.side;
 				temp_max.zero();//.set_length(0);
 
 
@@ -1315,7 +1349,7 @@ if((!next_set1)&&(!next_set2)){
 					memory_elementA.zero();//.set_length(0);
 				}
 
-				
+
 				if ((temp_connected_nodesB.get_length()) == 1) {
 
 					Bochert_neighbor(puttyB,temp_connected_nodesB.get_index(0), empty_node,temp_connected_starB);
@@ -1329,14 +1363,14 @@ if((!next_set1)&&(!next_set2)){
 					memory_elementB.zero();//.set_length(0);
 				}
 
-				
+
 				if(puttyA.get_length() > temp_max.get_length()){
 					temp_max.copy_array(puttyA);
 					temp_max.meta_data = puttyA.meta_data;
 					temp_max.side = puttyA.side;
 				}
 
-				
+
 				if(puttyB.get_length() > temp_max.get_length()){
 					temp_max.copy_array(puttyB);
 					temp_max.meta_data = puttyB.meta_data;
@@ -1347,7 +1381,7 @@ if((!next_set1)&&(!next_set2)){
 
 					head_max_star.copy_array(temp_max);												
 
-/*					if(temp_max.meta_data == 0){
+					/*					if(temp_max.meta_data == 0){
 
 						if(temp_max.side == 'A'){
 							head_max_star.add(current_nodeA.get_last());
@@ -1358,51 +1392,53 @@ if((!next_set1)&&(!next_set2)){
 							head_max_star.side = puttyB.side;
 						}
 					}
-*/					if(temp_max.meta_data == 1){
-						head_max_star.add(current_nodeA.get_last());
-						head_max_star.side = temp_max.side;
-					}
-					else if (temp_max.meta_data == 2){
-						head_max_star.add(current_nodeB.get_last());
-						head_max_star.side = temp_max.side;
-					}
-					else{
-						System.out.println("temp_max doesn't have an acceptable meta data: "+temp_max.meta_data);
-						pause();
-					}
+					 */					if(temp_max.meta_data == 1){
+						 head_max_star.add(current_nodeA.get_last());
+						 head_max_star.side = temp_max.side;
+					 }
+					 else if (temp_max.meta_data == 2){
+						 head_max_star.add(current_nodeB.get_last());
+						 head_max_star.side = temp_max.side;
+					 }
+					 else{
+						 System.out.println("temp_max doesn't have an acceptable meta data: "+temp_max.meta_data);
+						 pause();
+					 }
 
-//					head_max_star.meta_data = 0;
+					 //					head_max_star.meta_data = 0;
 
-					head_max_star.meta_data = head_max_star.get_length();
+					 head_max_star.meta_data = head_max_star.get_length();
 
-					if ((memory_elementA.get_length() == 0)&&(memory_elementB.get_length() == 0)){
-						current_nodeA.delete_last();
-						current_nodeB.delete_last();
-//						this.insert_spaces_for_iteration("B");
-//						System.out.println("temp_max deleted");
-					}
+					 if ((memory_elementA.get_length() == 0)&&(memory_elementB.get_length() == 0)){
+						 current_nodeA.delete_last();
+						 current_nodeB.delete_last();
+						 //						this.insert_spaces_for_iteration("B");
+						 //						System.out.println("temp_max deleted");
+					 }
 
 
 				}
 
 			}
 
-				/////////////////////////////////////////////////////////////
-				//      Set up the next iteration one deeper
-				/////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////
+			//      Set up the next iteration one deeper
+			/////////////////////////////////////////////////////////////
 
-				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				
-	
-
-				if (!((memory_elementA.get_length() == 0)&&(memory_elementB.get_length() == 0))){
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-					//				head_max_star.next = new node2();
-					if ((current_max_starA.get_length() == 0)&&(current_max_starB.get_length() == 0)){
+
+			if (!((memory_elementA.get_length() == 0)&&(memory_elementB.get_length() == 0))){
+
+
+				//				head_max_star.next = new node2();
+				head_max_star.memory_next = new node3(nodes);
+
+				/*					if ((current_max_starA.get_length() == 0)&&(current_max_starB.get_length() == 0)){
 						head_max_star.memory_next = new node3(nodes);
 					}
 					else{
@@ -1416,203 +1452,208 @@ if((!next_set1)&&(!next_set2)){
 						}
 
 					}
-
-					current_max_starA.memory_next = temp_connected_starA.copy_by_erasing();
-					current_max_starB.memory_next = temp_connected_starB.copy_by_erasing();
-
-
-					//temp_max.memory_next = new node2();
-					head_max_star.memory_next.meta_data = (head_max_star.meta_data>0?head_max_star.meta_data-1:0);
-					//int meta_data = 0;
+				 */
+				head_max_star.memory_next.meta_data = (head_max_star.meta_data>0?head_max_star.meta_data-1:0);
 
 
-					B_calls++;
-					B_iteration_deep++;
+				current_max_starA.memory_next = temp_connected_starA.copy_by_erasing();
+				current_max_starB.memory_next = temp_connected_starB.copy_by_erasing();
 
 
-					nodes_to_considerA.memory_next = temp_connected_nodesA.copy_by_erasing();
-					nodes_to_considerB.memory_next = temp_connected_nodesB.copy_by_erasing();
+				//temp_max.memory_next = new node2();
+				//int meta_data = 0;
+
+
+				B_calls++;
+				B_iteration_deep++;
+
+
+				nodes_to_considerA.memory_next = temp_connected_nodesA.copy_by_erasing();
+				nodes_to_considerB.memory_next = temp_connected_nodesB.copy_by_erasing();
 
 
 
-					dont_consider_connectedA.memory_next = temp_connected_starA.copy_by_erasing();
-					dont_consider_connectedB.memory_next = temp_connected_starB.copy_by_erasing();
+				dont_consider_connectedA.memory_next = temp_connected_starA.copy_by_erasing();
+				dont_consider_connectedB.memory_next = temp_connected_starB.copy_by_erasing();
 
-					before = System.nanoTime();
+				before = System.nanoTime();
 
-					if(nodes_to_considerA.memory_next.get_length() > 0){
+				if(nodes_to_considerA.memory_next.get_length() > 0){
 
-						current = nodes_to_considerA.memory_next.pop_first();
-						
-						Bochert_neighbor(memory_elementA, current, dont_consider_connectedA.memory_next, nodes_to_considerA.memory_next);
-						dont_consider_connectedA.memory_next.copy_array(memory_elementA);
-						
-						memory_elementA.invert();
-						temp_elementA.use_me_or(dont_consider_connectedA.memory_next, nodes_to_considerA.memory_next);
-						temp_elementA.use_me_and(temp_elementA, memory_elementA);
-						temp_elementA.add(current);
+					current = nodes_to_considerA.memory_next.pop_first();
 
-						
-						//		if(nodes_to_consider.get_length() > temp_element_P.get_length()){
-						nodes_to_considerA.memory_next.copy_array(temp_elementA);
-					}
-					else{
+					Bochert_neighbor(memory_elementA, current, dont_consider_connectedA.memory_next, nodes_to_considerA.memory_next);
+					dont_consider_connectedA.memory_next.copy_array(memory_elementA);
 
-					}
-
-					if(nodes_to_considerB.memory_next.get_length() > 0){
-						current = nodes_to_considerB.memory_next.pop_first();
-						
-						Bochert_neighbor(memory_elementB, current, dont_consider_connectedB.memory_next, nodes_to_considerB.memory_next);
-						dont_consider_connectedB.memory_next.copy_array(memory_elementB);
-						
-						memory_elementB.invert();
-						temp_elementB.use_me_or(dont_consider_connectedB.memory_next, nodes_to_considerB.memory_next);
-						temp_elementB.use_me_and(temp_elementB, memory_elementB);
-						temp_elementB.add(current);
-						
-						nodes_to_considerB.memory_next.copy_array(temp_elementB);
-
-					}
-					else{
-
-					}
-
-					after = System.nanoTime();
-					timings[0] = timings[0] + (after-before);
-
-					before = System.nanoTime();
-
-					reduce_consideration(nodes_to_considerA.memory_next, dont_consider_connectedA.memory_next, temp_elementA, memory_elementA, run_meA, relic_node2);
-	
-					reduce_consideration(nodes_to_considerB.memory_next, dont_consider_connectedB.memory_next, temp_elementB, memory_elementB, run_meB, relic_node2);
-					
-					cross_check_considerations(run_meA, dont_consider_connectedA.memory_next, memory_elementA, run_meB, dont_consider_connectedB.memory_next, memory_elementB);
-
-					after = System.nanoTime();
-					timings[1] = timings[1] + (after-before);
-					
-
-					nodes_to_considerA.memory_next.copy_array(run_meA);
-					nodes_to_considerB.memory_next.copy_array(run_meB);
-					run_meA.zero();//.set_length(0);
-					run_meB.zero();//.set_length(0);			
-
-						
-					nodes_to_considerA.memory_next.memory_previous = nodes_to_considerA;
-					nodes_to_considerB.memory_next.memory_previous = nodes_to_considerB;
-					dont_consider_connectedA.memory_next.memory_previous = dont_consider_connectedA; 
-					dont_consider_connectedB.memory_next.memory_previous = dont_consider_connectedB; 
-					//temp_max.memory_next.memory_previous = temp_max;
-					head_max_star.memory_next.memory_previous = head_max_star;
-					current_max_starA.memory_next.memory_previous = current_max_starA;
-					current_max_starB.memory_next.memory_previous = current_max_starB;
+					memory_elementA.invert();
+					temp_elementA.use_me_or(dont_consider_connectedA.memory_next, nodes_to_considerA.memory_next);
+					temp_elementA.use_me_and(temp_elementA, memory_elementA);
+					temp_elementA.add(current);
 
 
-					nodes_to_considerA = nodes_to_considerA.memory_next;
-					nodes_to_considerB = nodes_to_considerB.memory_next;
-					dont_consider_connectedA = dont_consider_connectedA.memory_next;
-					dont_consider_connectedB = dont_consider_connectedB.memory_next;
-					//temp_max = temp_max.memory_next;
-					head_max_star = head_max_star.memory_next;
-					current_max_starA = current_max_starA.memory_next;
-					current_max_starB = current_max_starB.memory_next;
-
-						
+					//		if(nodes_to_consider.get_length() > temp_element_P.get_length()){
+					nodes_to_considerA.memory_next.copy_array(temp_elementA);
 				}
-				else if (((nodes_to_considerA.get_length() == 0)&&(nodes_to_considerB.get_length() == 0))){
-
-
-					///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-					/////////////////////////////////////////////////////////////
-					//      if no passing down chain is needed, check if time to reduce (both were zero)
-					////////////////////////////////////////////////////////////
-					//***********************************************************//
-					//           check for max clique
-					//***********************************************************//
-
-					
-
-					nodes_to_considerA = nodes_to_considerA.memory_previous;
-					nodes_to_considerB = nodes_to_considerB.memory_previous;
-					dont_consider_connectedA = dont_consider_connectedA.memory_previous;
-					dont_consider_connectedB = dont_consider_connectedB.memory_previous;
-					//temp_max = temp_max.memory_previous;
-					head_max_star = head_max_star.memory_previous;
-					head_max_star.meta_data = (head_max_star.get_length()>head_max_star.meta_data?head_max_star.get_length():head_max_star.meta_data);
-					B_iteration_deep--;
-					current_nodeA.delete_last();
-					current_nodeB.delete_last();
-					current_max_starA = current_max_starA.memory_previous;
-					current_max_starB = current_max_starB.memory_previous;
-//					this.insert_spaces_for_iteration("B");
-//					System.out.println("regular deleted");
-
-
-					
-					if((head_max_star.memory_next.get_length() +1) > (head_max_star.meta_data)){
-
-						head_max_star.copy_array(head_max_star.memory_next);												
-						
-//						System.out.println("adding to hms, cnA: "+current_nodeA.print_list());
-						
-						
-//						if(head_max_star.meta_data == 0){
-
-						if(TOP_head_max_star != head_max_star){
-							if(head_max_star.memory_next.side == 'A'){
-//								head_max_star.add(current_nodeA.get_last());
-								head_max_star.add(current_nodeA.get_full_array()[current_nodeA.get_length()]);
-								head_max_star.side = nodes_to_considerA.side;
-							}
-							else if(head_max_star.memory_next.side == 'B'){
-//								head_max_star.add(current_nodeB.get_last());						
-								head_max_star.add(current_nodeB.get_full_array()[current_nodeB.get_length()]);						
-								head_max_star.side = nodes_to_considerB.side;
-							}
-							else{
-								System.out.println("head_max_star.mem_next.side is not an acceptable value: "+head_max_star.memory_next.side);
-								pause();
-							}
-						}
-
-						
-						head_max_star.meta_data = head_max_star.get_length();
-						
-						
-/*						if(head_max_star.find(-1)){
-							this.insert_spaces_for_iteration("B");
-							System.out.println("shoot, found a -1 in head_max_star :( B_calls: "+B_calls+" hms: "+head_max_star.print_list());
-							pause();
-						}
-						
-						if(!is_star(head_max_star.to_int(),true)){
-							this.insert_spaces_for_iteration("B");
-							System.out.println("FAIL, head_max_star isn't star at all :( B_calls: "+B_calls+" length: "+head_max_star.get_length()+" and it's: "+head_max_star.print_list());
-							pause();
-						}
-*/						
-					}
-					
-					
-
-					
+				else{
 
 				}
 
-				
-				
-			
+				if(nodes_to_considerB.memory_next.get_length() > 0){
+					current = nodes_to_considerB.memory_next.pop_first();
+
+					Bochert_neighbor(memory_elementB, current, dont_consider_connectedB.memory_next, nodes_to_considerB.memory_next);
+					dont_consider_connectedB.memory_next.copy_array(memory_elementB);
+
+					memory_elementB.invert();
+					temp_elementB.use_me_or(dont_consider_connectedB.memory_next, nodes_to_considerB.memory_next);
+					temp_elementB.use_me_and(temp_elementB, memory_elementB);
+					temp_elementB.add(current);
+
+					nodes_to_considerB.memory_next.copy_array(temp_elementB);
+
+				}
+				else{
+
+				}
+
+				after = System.nanoTime();
+				timings[0] = timings[0] + (after-before);
+
+				before = System.nanoTime();
+
+				reduce_consideration(nodes_to_considerA.memory_next, dont_consider_connectedA.memory_next, temp_elementA, memory_elementA, run_meA, relic_node2);
+
+				reduce_consideration(nodes_to_considerB.memory_next, dont_consider_connectedB.memory_next, temp_elementB, memory_elementB, run_meB, relic_node2);
+
+				cross_check_considerations(run_meA, dont_consider_connectedA.memory_next, memory_elementA, run_meB, dont_consider_connectedB.memory_next, memory_elementB);
+
+				after = System.nanoTime();
+				timings[1] = timings[1] + (after-before);
+
+
+				nodes_to_considerA.memory_next.copy_array(run_meA);
+				nodes_to_considerB.memory_next.copy_array(run_meB);
+				run_meA.zero();//.set_length(0);
+				run_meB.zero();//.set_length(0);			
+
+
+				nodes_to_considerA.memory_next.memory_previous = nodes_to_considerA;
+				nodes_to_considerB.memory_next.memory_previous = nodes_to_considerB;
+				dont_consider_connectedA.memory_next.memory_previous = dont_consider_connectedA; 
+				dont_consider_connectedB.memory_next.memory_previous = dont_consider_connectedB; 
+				//temp_max.memory_next.memory_previous = temp_max;
+				head_max_star.memory_next.memory_previous = head_max_star;
+				current_max_starA.memory_next.memory_previous = current_max_starA;
+				current_max_starB.memory_next.memory_previous = current_max_starB;
+
+
+				nodes_to_considerA = nodes_to_considerA.memory_next;
+				nodes_to_considerB = nodes_to_considerB.memory_next;
+				dont_consider_connectedA = dont_consider_connectedA.memory_next;
+				dont_consider_connectedB = dont_consider_connectedB.memory_next;
+				//temp_max = temp_max.memory_next;
+				head_max_star = head_max_star.memory_next;
+				current_max_starA = current_max_starA.memory_next;
+				current_max_starB = current_max_starB.memory_next;
+
+
+			}
+			else if (((nodes_to_considerA.get_length() == 0)&&(nodes_to_considerB.get_length() == 0))){
+
+
+				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+				/////////////////////////////////////////////////////////////
+				//      if no passing down chain is needed, check if time to reduce (both were zero)
+				////////////////////////////////////////////////////////////
+				//***********************************************************//
+				//           check for max clique
+				//***********************************************************//
+
+
+
+				nodes_to_considerA = nodes_to_considerA.memory_previous;
+				nodes_to_considerB = nodes_to_considerB.memory_previous;
+				dont_consider_connectedA = dont_consider_connectedA.memory_previous;
+				dont_consider_connectedB = dont_consider_connectedB.memory_previous;
+				//temp_max = temp_max.memory_previous;
+				head_max_star = head_max_star.memory_previous;
+				head_max_star.meta_data = (head_max_star.get_length()>head_max_star.meta_data?head_max_star.get_length():head_max_star.meta_data);
+				B_iteration_deep--;
+				current_nodeA.delete_last();
+				current_nodeB.delete_last();
+				current_max_starA = current_max_starA.memory_previous;
+				current_max_starB = current_max_starB.memory_previous;
+				//					this.insert_spaces_for_iteration("B");
+				//					System.out.println("regular deleted");
+
+
+
+				if((head_max_star.memory_next.get_length() +1) > (head_max_star.meta_data)){
+
+					head_max_star.copy_array(head_max_star.memory_next);												
+
+					//					System.out.println("adding to hms, cnA: "+current_nodeA.print_list());
+
+
+					//						if(head_max_star.meta_data == 0){
+
+					if(TOP_head_max_star != head_max_star){
+						//						System.out.println("Thms != hms");
+						if(head_max_star.memory_next.side == 'A'){
+							//							System.out.println("hms.mn.s == A");
+							//								head_max_star.add(current_nodeA.get_last());
+							head_max_star.add(current_nodeA.get_full_array()[current_nodeA.get_length()]);
+							head_max_star.side = nodes_to_considerA.side;
+						}
+						else if(head_max_star.memory_next.side == 'B'){
+							//							System.out.println("hms.mn.s == B");
+							//								head_max_star.add(current_nodeB.get_last());						
+							head_max_star.add(current_nodeB.get_full_array()[current_nodeB.get_length()]);						
+							head_max_star.side = nodes_to_considerB.side;
+						}
+						else{
+							System.out.println("head_max_star.mem_next.side is not an acceptable value: "+head_max_star.memory_next.side);
+							pause();
+						}
+					}
+
+
+					head_max_star.meta_data = head_max_star.get_length();
+
+
+					if(head_max_star.find(-1)){
+						this.insert_spaces_for_iteration("B");
+						System.out.println("shoot, found a -1 in head_max_star :( B_calls: "+B_calls+" hms: "+head_max_star.print_list());
+						pause();
+					}
+
+					if(!is_star(head_max_star.to_int(),true)){
+						this.insert_spaces_for_iteration("B");
+						System.out.println("FAIL, head_max_star isn't star at all :( B_calls: "+B_calls+" length: "+head_max_star.get_length()+" and it's: "+head_max_star.print_list());
+						pause();
+					}
+
+				}
+
+
+
+
+
+			}
+
+
+
+
 
 		}
 
 
-//		System.out.println("head_max_star inside: "+head_max_star.print_list());
-		
+		//		System.out.println("head_max_star inside: "+head_max_star.print_list());
+
 		B_iteration_deep--;
 
 		return head_max_star;
@@ -1767,16 +1808,944 @@ if((!next_set1)&&(!next_set2)){
 
 	private void Bochert_neighbor(node3 result, int n, node3 array, node3 node_array){
 
-			result.use_me_or(array, node_array);
-			result.use_me_and(graph3[n-1], result);
+		result.use_me_or(array, node_array);
+		result.use_me_and(graph3[n-1], result);
 
-			
-			
+
+
+		return;
+
+	}
+
+	private void Bochert_neighbor(node3 result, int n, node3 array){
+
+		result.use_me_and(graph3[n-1], array);
+
+
 		return;
 
 	}
 
 
+	public int[] pre_Newer_Bochert(boolean display){
+
+		/*		graph3 = new node3[nodes];
+		for(int i = 0; i<nodes; i++){
+			graph3[i] = new node3(graph[i],nodes,true);
+		}
+		empty_node = new node3(nodes);
+
+		if(1==1)
+		return Newer_Bochert(new node3(this.all_neighbors(-1),nodes),0,nodes,display).to_int();
+		 */
+
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if(sort){
+			sort_nodes();
+			reorganize_nodes();
+
+			int[] newgraph = new int[nodes*nodes];
+
+			for (int i = 0; i< nodes; i++)
+				for (int j = 0; j<nodes; j++)
+					newgraph[i*nodes+j] = graph[i][j];
+
+			//graphics_card = new gpu(newgraph, nodes);
+
+			results_array = new node3[nodes];
+			for(int i = 0; i<nodes; i++){
+				results_array[i] = new node3(nodes);
+			}
+
+			results_array_length = 0;
+			deleted_nodes = new node3(nodes);
+
+			graph3 = new node3[nodes];
+			for(int i = 0; i<nodes; i++){
+				graph3[i] = new node3(graph[i],nodes,true);
+			//	System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_list());
+			}
+
+			//this.disp_graph();
+			//		this.New_Bochert(nodesA, current_max, current_max_starA, nodesB, current_max_starB, display)
+			return merge_sort(unreorganize_nodes(Newer_Bochert(new node3(this.all_neighbors(-1),nodes),0,nodes,display,null)), all_neighbors(-1));
+		}
+		else{
+
+			int[] newgraph = new int[nodes*nodes];
+
+			for (int i = 0; i< nodes; i++)
+				for (int j = 0; j<nodes; j++)
+					newgraph[i*nodes+j] = graph[i][j];
+
+			results_array = new node3[nodes];
+			for(int i = 0; i<nodes; i++){
+				results_array[i] = new node3(nodes);
+			}
+
+			results_array_length = 0;
+			deleted_nodes = new node3(nodes);
+
+			graph3 = new node3[nodes];
+			for(int i = 0; i<nodes; i++){
+				graph3[i] = new node3(graph[i],nodes,true);
+			}
+
+			//this.disp_graph();
+			//		this.New_Bochert(nodesA, current_max, current_max_starA, nodesB, current_max_starB, display)
+			return Newer_Bochert(new node3(this.all_neighbors(-1),nodes),0,nodes,display,null).to_int();
+		}
+	}
+
+
+	private node3 reduction(node3 check_nodes, node3 not_included_extra_nodes){
+
+
+		node2 set = check_nodes.to_new_node2();
+
+		node3 all_nodes = check_nodes.copy_by_erasing();
+
+		if(not_included_extra_nodes != null)
+			all_nodes.use_me_or(all_nodes, not_included_extra_nodes);
+
+		int deleted = -1;
+		boolean multi_node = false;
+
+		for(int i = 0; i<set.get_length(); i++){
+			if((deleted != -1)&&(i>=deleted)){
+				check_nodes.delete(set.get_full_array()[deleted]);
+				set.delete(set.get_full_array()[deleted]);
+				deleted=-1;
+				multi_node = false;
+				i--;//in case this was the last node, reset to re-evalute the number of nodes left to check (aka, stop if zero)
+			}
+			else{
+				if(deleted == -1){
+					if(deletable(set.get_full_array()[i], all_nodes)){
+						deleted = i;
+						i = -1;
+					}
+				}
+				else{
+					if(multi_node){
+						if(deletable(set.get_full_array()[i], all_nodes)){
+							check_nodes.delete(set.get_full_array()[i]);
+							set.delete(set.get_full_array()[i]);
+							deleted--;
+							i = -1;					
+						}
+					}
+					else if(graph[i][deleted] == 1){//not connected so worth considering again
+						if(deletable(set.get_full_array()[i], all_nodes)){
+							check_nodes.delete(set.get_full_array()[i]);
+							set.delete(set.get_full_array()[i]);
+							multi_node = true;
+							deleted--;
+							i = -1;					
+						}
+					}
+					else{
+					}
+				}
+
+			}
+		}
+
+
+		return check_nodes;
+	}
+
+	private boolean deletable(int n, node3 all_nodes){
+
+		node3 connected = new node3(nodes);
+		node3 test = new node3(nodes);
+
+		connected.use_me_and(graph3[n-1], all_nodes);
+
+		test.use_me_and_not_first(connected, all_nodes);//no need to check the nodes that it's connected to, they can't be connected to the same because they cannot be connected to themself		
+		test.delete(n);//just in case
+		int[] int_nodes = test.to_int();
+
+		for(int i = 0; i<int_nodes.length; i++){
+			test.use_me_and(graph3[int_nodes[i]-1], connected);
+			//System.out.println("====== connected: "+connected.print_list()+" test: "+)
+			if(test.get_length() == connected.get_length()){
+				all_nodes.delete(n);
+				return true;
+			}
+		}
+
+
+		return false;
+
+	}
+
+	
+	private int[] newest_Bochert(node3 all_nodes){
+
+		System.out.println("Calling newest Bochert, looking at nodes: "+all_nodes.print_list());
+		
+		graph3 = new node3[nodes];
+		for(int i = 0; i<nodes; i++){
+			graph3[i] = new node3(graph[i],nodes,true);
+		//	System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_list());
+		}
+		
+		node2 inventory = all_nodes.to_new_node2();
+		node3 running_set = new node3(nodes);
+		node3 memory_element = new node3(nodes);
+		node3 forming_set = new node3(nodes);
+		
+		for(int i = (all_nodes.get_length()-1); i>=0; i--){
+			System.out.println("looking for sets of size: "+i);
+			running_set.copy_array(all_nodes);
+			
+		while(forming_set.get_length() != running_set.get_length()){
+			System.out.println("at top of while, forming set is length: "+forming_set.get_length()+" and running set is length: "+running_set.get_length());
+			for(int j = 0; j < inventory.get_length(); j++){
+				Bochert_neighbor(memory_element, inventory.get_full_array()[j], running_set);
+				if(memory_element.get_length() >= i){
+					System.out.println("adding node: "+inventory.get_full_array()[j]+" becuse it's length is: "+memory_element.get_length());
+					forming_set.add(inventory.get_full_array()[j]);
+				}
+			}
+			System.out.println("at mid of while, forming set is length: "+forming_set.get_length()+" and running set is length: "+running_set.get_length());
+			
+			if(forming_set.get_length() < (i+1)){
+				running_set.zero();
+				forming_set.zero();
+			}
+			else if(forming_set.get_length() != running_set.get_length()){
+				running_set.copy_array(forming_set);
+				forming_set.zero();
+			}
+			else{
+				//done
+				i = -1;
+			}
+			System.out.println("at bot of while, forming set is length: "+forming_set.get_length()+" and running set is length: "+running_set.get_length());
+				
+			
+		}
+			
+			
+		}
+		
+		forming_set.copy_array(running_set);
+		int temp = 0;
+		while(forming_set.get_length() != 0){
+			temp = forming_set.pop_first();
+			Bochert_neighbor(forming_set,temp,forming_set);
+			memory_element.add(temp);
+		}
+		
+		return memory_element.to_int();
+
+	}
+
+	
+	private node3 Newer_Bochert(node3 all_nodes, int current_max, int sought_max, boolean show, node3 already_been_checked){
+
+		B_iteration_deep++;
+		B_calls++;
+
+		if((all_nodes != null)&&(already_been_checked != null)){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
+		}
+
+		all_nodes = reduction(all_nodes, null);
+		if((all_nodes != null)&&(already_been_checked != null)){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("after reduction already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
+		}
+
+		boolean display = (((show == true)&&(B_iteration_deep < (display_level+1)))?true:false);
+
+		//		if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+		//			this.insert_spaces_for_iteration("B");
+		//			System.out.println(">> B_calls: "+B_calls+" calling Bochert("+all_nodes.print_list()+" ,cm: "+current_max+" ,sm: "+sought_max+" , abc: "+(already_been_checked==null?"null":already_been_checked.print_list())+" );");
+		//		}
+
+		if((all_nodes.get_length() == 0)||(all_nodes.get_length() == 1)){
+			B_iteration_deep--;
+			return all_nodes;
+		}
+
+		node3 result = new node3(nodes);		
+
+		if(sought_max <= 1){
+			result.add(all_nodes.get_index(0));
+			B_iteration_deep--;
+			return result;
+		}
+
+		if(all_nodes.get_length() < current_max){
+			B_iteration_deep--;
+			return new node3(nodes);
+		}
+
+		int toptop = all_nodes.get_index(0);
+		node3 TOP_dont_consider_connected = new node3(nodes);// = result.copy_by_erasing();
+		node3 all_nodes_in_set = TOP_dont_consider_connected;
+		node3 TOP_nodes_to_consider = new node3(nodes);
+		node3 TOP_comp_set_solution = new node3(nodes);
+		node3 TOP_lost_nodes = new node3(nodes);
+		node3 lost_nodes = TOP_lost_nodes;
+		node2 alpha_index;
+		node3 comp_set_solution = TOP_comp_set_solution;
+		node3 memory_element = new node3(nodes);
+		node3 temp_element = new node3(nodes);
+		node3 max_star = new node3(nodes);
+		max_star.meta_data = current_max;
+		node3 nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
+		node3 current_alpha = new node3(nodes);
+		node3 just_a_pointer = null;
+		int temp = 0;
+		int check_set = 1;
+		int comp_set = 0;
+		int deepness = 0;
+		node2[] alpha = new node2[0];
+		node3[] DCC = new node3[0];
+		int length_extra_alredy_been_checked = 1;
+
+
+		if(already_been_checked != null){
+
+			
+			
+			already_been_checked.similar_differences(all_nodes, temp_element, memory_element);
+
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
+				this.insert_spaces_for_iteration("B");
+				System.out.println("extra already been checked"+temp_element.print_list()+" extra all_nodes: "+memory_element.print_list());
+			}
+			
+			
+			if(memory_element.get_length() == 0){
+				//should never hit here tho...
+				B_iteration_deep--;
+				return empty_node;
+			}
+
+			if(temp_element.get_length() == 0){
+				already_been_checked = null;
+			}
+			else{
+				alpha = new node2[temp_element.get_length()+memory_element.get_length()];
+				for(int i = 0; i< alpha.length; i++){			
+					alpha[i] = new node2(all_nodes.length);
+				}
+
+				length_extra_alredy_been_checked = temp_element.get_length();
+				DCC = new node3[temp_element.get_length()+memory_element.get_length()];
+				for(int i = 0; i<temp_element.get_length(); i++){
+					DCC[i] = new node3(nodes);
+					DCC[i].meta_data = temp_element.get_index(i); 
+					Bochert_neighbor(DCC[i], DCC[i].meta_data, already_been_checked); 
+					already_been_checked.delete(alpha[i].meta_data);		
+					alpha[i].meta_data = -1*alpha[i].meta_data;
+					DCC[i].meta_data = -1*DCC[i].meta_data;
+					//to differentiate from not checked yet sets
+				}
+				for(int i = 0; i<memory_element.get_length(); i++){
+					DCC[i+temp_element.get_length()] = new node3(nodes);
+					DCC[i+temp_element.get_length()].meta_data = memory_element.get_index(i); //need to be checked still
+					Bochert_neighbor(DCC[i+temp_element.get_length()], DCC[i+temp_element.get_length()].meta_data, all_nodes); 
+					alpha[i+temp_element.get_length()].meta_data = DCC[i+temp_element.get_length()].meta_data;
+					all_nodes.delete(alpha[i+temp_element.get_length()].meta_data);		
+				}
+
+
+				TOP_nodes_to_consider = memory_element.copy_by_erasing();// .use_me_and_not_first(TOP_dont_consider_connected, all_nodes);
+				//TOP_nodes_to_consider.pop_first();// get rid of toptop
+				//TOP_dont_consider_connected = new node3(nodes);
+				//dont_consider_connected = TOP_dont_consider_connected;//new node3(nodes);
+				nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
+
+				check_set = length_extra_alredy_been_checked;
+
+			}
+		}
+		if(already_been_checked == null){		
+
+			this.Bochert_neighbor(result, toptop, all_nodes);
+
+
+			//it's connected to all the nodes
+			if((result.get_length()+1)==all_nodes.get_length()){
+//				if(display){
+//					this.insert_spaces_for_iteration("B");
+//					System.out.println(">> B_calls: "+B_calls+" calling Bochert("+result.print_list()+" ,cm: "+(current_max==0?0:current_max-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
+//				}
+				if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+					//			if(display){
+					this.insert_spaces_for_iteration("B");
+					System.out.println(B_calls+" NO  WHILE, toptop connected to all other nodes, calling Bochert("+result.print_list()+" ,cm: "+(current_max==0?0:current_max-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
+				}
+
+
+
+				result = Newer_Bochert(result,(current_max==0?0:current_max-1),(sought_max==0?0:sought_max-1),display, null);
+				result.add(toptop);
+				B_iteration_deep--;
+				return result;
+			}
+
+
+			TOP_dont_consider_connected.copy_array(result);
+			all_nodes_in_set = TOP_dont_consider_connected;//new node3(nodes);
+			TOP_nodes_to_consider.use_me_and_not_first(TOP_dont_consider_connected, all_nodes);
+			TOP_nodes_to_consider.pop_first();// get rid of toptop
+			nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
+
+			alpha = new node2[TOP_nodes_to_consider.get_length()+1];
+			for(int i = 0; i< alpha.length; i++){			
+				alpha[i] = new node2(all_nodes.length);
+			}
+
+			//find DCCs
+			DCC = new node3[TOP_nodes_to_consider.get_length()+1];
+			DCC[0] = TOP_dont_consider_connected.copy_by_erasing();
+			DCC[0].meta_data = toptop;
+			alpha[0].meta_data = toptop;
+			all_nodes.delete(toptop);
+			for(int i = 1; i< DCC.length; i++){			
+				DCC[i] = new node3(nodes);
+				DCC[i].meta_data = TOP_nodes_to_consider.get_index(i-1);
+				Bochert_neighbor(DCC[i], DCC[i].meta_data, all_nodes); 
+				alpha[i].meta_data = DCC[i].meta_data;
+				all_nodes.delete(alpha[i].meta_data);
+			}
+		}
+
+
+		if(display){
+			for(int i = 0; i<DCC.length; i++){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(" -- DCC["+i+"].md: "+DCC[i].meta_data+" and is: "+DCC[i].print_list());
+			}
+		}
+
+
+
+//		if(false){
+		if(already_been_checked == null){
+
+			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+				//			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(B_calls+" TOP  WHILE starting on, check set is "+(1+0)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+DCC[0].meta_data+" with DCC of: "+DCC[0].print_list()+" with no comp_set but current max of: "+(max_star.meta_data==0?0:max_star.meta_data-1));
+			}
+
+
+			temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), (max_star.meta_data==0?0:max_star.meta_data-1), nodes, display, null);
+
+			if((temp_element.get_length())>=max_star.meta_data){
+				if(display){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+max_star.meta_data);
+				}
+				max_star.copy_array(temp_element);
+				max_star.add(toptop);
+				if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
+				max_star.meta_data = max_star.get_length();
+			}
+			else{
+			}
+		}
+
+
+
+
+		while(check_set < (nodes_to_consider.get_length()+length_extra_alredy_been_checked)){	
+		
+		//				if(B_iteration_deep == 0){
+		//					System.out.println("reseting ms.md to 0");
+		//					max_star.meta_data = 0;
+		//				}
+
+			temp = 0;
+			//set alphas
+			for(int i = 0; i< alpha.length; i++){
+
+				if(i != check_set){
+					memory_element.use_me_and_not_first(DCC[check_set], DCC[i]);
+					//memory_element.delete(DCC[check_set].meta_data); //is this true that it shouldn't be included? it can't hurt to remove it, but it might add efficiency if it was kept?
+					memory_element.to_old_node2(alpha[i]);
+
+					if((i<check_set)&&(temp < (DCC[i].get_length()-memory_element.get_length()))){
+						temp = (DCC[i].get_length()-memory_element.get_length());
+						comp_set = i;
+					}
+				}
+				else
+					alpha[i].set_length(0);
+
+
+			}
+
+
+			//set alpha[check_set]
+			memory_element.use_me_and_not_first(DCC[comp_set], DCC[check_set]);
+			//memory_element.delete((DCC[comp_set].meta_data<0?-1*DCC[comp_set].meta_data:DCC[comp_set].meta_data)); //must be removed
+			memory_element.to_old_node2(alpha[check_set]);
+			current_alpha.copy_array(memory_element);
+
+			if(display){
+				System.out.println();
+				for(int i = 0; i<DCC.length; i++){
+					this.insert_spaces_for_iteration("B");
+					System.out.println(" -- alpha["+i+"].md: "+alpha[i].meta_data+" and is: "+alpha[i].print_list());
+				}
+			}
+
+
+
+
+
+			//find DCC12
+			memory_element.use_me_and(DCC[comp_set], DCC[check_set]);
+			//memory_element.copy_array(DCC[comp_set]);
+			//Bochert_neighbor(memory_element, DCC[check_set].meta_data, memory_element);
+
+			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+				//			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(B_calls+" MAIN WHILE starting on, check set is "+(1+check_set)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+alpha[check_set].meta_data+" with alpha of: "+alpha[check_set].print_list()+" with the comp_set "+comp_set+" which is node "+alpha[comp_set].meta_data+" with alpha of: "+alpha[comp_set].print_list()+" and common nodes are: "+memory_element.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
+			}
+
+
+			current_alpha = reduction(current_alpha, memory_element);
+
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("reduced current alpha is: "+current_alpha.print_list());
+			}
+
+
+			if(current_alpha.get_length() != 0){
+
+				all_nodes_in_set.memory_next = new node3(nodes);
+				all_nodes_in_set.memory_next.memory_previous = all_nodes_in_set; 
+				all_nodes_in_set = all_nodes_in_set.memory_next;
+				all_nodes_in_set.copy_array(current_alpha);
+				//Bochert_neighbor(all_nodes_in_set,alpha[check_set].get_full_array()[0],current_alpha);
+				//all_nodes_in_set.copy_array(reduction(all_nodes_in_set, memory_element)); //already reduced
+
+
+
+
+				nodes_to_consider.memory_next = new node3(nodes);
+				nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
+				nodes_to_consider = nodes_to_consider.memory_next;
+				//nodes_to_consider.copy_array(current_alpha);
+				temp = all_nodes_in_set.pop_first();
+				Bochert_neighbor(temp_element,temp,all_nodes_in_set);
+				nodes_to_consider.use_me_and_not_first(temp_element, all_nodes_in_set);
+				nodes_to_consider.add(temp);
+
+				memory_element.memory_next = new node3(nodes);
+				memory_element.memory_next.memory_previous = memory_element; 
+				memory_element = memory_element.memory_next;
+				memory_element.copy_array(memory_element.memory_previous);
+
+				//comp_set_solution.copy_array(new node3(alpha[comp_set], nodes));
+				comp_set_solution.memory_next = new node3(nodes);
+				comp_set_solution.memory_next.memory_previous = comp_set_solution;
+				comp_set_solution = comp_set_solution.memory_next;
+
+				alpha[comp_set].memory_next = new node2(nodes);
+				alpha[comp_set].memory_next.memory_previous = alpha[comp_set];
+				alpha_index = alpha[comp_set].memory_next;
+				alpha_index.copy_array(alpha_index.memory_previous);
+
+				lost_nodes.memory_next = new node3(nodes);
+				lost_nodes.memory_next.memory_previous = lost_nodes;
+				lost_nodes = lost_nodes.memory_next;
+				Bochert_neighbor(temp_element, temp, memory_element);
+				lost_nodes.use_me_and_not_first(temp_element, memory_element);
+
+
+
+				deepness++;
+
+				//if(B_calls > 100)
+				//pause();
+
+
+
+				while(TOP_nodes_to_consider != nodes_to_consider){
+
+					if((nodes_to_consider.get_length()+lost_nodes.get_length()) > 0){
+						if(nodes_to_consider.get_length() == 0){
+							nodes_to_consider.meta_data = lost_nodes.pop_first();
+							//all_nodes_in_set.delete(nodes_to_consider.meta_data);
+						}
+						else{
+							nodes_to_consider.meta_data = nodes_to_consider.pop_first();
+							all_nodes_in_set.delete(nodes_to_consider.meta_data);
+						}
+
+						memory_element.memory_next = new node3(nodes);
+						memory_element.memory_next.memory_previous = memory_element; 
+						memory_element = memory_element.memory_next;
+
+						alpha_index.memory_next = new node2(nodes);
+						alpha_index.memory_next.memory_previous = alpha_index;
+						alpha_index = alpha_index.memory_next;
+						alpha_index.copy_array(alpha_index.memory_previous);
+
+						Bochert_neighbor(memory_element, nodes_to_consider.meta_data , memory_element.memory_previous);
+						temp_element.use_me_and_not_first(memory_element, memory_element.memory_previous);
+						if(temp_element.get_length() > 0){//nodes were removed
+							alpha_index.add(temp_element.to_int());
+						}
+
+						if(display){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("deepness: "+deepness+" considering node "+nodes_to_consider.meta_data+" common nodes of ("+memory_element.get_length()+"): "+memory_element.print_list()+" and ntc: "+nodes_to_consider.print_list()+" and alpha_index: "+alpha_index.print_list());
+						}
+
+
+						//						if(show == true){
+						//							System.out.println("ms.md: "+max_star.meta_data+" me.gl: "+memory_element.get_length()+" all_nodes"+all_nodes_in_set.get_length()+deepness+1))
+
+						//						}
+//						if(display&&(max_star.meta_data>(memory_element.get_length()+all_nodes_in_set.get_length()+deepness+1))&&(run_it_down(alpha_index, memory_element, deepness, check_set, display, TOP_nodes_to_consider, comp_set,comp_set_solution))){
+//							System.out.println("ms.md: "+max_star.meta_data+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set.get_length()+" + deepness: "+deepness+" + 1");
+//						}
+
+						if((max_star.meta_data>(memory_element.get_length()+all_nodes_in_set.get_length()+deepness))){
+							//need not look further
+							
+							if(display){
+								this.insert_spaces_for_iteration("B");
+								System.out.println("ELIMIATED OUT!!!!  ms.md: "+max_star.meta_data+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set.get_length()+" + deepness: "+deepness+" + 1");
+							}
+							
+							memory_element = memory_element.memory_previous;								
+							alpha_index = alpha_index.memory_previous;
+
+							
+							
+						}
+						else{
+							if((deepness > comp_set_solution.get_length())&&run_it_down(alpha_index, memory_element, deepness, check_set, display, TOP_nodes_to_consider, comp_set,comp_set_solution)){
+
+								just_a_pointer = ideal_comp(alpha_index, comp_set_solution.memory_previous, memory_element);
+
+								//add back in unconsidered nodes, aka DCC2/1
+								Bochert_neighbor(temp_element, nodes_to_consider.meta_data, all_nodes_in_set);
+								memory_element.use_me_or(memory_element, temp_element);
+
+								if(display){
+									this.insert_spaces_for_iteration("B");
+									System.out.println(">> B_calls: "+B_calls+" calling Bochert("+memory_element.print_list()+" ,cm: "+(max_star.meta_data-deepness<=0?0:max_star.meta_data-deepness)+" ,sm: "+nodes+" , abc: "+(just_a_pointer == null?"null":just_a_pointer.print_list())+"; ");
+								}
+
+								just_a_pointer = Newer_Bochert(memory_element, (max_star.meta_data-deepness-1<=0?0:max_star.meta_data-deepness-1), nodes, display, just_a_pointer);
+
+
+								if((just_a_pointer.get_length()+deepness)>=max_star.meta_data){
+									if(display){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("found new max star!! te.gl: "+just_a_pointer.print_list()+" deepness: "+deepness+" previous max_star.md: "+max_star.meta_data);
+									}
+									max_star.copy_array(just_a_pointer);
+									just_a_pointer = nodes_to_consider;
+									while(just_a_pointer != TOP_nodes_to_consider){
+										if(display){
+											this.insert_spaces_for_iteration("B");
+											System.out.println("Adding: "+just_a_pointer.meta_data);
+										}
+										max_star.add(just_a_pointer.meta_data);
+										just_a_pointer = just_a_pointer.memory_previous;
+									}
+									max_star.add(alpha[check_set].meta_data);
+									max_star.meta_data = max_star.get_length();
+									if(display){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("just added: "+alpha[check_set].meta_data+" so max_star is now: "+max_star.print_list());
+									}
+									if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
+								}
+								else{
+								}
+								memory_element = memory_element.memory_previous;
+								alpha_index = alpha_index.memory_previous;
+
+
+							}
+							else{
+								//go deeper
+
+								Bochert_neighbor(temp_element,nodes_to_consider.meta_data,all_nodes_in_set);
+								temp_element = reduction(temp_element, memory_element);
+
+								if(temp_element.get_length() > 0){
+
+
+									all_nodes_in_set.memory_next = new node3(nodes);
+									all_nodes_in_set.memory_next.memory_previous = all_nodes_in_set; 
+									all_nodes_in_set = all_nodes_in_set.memory_next;
+									//								Bochert_neighbor(all_nodes_in_set,nodes_to_consider.meta_data,all_nodes_in_set.memory_previous);
+									//								all_nodes_in_set.copy_array(reduction(all_nodes_in_set, memory_element));
+									all_nodes_in_set.copy_array(temp_element);
+
+
+
+									nodes_to_consider.memory_next = new node3(nodes);
+									nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
+									nodes_to_consider = nodes_to_consider.memory_next;
+									temp = all_nodes_in_set.pop_first();
+									Bochert_neighbor(temp_element,temp,all_nodes_in_set);
+									nodes_to_consider.use_me_and_not_first(temp_element, all_nodes_in_set);
+									nodes_to_consider.add(temp);
+
+
+									comp_set_solution.memory_next = comp_set_solution.copy_by_erasing();//new node3(nodes);
+									comp_set_solution.memory_next.memory_previous = comp_set_solution;
+									comp_set_solution = comp_set_solution.memory_next;
+
+
+									//nodes_to_consider.copy_array(temp_element);
+									//Bochert_neighbor(nodes_to_consider,nodes_to_consider.memory_previous.meta_data,nodes_to_consider.memory_previous);
+									//nodes_to_consider.use_me_and_not_first(dont_consider_connected, dont_consider_connected.memory_previous);
+									//nodes_to_consider.add(dont_consider_connected.memory_previous.get_index(0));
+
+									lost_nodes.memory_next = new node3(nodes);
+									lost_nodes.memory_next.memory_previous = lost_nodes;
+									lost_nodes = lost_nodes.memory_next;
+									Bochert_neighbor(temp_element, temp, memory_element);
+									lost_nodes.use_me_and_not_first(temp_element, memory_element);
+
+
+
+
+
+									deepness++;
+								}
+								else{
+									memory_element = memory_element.memory_previous;								
+									alpha_index = alpha_index.memory_previous;
+								}
+
+							}
+						}
+					}
+					else{
+						//go back to previous
+						all_nodes_in_set = all_nodes_in_set.memory_previous;
+						nodes_to_consider = nodes_to_consider.memory_previous;
+						memory_element = memory_element.memory_previous;
+						comp_set_solution = comp_set_solution.memory_previous;
+						alpha_index = alpha_index.memory_previous;
+						lost_nodes = lost_nodes.memory_previous;
+						deepness--;
+					}
+				}
+
+			}
+
+			check_set++;
+		}
+
+
+
+		if(display){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("Returning: "+max_star.print_list());
+		}
+
+		B_iteration_deep--;
+		return max_star;
+
+	}
+	
+	
+	
+	private void same_depth_reduce_options(node2 alpha_comp_set, node3 common, node3 alpha_check_set, node3 comp_set_solution){
+		
+		node3 look_in_set = new node3(nodes);
+		node3 memory_element = new node3(alpha_comp_set, nodes);
+
+		
+		node2 ntc = comp_set_solution.to_new_node2();
+		for(int i = 0; i<ntc.get_length(); i++){
+			Bochert_neighbor(memory_element, ntc.get_full_array()[i], memory_element);			
+		}
+		
+		memory_element.to_old_node2(ntc);
+		for(int j = 0; j<ntc.get_length(); j++){
+			Bochert_neighbor(memory_element, ntc.get_full_array()[j], common);
+			if(memory_element.get_length() == common.get_length()){
+				look_in_set.add(ntc.get_full_array()[j]);
+			}
+		}
+		
+		alpha_check_set.to_old_node2(ntc);	
+		
+		
+		for(int i = 0; i<alpha_check_set.get_length(); i++){
+			if(ntc.memory_previous == null){
+				
+			}
+			
+		}
+		
+		
+		
+	}
+
+	
+
+	private boolean run_it_down(node2 alpha, node3 common, int deepness, int check_set, boolean display, node3 TOP_dont_consider_connected, int comp_set,node3 comp_set_solution){
+
+		node3 look_in_set = new node3(nodes);
+		node3 memory_element = new node3(nodes);
+		node3 index_Tntc;
+
+		//		for(int ii = 0; ii<alpha.length; ii++){
+		//int ii = comp_set;
+
+		//if(display)
+		//System.out.println("looking at i of "+ii);
+
+		look_in_set = new node3(nodes);
+
+		//			System.out.println("at top, look in set: "+look_in_set.print_list());
+		for(int j = 0; j<alpha.get_length(); j++){
+			//				System.out.println("looking at "+alpha[i].get_full_array()[j]+" and look_in_set is: "+look_in_set.print_list());
+			Bochert_neighbor(memory_element, alpha.get_full_array()[j], common);
+			//				System.out.println("after Bochert neighbor looking at "+alpha[i].get_full_array()[j]+" and look_in_set is: "+look_in_set.print_list());
+			if(memory_element.get_length() == common.get_length()){
+				//					System.out.println(alpha[i].get_full_array()[j]+" is connected to "+common.print_list()+" look_in_set is: "+look_in_set.print_list());
+				look_in_set.add(alpha.get_full_array()[j]);
+				//					System.out.println("look_in_set is now: "+look_in_set.print_list());
+			}
+
+		}
+
+
+		if(comp_set < check_set){
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
+			}
+			memory_element = Newer_Bochert(look_in_set, deepness-1, nodes/*deepness*/,false, null);
+			if(deepness <= memory_element.get_length()){
+				if(display)	System.out.println("true");
+				comp_set_solution.copy_array(memory_element);
+				return false;
+			}
+			if(display)System.out.println("false");
+		}
+		else if(comp_set == check_set){
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
+			}
+			memory_element = Newer_Bochert(look_in_set, deepness-1, nodes/*deepness+1*/,false, null);
+			if((deepness+1) <= memory_element.get_length()){
+				if(display)System.out.println("true");
+				comp_set_solution.copy_array(memory_element);
+				return false;
+			}
+			if(deepness == memory_element.get_length()){
+				index_Tntc = TOP_dont_consider_connected.memory_next;
+
+				for(int kitten = 0; kitten < memory_element.get_length(); kitten++){
+					if(memory_element.get_index(kitten) < index_Tntc.meta_data){
+						if(display)System.out.println("true");
+						comp_set_solution.copy_array(memory_element);
+						return false;
+					}
+					else if(memory_element.get_index(kitten) < index_Tntc.meta_data){
+						kitten=memory_element.get_length();
+					}
+					index_Tntc = index_Tntc.memory_next;
+					kitten++;
+				}
+
+				//			if(display)	System.out.println("true");
+				//			return false;
+			}
+			if(display)System.out.println("false");
+		}
+		else{
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
+			}
+			memory_element = Newer_Bochert(look_in_set, deepness, nodes/*deepness+1*/, false, null);
+			if((deepness+1) <= memory_element.get_length()){
+				if(display)System.out.println("true");
+				comp_set_solution.copy_array(memory_element);
+				return false;
+			}
+			if(display)System.out.println("false");
+		}
+
+
+
+
+
+		return true;
+	}
+
+
+	private node3 ideal_comp(node2 alpha_index, node3 prev_set, node3 memory_element){
+
+		//System.out.println("alpha_index: "+alpha_index.print_list()+" prev_set: "+prev_set.print_list()+" mem_elm: "+memory_element.print_list());
+
+		if(alpha_index.get_length() == 0)
+			return null;
+
+		node3 alpha = new node3(alpha_index, nodes);
+		node2 prev_set2 = prev_set.to_new_node2();//= new node2(nodes);
+		//		prev_set.to_old_node2(prev_set2);
+
+
+		for(int i = 0; i<prev_set2.get_length(); i++){
+			Bochert_neighbor(alpha, prev_set2.get_full_array()[i], alpha);
+		}
+
+		//System.out.println("checking alpha of: "+alpha.print_list());
+
+		//alpha.to_old_node2(prev_set2);
+		prev_set2 = alpha.to_new_node2();
+
+		if(prev_set2.get_length() == 0)
+			return null;
+
+
+		int current_max = -1;
+		int cor_node = 0;
+		node3 play_sand = new node3(nodes);
+		for(int i = 0; i<prev_set2.get_length(); i++){
+			Bochert_neighbor(play_sand, prev_set2.get_full_array()[i], memory_element);
+			if(play_sand.get_length() > current_max){
+				cor_node = prev_set2.get_full_array()[i];
+				current_max = play_sand.get_length();
+			}
+		}
+
+
+		Bochert_neighbor(alpha, cor_node, alpha);
+		Bochert_neighbor(play_sand, cor_node, memory_element);
+		alpha.use_me_or(alpha, play_sand);
+
+		//		System.out.println("returning: "+alpha.print_list());
+
+		return alpha;
+	}
 
 
 	private void insert_spaces_for_iteration(String mode){
@@ -2201,7 +3170,8 @@ if((!next_set1)&&(!next_set2)){
 
 	public boolean is_star(int[] nodes, boolean clique){
 
-		if((nodes == null)||(nodes.length == 0))
+
+		if((nodes == null)||(nodes.length <= 1))
 			return true;
 
 		int comparitor;
@@ -2215,7 +3185,7 @@ if((!next_set1)&&(!next_set2)){
 		for (int i = 0; i < nodes.length ; i++){
 			for (int j = 0; j<nodes.length ; j++){
 				if (i != j && graph[nodes[i]-1][nodes[j]-1] == comparitor){
-					//System.out.println(nodes[i]+" "+nodes[j]+" failed");
+					System.out.println(nodes[i]+" "+nodes[j]+" failed");
 					return false;	
 				}
 
@@ -2256,7 +3226,7 @@ if((!next_set1)&&(!next_set2)){
 		//int[] isstar = {2,4,6,8,10,11,13,14,19,30,32,36,39,40,45,48,49,54,57,59,63,66,69,70,75,77,81,83,87,90,93,96,98,101,103,106,110,113,115,118,121,124,128,130,133,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,183,186,189,192,195,198,201,204,207,210,213,216,219,222,225,228,231,234,237,240,243,245,249,252,254,257,261,264,267,270,272,276,279,282,285,288,291,294,297,300,303,306,309,312,315,316,321,324,325,329,333,336,339,342,343,348,351,352,357,360,363,366,369,372,375,378};
 
 
-		System.out.println("Hello?");
+		System.out.println("Hello?2");
 
 		int[][] testie={{0,1,0,0,0,0,1,1,0,0,1},
 				{1,0,1,0,0,0,1,1,0,0,0},
@@ -2270,6 +3240,16 @@ if((!next_set1)&&(!next_set2)){
 				{0,0,0,0,0,0,1,1,1,0,1},
 				{1,0,0,0,0,0,1,1,1,1,0}};
 		//			graph g = new graph(testie);
+
+		int[][] testie1={	
+				{0,1,1,1,1,1,1},
+				{1,0,1,1,1,1,1},
+				{1,1,0,1,1,1,1},
+				{1,1,1,0,1,1,1},
+				{1,1,1,1,0,1,1},
+				{1,1,1,1,1,0,1},
+				{1,1,1,1,1,1,0}};
+
 		int[][] testie2={	{0,0,1,1,1,1,0},
 				{0,0,1,1,1,1,1},
 				{1,1,0,1,1,1,1},
@@ -2302,12 +3282,81 @@ if((!next_set1)&&(!next_set2)){
 				{1,1,1,1,1,1,1,1,0}};
 
 
-		graph g = new graph(testie3);
+		int[][] testie5={
+				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
+				{0,0,0,0,0,0,1,1,0,1,1,1,1,1},//1
+				{0,0,1,0,0,1,1,1,1,0,0,0,1,1},//2
+				{0,1,0,1,0,1,1,1,0,0,0,0,0,0},//3
+				{0,0,1,0,0,0,0,0,0,0,0,0,0,0},//4
+				{0,0,0,0,0,0,0,0,0,0,0,0,0,0},//5
+				{0,1,1,0,0,0,1,1,1,0,0,0,0,0},//6
+				{1,1,1,0,0,1,0,1,1,1,1,1,0,0},//7
+				{1,1,1,0,0,1,1,0,1,1,1,1,0,0},//8
+				{0,1,0,0,0,1,1,1,0,0,0,0,0,0},//9
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//0
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//1
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//2
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,1}, //3
+				{1,1,0,0,0,0,0,0,0,0,0,0,1,0} //4
+		};
+		int[][] testie5b={
+				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
+				{0,0,0,0,0,0,1,1,0,1,1,1,1,1},//1
+				{0,0,1,0,0,1,1,1,1,0,0,0,1,1},//2
+				{0,1,0,1,0,1,0,1,0,0,0,0,0,0},//3
+				{0,0,1,0,0,0,0,0,0,0,0,0,0,0},//4
+				{0,0,0,0,0,0,0,0,0,0,0,0,0,0},//5
+				{0,1,1,0,0,0,1,1,0,0,0,0,0,0},//6
+				{1,1,0,0,0,1,0,1,0,1,1,1,0,0},//7
+				{1,1,1,0,0,1,1,0,0,1,1,1,0,0},//8
+				{0,1,0,0,0,0,0,0,0,0,0,0,0,0},//9
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//0
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//1
+				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//2
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,1}, //3
+				{1,1,0,0,0,0,0,0,0,0,0,0,1,0} //4
+		};
+
+		int[][] testie6={
+				//				{1,2,3,4,5,6,7},
+				{0,1,0,0,1,0,1},
+				{1,0,1,1,1,0,1},
+				{0,1,0,1,1,1,1},
+				{0,1,1,0,0,0,1},
+				{1,1,1,0,0,1,1},
+				{0,0,1,0,1,0,1},
+				{1,1,1,1,1,1,0}};
+
+		int[][] testie7={
+				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
+				{0,1,1,0,0,0,0},//1
+				{1,0,1,0,0,0,0},//2
+				{1,1,0,1,0,0,0},//3
+				{0,0,1,0,1,0,0},//4
+				{0,0,0,1,0,1,0},//5
+				{0,0,0,0,1,0,1},//6
+				{0,0,0,0,0,1,0},//7
+		};
+
+
+		graph g = new graph(testie7);
 		long start;
 		int [] temp;
 		long elapsedTimeMillis;
 
+		/*		g.graph3 = new node3[g.nodes];
+		for(int i = 0; i<g.nodes; i++){
+			g.graph3[i] = new node3(g.graph[i],g.nodes,true);
+		}
 
+
+		node3 all_nodes = new node3(g.all_neighbors(-1),g.nodes);
+
+		System.out.println(">> all_nodes was: "+all_nodes.print_list());
+		g.reduction(all_nodes);
+		System.out.println(">> all_nodes is now: "+all_nodes.print_list());
+		g.pause();
+		 */
 
 		String s[] = new String[35];
 
@@ -2347,83 +3396,15 @@ if((!next_set1)&&(!next_set2)){
 		s[33] = "MANN_a81.clq";
 		s[34] = "MANN_a9.clq";
 
-		/*
-		int[] a = new int[0];
-		int[] b = {0,1,6,7};
-		node2 na = new node2(a);
-		node2 nb = new node2(b);
-		node2 uniqa = new node2(10);
-		node2 uniqb = new node2(10);
-
-		na.similar_differences(nb, uniqa, uniqb);
-
-		System.out.println("uniqa: "+uniqa.print_list());
-		System.out.println("uniqb: "+uniqb.print_list());
-
-		g.pause();
-		 */		
-
-		int[] aa = {184,193,197};
-		int[] bb = {1,2,4,5,35,64};
-		node3 test = new node3(aa,200);
-		node3 test2 = new node3(bb,64);
-		node3 test_extra = new node3(64);
-		node3 test2_extra = new node3(64);
-		
-		System.out.println();
-		
-	/*	
-		test.similar_differences(test2, test_extra, test2_extra);
-
-		System.out.println("test is: ");
-		System.out.println(test.print_literal());
-
-		System.out.println("test is: "+test.print_list());
-		System.out.println("test2 is: "+test2.print_list());
-		System.out.println("test_extra is: "+test_extra.print_list());
-		System.out.println("test2_extra is: "+test2_extra.print_list());
-		test_extra.delete(7);
-		System.out.println("test_extra after delete 7 is: "+test_extra.print_list());
-		
-		
-		test.use_me_and(test, test2);
-		
-		na.set_length(0);
-		test.to_old_node2(na);
-		System.out.println(na.print_list());
-		test.add(11);
-		test.to_old_node2(na);
-		System.out.println(na.print_list());
-		blah = test.pop_first();
-		test.to_old_node2(na);
-		System.out.println("popped: "+blah+" and array is now: "+na.print_list());
-		blah = test.get_index(0);
-		test.to_old_node2(na);
-		System.out.println("index 0: "+blah);
-		blah = test.get_index(1);
-		test.to_old_node2(na);
-		System.out.println("index 1: "+blah);
-		blah = test.get_index(2);
-		test.to_old_node2(na);
-		System.out.println("index 2: "+blah);
-		blah = test.get_index(3);
-		test.to_old_node2(na);
-		System.out.println("index 3: "+blah);
-		
-		g = new graph(testie3);
-		g.display_level = -1;
-		g.pre_New_Bochert(false);
-		*/
-		
 		for(int i = 1; i<s.length; i++){//i<s.length; i++){
-			if ((i != 18) && (i == 3)){// && (i != 18) && (i != 19)){
+			if ((i == 34) && (i != 19)){// && (i != 18) && (i != 19)){
 				System.out.println("***********************************************************************************************************");
 				System.out.println(i+" "+s[i]);
 				g = new graph(s[i]);
 				//g = new graph(testie5);
 
 				if(i>0)
-					g.display_level = 0;
+					g.display_level = 110;
 				else if (i == 31)
 					g.display_level = 4;
 				else if (i == 32)
@@ -2436,10 +3417,11 @@ if((!next_set1)&&(!next_set2)){
 					g.display_level = 0;
 
 
+
 				g.timings[0] = 0;
 				g.timings[1] = 0;
 				g.timings[2] = 0;
-				
+
 
 				System.out.println("Number of nodes: "+g.nodes);
 
@@ -2448,10 +3430,14 @@ if((!next_set1)&&(!next_set2)){
 				System.out.println();
 				System.out.println("AND NOW THE NEWER VERSION");
 				g.start_showing_crap = false;
+				g.sort_smallest_first = false;
+				g.sort = true;
 
 				start = System.currentTimeMillis();
 				g.B_calls = 0;
-				temp = g.pre_New_Bochert(false);
+				//				temp = g.pre_New_Bochert(false,g.nodes);
+				//temp = g.pre_Newer_Bochert(true);
+				temp = g.newest_Bochert(new node3(g.all_neighbors(-1),g.nodes));
 
 				elapsedTimeMillis = System.currentTimeMillis()-start;
 
@@ -2464,14 +3450,14 @@ if((!next_set1)&&(!next_set2)){
 				System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
 
 				System.out.println();
-				
+
+
 				for(int ii=0; ii<3; ii++){
 					System.out.println("timing "+ii+": "+(g.timings[ii]/1e6)+" for: "+g.timings2[ii]);
 				}
-				
-				
 
-				
+
+
 				/*				node2 ntemp = new node2(temp);
 				for(int a = 1; a<=g.nodes; a++){
 					ntemp.add(a);
