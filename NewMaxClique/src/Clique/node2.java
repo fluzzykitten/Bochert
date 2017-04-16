@@ -5,6 +5,7 @@ package Clique;
 public class node2 {
 
 	int node;
+	node2 memory_previous = null;
 	node2 memory_next = null;
 	private int[] array;
 	private int length;
@@ -17,7 +18,6 @@ public class node2 {
 		
 	}
 
-	
 	public node2(int n) {
 		node = 0;
 		array = new int[n];
@@ -36,19 +36,38 @@ public class node2 {
 		}
 	}
 		
-	public node2 copy(){
+	public node2 copy_double_mem(){
 		node2 result = new node2();
 		result.node = node;
 		result.memory_next = memory_next;
 		result.length = length;
-		result.array = new int[get_length()];
+		result.memory_next = memory_next;
+		result.memory_previous = memory_previous;
+		
+		result.array = new int[get_length()];		
 		System.arraycopy(array, 0, result.array, 0, get_length());
 		
 		return result;
 	}
+	
+	public void copy(node2 result){
+		node= result.node;
+		length = result.length;
+		memory_next = result.memory_next;
+		memory_previous = result.memory_previous;
+
+		if(array.length < length)
+			array = new int[length];
+		
+		System.arraycopy(result.array, 0, array, 0, get_length());
+	}
 
 	public int get_last(){
 		return array[get_length()-1];
+	}
+
+	public int get_first(){
+		return array[0];
 	}
 	
 	public void incriment_length(){
@@ -62,7 +81,15 @@ public class node2 {
 	public node2 get_memory_next(){
 		return memory_next;
 	}
-	
+
+	public void set_memory_previous(node2 mem){
+		memory_previous = mem;
+	}
+
+	public node2 get_memory_previous(){
+		return memory_previous;
+	}
+
 	
 	public int get_length(){
 		return length;
@@ -155,6 +182,19 @@ public class node2 {
 		
 	}
 
+	public void negcheck(){
+		if (length < 0)
+			System.out.println(array[length]);
+	}
+	
+	public void dupceck(){
+		for(int i = 0; i< length -1; i++){
+			if(array[i] == array[i+1]){
+				System.out.println("duplicate of: "+array[i]);
+				System.out.println(array[-1]);
+			}
+		}
+	}
 	
 	private void add_size_increase(int[] n){
 		
@@ -244,8 +284,100 @@ public class node2 {
 	}
 
 	
+	private void add_size_increase(node2 n){
+		
+		int index = 0;
+		int index_this = 0;
+		int index_n = 0;
+		int[] new_array = new int[get_length()+n.get_length()];
+		
+		while((index_this < get_length())&&((index_n < n.get_length()))){
+			
+			if(array[index_this] < n.array[index_n]){
+				new_array[index] = array[index_this];
+				index_this++;
+			}
+			else{
+				new_array[index] = n.array[index_n];
+				index_n++;
+			}
+			index++;				
+		}
+	
+		while(index_this < get_length()){
+			
+				new_array[index] = array[index_this];
+				index++;
+				index_this++;
+		}
+	
+		while(index_n < n.get_length()){
+			
+			new_array[index] = n.array[index_n];
+			index++;
+			index_n++;
+	}
+	
+		
+		array = new_array;
+		length = array.length;
+		
+		
+	}
+	
+	public void add(node2 n){
+
+		
+		if((length+n.get_length()) > array.length){
+			add_size_increase(n);
+			return;
+		}
+
+		
+		int index = length+n.get_length()-1;
+		int index_this = length-1;
+		int index_n = n.get_length()-1;
+//		int[] new_array = new int[get_length()+n.get_length()];
+		
+		while((index_this >= 0)&&((index_n >= 0))){
+			
+			if(array[index_this] > n.array[index_n]){
+				array[index] = array[index_this];
+				index_this--;
+			}
+			else{
+				array[index] = n.array[index_n];
+				index_n--;
+			}
+			index--;				
+		}
+	
+/*		while(index_this >= 0){
+			
+				array[index] = array[index_this];
+				index--;
+				index_this--;
+		}
+	*/
+		while(index_n >= 0){
+			
+			array[index] = n.array[index_n];
+			index--;
+			index_n--;
+	}
+	
+		
+		length = length+n.get_length();
+		
+	}
+
+	
 	public void delete_last(){
 		length--;
+		
+		if(length<0)
+			System.out.println(array[length]);
+		
 	}
 	
 	public boolean delete(node2 n){
@@ -296,19 +428,10 @@ public class node2 {
 		
 	}
 
-	public int[] get_array_min_size(){
-		
-		int[] result = new int[length];
-		
-		System.arraycopy(array, 0, result, 0, length);
-		
-		return result;
-	}
-
 	
 public boolean delete(int n){
 		
-		if(length == 0)
+		if(array.length == 0)
 			return false;
 		
 		
@@ -316,7 +439,7 @@ public boolean delete(int n){
 
 		boolean found = false;
 		
-		while(((found)&&(index < (length)))||(index < (length-1))){
+		while(((found)&&(index < (array.length)))||(index < (array.length-1))){
 			
 			if(array[index] == n){
 				found = true;
@@ -337,100 +460,63 @@ public boolean delete(int n){
 			length--;
 			found = true;
 		}
-		else{
-			array[index-1] = array[index];
-		}
 			
 		
 		
 		return found;
 		
 	}
+	
+public void pull_out_intersection(node2 set, node2 star){
+	
+	length = 0;
+	
+	int index_set = 0;
+	int index_star = 0;
 
-public void copy_array(node2 source){
 	
-	length = source.length;
-	if (array.length < length)
-		array = new int[length];
-	
-	for(int i = 0; i<length; i++){
+	while((index_set < set.get_length())&&((index_star < star.get_length()))){
 		
-		array[i] = source.array[i];
+		if(set.array[index_set] == star.array[index_star]){
+			array[length] = set.array[index_set];
+			index_star++;
+			index_set++;
+			length++;				
+		}
+		else if (set.array[index_set] < star.array[index_star]){
+			index_set++;
+		}
+		else if (set.array[index_set] > star.array[index_star]){
+			index_star++;
+		}
 		
-	}
-	
-	
-	
-	
-}
-
-public void similar_differences(node2 element, node2 memory_unique, node2 element_unique){
-	//returns if there are similarities
-	memory_unique.length = 0;
-	element_unique.length = 0;
-	
-	if (length == 0){
-		element_unique.copy_array(element);
-		return;
-	}
-	
-	if(element.length == 0){
-		memory_unique.copy_array(this);
-		return;
-	}
-
-	
-	int memory_diff = 0;
-	int element_diff = 0;
-
-	int i_element = 0;
-	int i_memory = 0;
-	
-	while((i_memory < get_length())&&(i_element < element.get_length())){//&&
-//			((element.get_previous() != null)&&(((element_diff+element.get_previous().get_length()) <= previous.get_length()))||
-//			((previous != null)&&((memory_diff+previous.get_length()) <= element.previous.get_length())))){			
-		
-		if(element.array[i_element] < array[i_memory]){
-			element_unique.add_to_end(element.array[i_element]);
-			i_element++;
-		}
-		else if(array[i_memory] < element.array[i_element]){
-			memory_unique.add_to_end(array[i_memory]);
-			i_memory++;
-			
-		}
-		else if(array[i_memory] == element.array[i_element]){
-			i_element++;
-			i_memory++;
-		}
 	}		
-
-
-while (i_memory < get_length()){
-	memory_unique.add_to_end(array[i_memory]);
-	i_memory++;	
-}
-
-while (i_element < element.get_length()){	
-	element_unique.add_to_end(element.array[i_element]);
-	i_element++;
-}
-
-}
-
-
-public void dupcheck(){
 	
-	for(int i = 0; i<length-1; i++){
-		if(array[i] == array[i+1]){
-			System.out.println("failed on :"+array[i]);
-			System.out.println(array[-1]);
-		}
+
+	
+}
+
+
+public void print_stack(){
+	node2 index = this;
+	int i = 0;
+	
+	while (index != null){
+		System.out.println("iteration: "+i+" node: "+index.get_last());
+		i++;
+		index = index.get_memory_next();
 		
 	}
 	
-	
 }
 
+public int[] get_array_min_size(){
+	
+	int[] result = new int[length];
+	
+	System.arraycopy(array, 0, result, 0, length);
+	
+	return result;
+}
 
 }
