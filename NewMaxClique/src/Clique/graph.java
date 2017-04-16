@@ -33,7 +33,7 @@ public class graph {
 	private node3 empty_node;
 	private int previous_depth = 0;
 	private int count_down = 20;
-	private gpu graphics_card;
+//	private gpu graphics_card;
 	private node3[] results_array;
 	private int results_array_length;
 	private node3 deleted_nodes;
@@ -2385,7 +2385,7 @@ public class graph {
 		s[34] = "MANN_a9.clq";
 
 		for(int i = 1; i<s.length; i++){//i<s.length; i++){
-			if (((i == 31) && (i != 18)) && (i != 19)){// && (i != 18) && (i != 19)){
+			if (((i == 32) && (i != 18)) && (i != 19)){// && (i != 18) && (i != 19)){
 				System.out.println("***********************************************************************************************************");
 				System.out.println("graph#"+i+" "+s[i]);
 				g = new graph(s[i]);
@@ -2395,8 +2395,6 @@ public class graph {
 					g.display_level = 0;
 				else if (i == 18)
 					g.display_level = 2;
-				else if (i == 33)
-					g.display_level = 150;
 				else
 					g.display_level = 0;
 
@@ -2417,9 +2415,9 @@ public class graph {
 				g.sort = true;
 				g.degressive_display = true;
 				g.priority_threading = false;
-				g.num_threads = 20;
-				g.mid_num_threads = 20;
-				g.min_new_thread_size = 5;
+				g.num_threads = 0;
+				g.mid_num_threads = 0;
+				g.min_new_thread_size = 10;
 				g.hotswap_trigger = -17;//115//116//1986;//12063; //-34530;//35105
 
 
@@ -2445,6 +2443,7 @@ public class graph {
 				System.out.println();
 
 
+				
 				//for(int ii=0; ii<3; ii++){
 				//	System.out.println("timing "+ii+": "+(g.timings[ii]/1e6)+" for: "+g.timings2[ii]);
 				//}
