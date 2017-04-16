@@ -92,13 +92,14 @@ public class graph {
 	int exit_loop = 15000;
 	int middle_loop_run = 0;
 	boolean show_me_intermitent_maxes = false;
+	
 	Random generator = new Random();
 	int randseed = -1;
 	
 	String IV = "AAAAAAAAAAAAAAAA";
-	String plaintext = "test text 123\0\0\0"; /*Note null padding*/
-	String encryptionKey = "0123456789abcdef";
-	int current_byte = 4;
+	byte[] plaintext = new byte[32];
+	byte[] encryptionKey = new byte[16];
+	int current_byte = 8;
 	byte[] cipher = new byte[32];
 
 
@@ -2395,8 +2396,8 @@ public class graph {
 				else
 					graph[perm[i]][perm[j]] = 0;
 
-		
-/*		try {
+/*		
+		try {
 
 			File file = new File("..\\graph_binaries\\AESLeemon3SATGen-g"+graphnum+"-v"+numVar+"-"+(force3satTrue?"forced":"unforced")+".clq");
 
@@ -2427,8 +2428,8 @@ public class graph {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		*/
+*/
+		
 		return graph;
 		
 		
@@ -2439,71 +2440,46 @@ public class graph {
 		randseed = s;
 	}
 	
-	public void init_AES_rand(short G, short N)
+	public void init_AES_rand(int G, int N)
 	{	
-//		System.out.println("poopoo - G:"+G+" N:"+N);
-		
-	short[] initpt = new short[8];	
-	short[] initkey = new short[8];
-		
-    for (byte i=0; i<4; i++) {
-        initkey[7-i] = (short)((short)(G<<(i*2)) & 0xff);//255;
-        initkey[  3-i] = (short)((short)(N<<(i*2)) & 0xff);//255;
+	//	System.out.println("poopoo - G:"+G+" N:"+N);
+	plaintext = new byte[32];
+	encryptionKey = new byte[16];
+	
+    for (byte i=0; i<8; i++) {
+    	encryptionKey[8+i] = (byte)(G>>>(i*8));//255;
+    	encryptionKey[i] = (byte)(N>>>(i*8));//255;
     }
 
-    for (int i=0; i<8; i++)
-    	initpt[i] = 0;
+//    for (byte i=0; i<16; i++) {
+//    	encryptionKey[i] = (byte)i;//255;
+//    }
 
-//    System.out.print("initkey: ");
-    encryptionKey = "";
-    for(int i = 0; i<8; i++){
-//    	System.out.print(Integer.toHexString(initkey[i]>>>4&0xf)+Integer.toHexString(initkey[i]&0x0f)+" ");
-    	encryptionKey = encryptionKey + Integer.toHexString(initkey[i]>>>4&0xf)+Integer.toHexString(initkey[i]&0x0f);
-    }
- //   System.out.println();
-//    encryptionKey = initkey.toString();
-//    System.out.println("encryptKey: "+encryptionKey);
-    plaintext = "0000000000000000";
-//    plaintext = encryptionKey;
-//    System.out.println("plaintext: "+plaintext);
     
-	//static String plaintext = "test text 123\0\0\0"; /*Note null padding*/
-	//static String encryptionKey = "0123456789abcdef";
-
+//    System.out.println(encryptionKey[0]+" "+encryptionKey[1]+" "+encryptionKey[2]+" "+encryptionKey[3]+" "+encryptionKey[4]+" "+encryptionKey[5]+" "+encryptionKey[6]+" "+encryptionKey[7]+" "+encryptionKey[8]+" "+encryptionKey[9]+" "+encryptionKey[10]+" "+encryptionKey[11]+" "+encryptionKey[12]+" "+encryptionKey[13]+" "+encryptionKey[14]+" "+encryptionKey[15]);    
+//    System.exit(0);
+    
+//    for (int i=0; i<plaintext.length; i++)
+//    	plaintext[i] = (byte)i;
 	}
 
 	
 	public void tickplaintext(){
 		
-		int[] pt = new int[8];
-//		System.out.println("tickplaintext plaintext string:"+plaintext);
-		
-//		System.out.print("plaintext before:");
-		for(int i = 7; i>=0; i--){
-//			System.out.println("literal string:"+plaintext.subSequence((16-(i+1))*2, (16-i)*2).toString());
-			pt[i] = Integer.valueOf(plaintext.subSequence((8-(i+1))*2, (8-i)*2).toString(),16);
-//			System.out.print(Integer.toHexString(pt[i])+" ");
-		}
-//		System.out.println();
-
 		for(int i = 0; i<8; i++){
-			pt[i] = (pt[i] + 1) & 0xff;
-			if(pt[i] != 0)
+			plaintext[i] = (byte)(plaintext[i] + 1);
+			if(plaintext[i] != 0)
 				break;
 		}
-		
-	    plaintext = "";
-	    for(int i = 7; i>=0; i--){
-//	    	System.out.println(Integer.toHexString(pt[i]));
-	    	plaintext = plaintext + Integer.toHexString((pt[i]&0xf0)>>>4)+Integer.toHexString(pt[i]&0x0f);
-	    }
-		//System.out.println("tickplaintext plaintext after: "+plaintext);
-		
+				
 	}
 	
 	public double nextDouble(){
 
-		if(current_byte == 4){
+//		if(true)
+//			return generator.nextDouble();
+		
+		if(current_byte == 8){
 		
 		try{
 		      cipher = encrypt(plaintext, encryptionKey);
@@ -2520,12 +2496,21 @@ public class graph {
 		current_byte = 0;
 		tickplaintext();
 		}
+
+//		System.out.println(cipher[current_byte*4+0]+" "+((long)cipher[current_byte*4+1])+" "+((long)cipher[current_byte*4+2])+" "+(((long)cipher[current_byte*4+3])));
+
+		long javadumb1 = (long)(cipher[current_byte*4+0]&0x0ff);
+		long javadumb2 = (long)(cipher[current_byte*4+1]&0x0ff);
+		long javadumb3 = (long)(cipher[current_byte*4+2]&0x0ff);
+		long javadumb4 = (long)(cipher[current_byte*4+3]&0x0ff);
 		
-		int num = (cipher[current_byte*4+0])+(cipher[current_byte*4+1]<<8)+(cipher[current_byte*4+2]<<16)+(cipher[current_byte*4+3]<<24);
-		num = num>>>1;//because all longs in java are signed, and I don't want negatives
+		long num = javadumb1+(javadumb2<<8)+(javadumb3<<16)+(javadumb4<<24);
+		//long num = ((long)cipher[current_byte*4+0])+((long)cipher[current_byte*4+1]<<8)+((long)cipher[current_byte*4+2]<<16)+(((long)cipher[current_byte*4+3])<<24);
+//		num = num>>>1;//because all longs in java are signed, and I don't want negatives
 //		System.out.println("num sum: "+Integer.toHexString((int)num)+" = "+num);
-		int dividend = 0xffffffff;
-		dividend = dividend>>>1;
+		long dividend = (long)(0xfffffff);
+		dividend = (dividend<<4)+0xf;
+//		dividend = dividend>>>1;
 //		System.out.println("dividing by: "+dividend);
 		
 		current_byte++;
@@ -2687,18 +2672,20 @@ public class graph {
 
 	
 
-		  public static byte[] encrypt(String plainText, String encryptionKey) throws Exception {
-		    Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
-		    SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
-		    cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec("AAAAAAAAAAAAAAAA".getBytes("UTF-8")));
-		    return cipher.doFinal(plainText.getBytes("UTF-8"));
+		  public static byte[] encrypt(byte[] plainText, byte[] encryptionKey) throws Exception {
+				Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+				SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
+				c.init(Cipher.ENCRYPT_MODE, k);
+				byte[] encryptedData = c.doFinal(plainText);
+				return encryptedData;
 		  }
 		 
-		  public static String decrypt(byte[] cipherText, String encryptionKey) throws Exception{
-		    Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
-		    SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
-		    cipher.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec("AAAAAAAAAAAAAAAA".getBytes("UTF-8")));
-		    return new String(cipher.doFinal(cipherText),"UTF-8");
+		  public static byte[] decrypt(byte[] cipherText, byte[] encryptionKey) throws Exception{
+				Cipher d = Cipher.getInstance("AES/ECB/NoPadding");
+				SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
+				d.init(Cipher.DECRYPT_MODE, k);
+				byte[] data = d.doFinal(cipherText);
+				return data;
 		  }
 
 		  private int get_node_with_max_degree(node3 graphmain){
@@ -3073,6 +3060,8 @@ boolean next_display = false;
 				  return returned_set;
 				  }
 			  }
+			  
+			  
 			  //find node of max degree
 			  v = this.get_node_with_max_degree(checkset);
 			  
@@ -3108,7 +3097,9 @@ boolean next_display = false;
 		  
 	public static void main(String args[]) throws Exception
 	{
-
+	
+/*
+			
 		short shorttemp = 0b111111111111111;
 		byte bytetemp = 0b1111111;	
 		System.out.println(shorttemp);
@@ -3127,9 +3118,9 @@ boolean next_display = false;
 			key[i] = copykey[i];
 		}
 		
-		byte[] dataToSend = new byte[31];
+		byte[] dataToSend = new byte[32];
 
-		Cipher c = Cipher.getInstance("AES");
+		Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
 		SecretKeySpec k =
 		new SecretKeySpec(key, "AES");
 		c.init(Cipher.ENCRYPT_MODE, k);
@@ -3141,7 +3132,7 @@ boolean next_display = false;
 		}
 		System.out.println();
 		
-		Cipher d = Cipher.getInstance("AES");
+		Cipher d = Cipher.getInstance("AES/ECB/NoPadding");
 		d.init(Cipher.DECRYPT_MODE, k);
 		byte[] data = d.doFinal(encryptedData);
 
@@ -3151,7 +3142,9 @@ boolean next_display = false;
 		}
 		System.out.println();
 
-		
+		if(1==1)
+			System.exit(0);
+*/		
 /*		int[][] alp ={{0,1,0,0,0,0,0,0},
 					  {1,0,1,1,0,0,0,0},
 					  {0,1,0,0,0,0,0,0},
@@ -3399,7 +3392,7 @@ boolean next_display = false;
 		g.pause();
 		 */
 
-/*		String s[] = new String[35];
+		String s[] = new String[35];
 
 		s[0] = "brock200_1.clq";
 		s[1] = "brock200_2.clq";
@@ -3437,9 +3430,9 @@ boolean next_display = false;
 		s[33] = "MANN_a81.clq";
 		s[34] = "MANN_a9.clq";
 
-		for(int i = 1; i<s.length; i++){//i<s.length; i++){
-			if (((i == 31) && (i != 33)) && (i != 18) && (i != 19)){
-*/		 
+//		for(int i = 0; i<s.length; i++){//i<s.length; i++){
+//			if (((i != 32) && (i != 33)) && (i != 18) && (i != 19)){
+//		 System.out.print(i);
 
 
 /*		String s[] = new String[35];
@@ -3484,18 +3477,22 @@ boolean next_display = false;
 		//			if (((i == 0) && (i != -22)) && (i != -24) && (i != -25)){
 */
 		
-//		System.out.println("Bochert forced seed 2");
+		System.out.println("Bochert forced seed 0");
 		System.out.println("nv:c:nodes:clique:runs:ms:tf");
 
-		for(int v = 3; v<4; v++){
-			//if(true){
+		for(int v = 3; v<51; v++){
 			if(true){
 
-				int graphnum = 4;
+				int graphnum = 1;
 				g.init_AES_rand((short)graphnum,(short)(4.27*v));
-				g.start_random_with_seed(2);
-
 				System.out.print(v+":"+(int)(4.27*v)+":"+(int)(4.27*v*3)+":");
+				g.start_random_with_seed(0);
+				
+				for(int i = 0; i<1000; i++)
+					System.out.println(g.nextDouble());
+				
+				if(true)
+					System.exit(0);
 				
 				//g = new graph(g.create3SAT(v,(int)(4.27*v)));
 				g = new graph(g.createLeemon3SAT(v,(int)(4.27*v),true,graphnum));
@@ -3540,10 +3537,10 @@ boolean next_display = false;
 				p = g.find_P();
 
 				
-				//temp = g.pre_Newer_Bochert(false);
+				temp = g.pre_Newer_Bochert(false);
 				//temp = g.BronKerbosch(r, p, x);	
-				g.invert_graph();
-				temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
+				//g.invert_graph();
+				//temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
 
 				
 				elapsedTimeMillis = System.currentTimeMillis()-start;
