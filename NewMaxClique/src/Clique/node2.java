@@ -8,6 +8,8 @@ public class node2 {
 	node2 memory_next = null;
 	private int[] array;
 	private int length;
+	int meta_data = 0;// 1 == A, 2 == B
+	char side;
 	
 	
 	public node2() {
