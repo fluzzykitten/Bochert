@@ -479,6 +479,9 @@ public class graph {
 
 						imemory.set_memory_next(imemory.get_memory_next().get_memory_next());
 					}
+					else
+						temp = temp.get_memory_next();
+
 				}
 				if (imemory.get_memory_next() == null){
 					return false;
@@ -512,6 +515,9 @@ public class graph {
 
 						temp.set_memory_next(temp.get_memory_next().get_memory_next());
 					}
+					else
+						temp = temp.get_memory_next();
+
 				}
 			}
 			if (temp.get_memory_next() != null){
@@ -743,7 +749,7 @@ public class graph {
 		//		System.out.println("SH*T SH*T!! Fire the MISILES!!");
 
 		int[] temp_connected_nodes = null;
-		int[] max_star = null;
+		int[] max_star = new int[0];
 		int[] temp_max = null;
 		int temp_current_max = current_max;
 		int current_node;
@@ -892,7 +898,7 @@ public class graph {
 			///////////////////////////////////////////////////////////
 
 
-			if (((nodes_to_consider.get_length()+pergatory.get_length()) <= current_max)||(index_imemory.get_memory_next() == null)){
+			if (((nodes_to_consider.get_length()+pergatory.get_length()+max_star.length) <= current_max)||(index_imemory.get_memory_next() == null)){
 				//this.insert_spaces_for_iteration("B");
 				//System.out.println("returning null");
 				//B_iteration_deep--;
@@ -1072,7 +1078,7 @@ public class graph {
 		
 
 		int[] temp_connected_nodes = null;
-		int[] max_star = null;
+		int[] max_star = new int[0];
 		int[] temp_max = null;
 		int temp_current_max = current_max;
 		int current_node;
@@ -1155,7 +1161,7 @@ public class graph {
 			///////////////////////////////////////////////////////////
 
 
-			if (((nodes_to_consider.get_length()+pergatory.get_length()) <= current_max)||(index_imemory.get_memory_next() == null)){
+			if (((nodes_to_consider.get_length()+pergatory.get_length()+max_star.length) <= current_max)||(index_imemory.get_memory_next() == null)){
 
 				if (node_that_found_max_star == -1){
 					B_iteration_deep--;		
@@ -1383,7 +1389,7 @@ public class graph {
 								slide_memory.set_memory_next(slide_memory.get_memory_next().get_memory_next());
 								memory.decriment_node();
 						}
-						else{							
+						else{
 							slide_memory = slide_memory.get_memory_next();							
 						}
 
@@ -2072,7 +2078,7 @@ public class graph {
 
 		for(int i = 0; i<s.length; i++){
 
-			if ((i == 6) && (i != 18) && (i != 19) && (i != 21) && (i != 22)){
+			if ((i == 0) && (i != 18) && (i != 19) && (i != 21) && (i != 22)){
 				System.out.println("***********************************************************************************************************");
 				System.out.println(i+" "+s[i]);
 				g = new graph(s[i]);
@@ -2090,10 +2096,10 @@ public class graph {
 				g.start_showing_crap = false;
 				long start = System.currentTimeMillis();
 				g.B_calls = 0;
-				int [] temp = g.new_Bochert(g.all_neighbors(-1));
+				int [] temp;// = g.pre_Old_Bochert2();
 				long elapsedTimeMillis = System.currentTimeMillis()-start;
 
-				System.out.println();
+/*				System.out.println();
 				System.out.println();
 				System.out.println("NOW FOR THE NEW VERSION");
 				System.out.println("max clique from optimized Bochert is: ");
@@ -2105,7 +2111,7 @@ public class graph {
 					System.out.println("is star?: "+g.is_star(temp, true)+" and length is: "+temp.length);
 
 				System.out.println();
-
+*/
 
 
 
