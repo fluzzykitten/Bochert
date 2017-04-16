@@ -49,6 +49,25 @@ public class node2 {
 		return result;
 	}
 
+
+public void copy_array(node2 source){
+	
+	length = source.length;
+	if (array.length < length)
+		array = new int[length];
+	
+	for(int i = 0; i<length; i++){
+		
+		array[i] = source.array[i];
+		
+	}
+	
+	
+	
+	
+}
+
+	
 	public int get_last(){
 		return array[get_length()-1];
 	}
@@ -375,24 +394,35 @@ public boolean delete(int n){
 		
 	}
 
+String temp = "    bool delete(int* array, int* array_length, int n){" +
+"if(array_length[0] == 0)" +
+"	return false;" +
+"int index = 0;" +
+"bool found = false;" +
+"while(((found)&&(index < (array_length[0])))||(index < (array_length[0]-1))){" +
+"if(array[index] == n){" +
+"		found = true;" +
+"		index++;" +
+"		array_length[0]--;" +
+"	}" +
+"	else{" +
+"		if(found)" +
+"			array[index-1] = array[index];" +
+"		index++;" +
+"	}	" +		
+"}	" +
+"if((!found)&&(array[index]==n)){" +
+"	array_length[0]--;" +
+"	found = true;" +
+"}" +
+"else if (found){" +
+"	array[index-1] = array[index];" +
+"}" +
+"return found;" +
+"	}" +
+"" +
+"";
 
-
-public void copy_array(node2 source){
-	
-	length = source.length;
-	if (array.length < length)
-		array = new int[length];
-	
-	for(int i = 0; i<length; i++){
-		
-		array[i] = source.array[i];
-		
-	}
-	
-	
-	
-	
-}
 
 public void similar_differences(node2 element, node2 memory_unique, node2 element_unique){
 	//returns if there are similarities
