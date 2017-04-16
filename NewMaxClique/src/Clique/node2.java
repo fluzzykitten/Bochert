@@ -68,6 +68,18 @@ public void copy_array(node2 source){
 	
 }
 
+public void zero_and_resize(int n){
+	
+	node = 0;
+	memory_next = null;
+	memory_previous = null;
+	array = new int[n];
+	length = 0;
+	meta_data = 0;// 1 == A, 2 == B
+	side = ' ';
+	
+	
+}
 	
 	public int get_last(){
 		if(length == 0)
@@ -197,14 +209,14 @@ public void copy_array(node2 source){
 		int index = 0;
 //		int[] new_array = new int[get_length()+1];
 		
-		while(index < length){
-			
-			if(array[index] == n){
-				return true;
-			}
-			else
-				index++;
+		while((index < length)&&(array[index]<n)){
+			index++;
+		}			
+		
+		if((index < length)&&(array[index]==n)){
+			return true;
 		}
+		
 
 		return false;
 	}
