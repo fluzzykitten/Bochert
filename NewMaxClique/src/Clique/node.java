@@ -46,7 +46,7 @@ public class node {
 		head = this;
 
 
-		if (n == null){		
+		if ((n == null)|| (n.length == 0)){		
 			length = new node(0);
 			length.head = this;
 			length.length = length;
@@ -90,9 +90,13 @@ public class node {
 		return memory_next;
 	}
 	
-//	public int[] get_max_star(){
-//		return max_star;
-//	}
+	public void set_head(int new_head){
+		head.node = new_head;
+	}
+	
+	public int get_head(){
+		return head.node;
+	}
 	
 	public node get_next(){
 		return next;
@@ -112,6 +116,18 @@ public class node {
 		return previous;
 	}
 
+	public void print_memory(){
+		System.out.println("Head: "+head.node+" Lenght: "+length.node+" and contents: "+print_list());
+		
+		node mem_next = memory_next;
+		
+		while (mem_next != null){
+			System.out.println("Head: "+mem_next.head.node+" Lenght: "+mem_next.length.node+" and contents: "+mem_next.print_list());
+			mem_next = mem_next.memory_next;			
+		}
+		
+	}
+	
 	public String print_list(){
 
 		if (length == null){
@@ -233,6 +249,24 @@ public class node {
 
 	}
 
+	
+	public boolean find (int n){
+		if (length == null || head == null)
+			return false;
+
+		node finder = head;
+		for(int i = 0; i<length.node; i++){
+			if (finder.next.node == n){
+				return true;
+			}
+			finder = finder.next;
+		}
+
+		return false;
+
+	}
+
+	
 	public boolean delete (int[] n){ //this presupposes that both the array are in increasing order and the delete int[] is in increasing order
 		if (length == null || head == null || n == null)
 			return false;
@@ -265,9 +299,18 @@ public class node {
 	}
 
 	public node copy(){
-
-		return new node(this.print_array());
-
+		node temp;
+		if (this.length.node == 0){
+			temp = new node();
+			temp.head.node = head.node;
+			
+		}
+		else{
+			temp = new node(this.print_array());
+			temp.head.node = head.node;
+		}
+			return temp;
+		
 	}
 
 
@@ -506,11 +549,23 @@ public class node {
 
 	public boolean contains(node head){
 		
+		if(head.length.node == 0){
+			if (this.length.node == 0)
+				return true;
+			else
+				return false;
+		}
+		
+		
 		node current_this = this.next;
 		node current_head = head.next;
 		
 		boolean on_first_this = true;
 		boolean on_first_head = true;
+		
+//		System.out.println("in NODE.CONTAINS():");
+//		System.out.println("This: "+this.print_list());
+//		System.out.println("head: "+head.print_list());
 		
 		while(((current_this != this.next)||on_first_this)&&((current_head != head.next)||on_first_head)){
 			if(current_this.node == current_head.node){
