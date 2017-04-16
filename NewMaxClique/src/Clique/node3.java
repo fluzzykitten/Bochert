@@ -447,24 +447,20 @@ public void zero(){
 }
 	
 
-public boolean equals(Object o) {
+public boolean set_equals(node3 o) {
 
-	System.out.println("in equals function");
-	
-	if (o instanceof node3) {
-		node3 c = (node3) o;
+	//System.out.println("in equals function");
+			
 
-		if(length != c.length)
+		if(length != o.length)
 			return false;
 		
-		for(int i = 0; i<length; i++){
-			if(array[i] != c.array[i])
+		for(int i = 0; i<array.length; i++){
+			if(array[i] != o.array[i])
 				return false;
 		}
 		return true;
 	
-	}
-	    return false;
 }
 
 public int get_index(int n){

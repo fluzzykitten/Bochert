@@ -1,23 +1,32 @@
 package Clique;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
-//import java.util.*;
+import java.util.Scanner;
+
+
 
 public class bthread implements Runnable  {
 
-
 	private int[][] graph; // the adjacency matrix
 	private node3[] graph3; // the adjacency matrix
+	private int[][] old_graph; //when changing the graph around, can keep the old one to ensure that the returned set is indeed a clique
 	private int nodes; // total number of nodes
 	private int BK_iteration_deep = 0; // iterations deep into BronKerbosch
+	private long BK_calls = 0; // calls to BronKerbosch
 	private int B_iteration_deep = -1; //iterations deep into Bochert
 	private long B_calls = 0; // calls to Bochert
+	private boolean verboseBK = false; // Verbosity of output... verbosity should be a word... it sounds cool
+	private int[] node_edge_count; // number of edges each node has connected to it
+	private int[] nodes_ordered_increasing; // array of nodes with decreasing edge count - first node has highest num edges
+	private int[] index_ordered_nodes; //array of nodes, where int[0] represents the index of the first node into nodes_ordered_decreasing, and int[1] represents the index of the second, etc 
 	boolean start_showing_crap = false;
-	private int display_level = 0;
 	private node3 empty_node;
+	private boolean sort_smallest_first = true;
 	private boolean degressive_display = false;
+	private long hotswap_trigger = -1;
+	private boolean level_0_display = false;
 	private node3[] reach_back;
 	private node3 find;
 	private boolean display = false;
@@ -25,17 +34,19 @@ public class bthread implements Runnable  {
 	private int whoami;
 	private node3[] previous_nodes;
 	private int previously_known_max;
-	
+	private int who_ran_me = 100;
+
 	static boolean fing_semaphore = false;
 	static int thread_count = 1;
 	static int thread_pool = 1;
 	static int[] status;//0 means free, 1 means running
 	semaphore semasema = null;
 	semaphore stillrunning = null;
+	static int display_level = 0;
 
 
-
-	bthread(node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1){
+	
+	bthread(node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1){
 		reach_back = reach_back1;
 		graph3 = graph31;
 		find = find1;
@@ -43,7 +54,7 @@ public class bthread implements Runnable  {
 		nodes = nodes1;
 		graph = graph1;
 		reach_back_B_calls = reach_back_B_calls1;
-		display_level = display_level1;
+		if(display_level1>0) display_level = display_level1;
 		empty_node = empty_node1;
 		degressive_display = degressive_display1;
 		whoami = whoami1;
@@ -53,16 +64,21 @@ public class bthread implements Runnable  {
 		previously_known_max = previously_known_max1;
 		if(semasema1 != null) semasema = semasema1;
 		stillrunning = stillrunning1;
+		B_iteration_deep = B_iteration_deep1;
+		who_ran_me = who_ran_me1;
 	}
 
+	
 	@Override
 	public void run() {
 
+		//Thread.currentThread().setPriority(whoami);
 		
 		
-		if(display)		System.out.println("++++++++++engtering run... whoami: "+whoami+" thread_count: "+thread_count);
+		
+		if(display)		System.out.println("++++++++++display: "+display+" engtering run... whoami: "+whoami+" thread_count: "+thread_count+" priority: "+Thread.currentThread().getPriority());
 
-		node3 result = Newer_Bochert(find,previously_known_max,nodes,display,null);
+		node3 result = Newer_Bochert(find,previously_known_max,nodes,display,who_ran_me);
 
 			reach_back[whoami] = result;
 			reach_back_B_calls[0] += B_calls;
@@ -73,7 +89,7 @@ public class bthread implements Runnable  {
 
 	}
 
-
+	
 	public int available_thread() throws InterruptedException{
 		int new_thread = 0;
 		
@@ -81,6 +97,9 @@ public class bthread implements Runnable  {
 		//if(nonzeros(status) != thread_count) {System.out.println("status nonzeros ("+nonzeros(status)+") != thread count ("+thread_count+")"); System.out.println(status[-1]);}
 		if(fing_semaphore) {System.out.println("fing_semaphore not false at start"); System.out.println(status[-1]);}
 		fing_semaphore = true;
+		
+		//System.out.println("running available thread, semiphore just taken");
+		//System.out.println("whoami: "+whoami+" thread_count: "+thread_count+" thread_pool: "+thread_pool);
 		
 		if((thread_count) < thread_pool){
 			thread_count++;
@@ -96,7 +115,7 @@ public class bthread implements Runnable  {
 
 		}
 
-		if(display){
+		if(false&&display){
 			this.insert_spaces_for_iteration("B");
 			System.out.println("Available_thread, whoami: "+whoami+" returning: "+new_thread+" and thread count is: "+thread_count+" thread_pool: "+thread_pool);
 		}
@@ -105,11 +124,2081 @@ public class bthread implements Runnable  {
 		if(!fing_semaphore) {System.out.println("fing_semaphore not true at end"); System.out.println(status[-1]);}
 		fing_semaphore = false;
 		
+		//System.out.println("releasing semaphore");
+		
 		semasema.release();
 		
 		return new_thread;
 	}
 
+	
+	private void hotswap(){
+
+		//		Scanner scanner;
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		String name = null;
+		try {
+
+
+			System.out.println();
+			System.out.print("trigger("+hotswap_trigger+"): ");
+			name = br.readLine();
+			if(name.isEmpty()){
+				System.out.println("empty line");
+			}
+			else{
+				hotswap_trigger = Integer.parseInt(name);
+				System.out.println("trigger("+hotswap_trigger+"): ");
+			}
+
+			System.out.print("display_level("+display_level+"): ");
+			name = br.readLine();
+			if(name.isEmpty()){
+
+			}
+			else{
+				display_level = Integer.parseInt(name);
+				System.out.println("display_level("+display_level+"): ");
+			}
+
+			System.out.print("degressive_display("+degressive_display+"): ");
+			name = br.readLine();
+			name.trim();
+			if(name.isEmpty()){
+
+			}
+			else if(name.startsWith("true")){
+				degressive_display = true;
+				System.out.println("degressive_display("+degressive_display+"): ");
+			}
+			else{
+				degressive_display = false;
+				System.out.println("degressive_display("+degressive_display+"): ");
+			}
+
+			System.out.print("level_0_display ("+level_0_display +"): ");
+			name = br.readLine();
+			name.trim();
+			if(name.isEmpty()){
+				System.out.println("was empty");
+			}
+			else if(name.startsWith("true")){
+				level_0_display  = true;
+				System.out.println("level_0_display ("+level_0_display +"): ");
+			}
+			else{
+				level_0_display  = false;
+				System.out.println("level_0_display ("+level_0_display +"): ");
+			}
+
+		} catch (IOException e) {
+			//		         System.out.println("Error!");
+			//		         System.exit(1);
+		}
+
+		/*/		       System.out.print("Enter your name and press Enter: ");
+//		       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+//		       String name = null;
+		       try {
+		    	   System.out.print("degressive_display("+degressive_display+"): ");
+//		    	   degressive_display = (boolean)(int)br.read .readLine();
+		    	   System.out.print("degressive_display("+degressive_display+"): ");
+
+		    	degressive_display = true;
+				num_threads = 0;
+
+		         name = br.readLine();
+		       } catch (IOException e) {
+//		         System.out.println("Error!");
+//		         System.exit(1);
+		       }
+//		       System.out.println("Your name is " + name);
+		 */	
+	}
+
+
+	private void pause() 
+	{
+		System.out.println("Press the anykey to continue");
+		try
+		{
+			System.in.read();
+		}
+		catch(IOException exe)
+		{
+		}
+	}
+
+
+
+
+	/*	private boolean is_there_another(final node2 check_set, final node2 nodes_to_consider, final node2 dont_consider_connected, node2 result, boolean display){
+
+		//		Bochert_neighbor(result,node,nodes_a, nodes_b, internal_connected);
+
+		if(check_set.get_length() == 0)
+			return false;
+
+		//		node2 check_set = memory_element;
+		if(display)
+			System.out.println("about to start and look at "+check_set.get_last()+" which is index "+check_set.get_length()+" out of: "+result.get_length());
+
+		Bochert_neighbor(result,check_set.get_last(),nodes_to_consider, dont_consider_connected, internal_connected);
+
+		if(display)
+			System.out.println("looking at "+check_set.get_last()+" which is index "+check_set.get_length()+" out of: "+result.get_length());
+
+
+		if(result.get_length() <= 1)
+			return false;
+
+		//		
+		for(int i = check_set.get_length()-2; i>=0; i--){
+			Bochert_neighbor(result,check_set.get_full_array()[i],empty_node, result, internal_connected);
+
+			if(display)
+				System.out.println("looking at "+check_set.get_full_array()[i]+" which is index "+i+" out of: "+result.get_length());
+
+			if(result.get_length() <= 1){
+				return false;
+			}
+
+		}
+
+		return true;
+	}
+	 */
+
+
+
+
+
+
+
+
+
+	private void sort_nodes(){
+
+		nodes_ordered_increasing = merge_sort(this.all_neighbors(-1),node_edge_count);
+
+		index_ordered_nodes = new int[nodes];
+
+		for(int i = 0; i<nodes_ordered_increasing.length; i++){
+			//			System.out.println(i+" node: "+nodes_ordered_increasing[i]+" has "+node_edge_count[nodes_ordered_increasing[i]-1]+" edges");
+			index_ordered_nodes[nodes_ordered_increasing[i]-1] = i;			
+		}
+
+		//		pause();
+
+	}
+
+	private void reorganize_nodes(){
+		//function reorganizes the graph[][] to make the node with the fewest edges node 1 and the node with the most nodes the last node
+
+		int[][] newgraph = new int[nodes][nodes];
+
+		for(int i = 0; i<nodes; i++)
+			for(int j = 0; j<nodes; j++){
+				newgraph[i][j] = graph[nodes_ordered_increasing[i]-1][nodes_ordered_increasing[j]-1];								
+			}				
+
+		old_graph = graph;
+		graph = newgraph;
+
+	}
+
+	private int[] unreorganize_nodes(node3 result){
+		//find out what the real nodes are
+
+		//		System.out.println("result was: "+result.print_list());
+
+		int[] real_result = new int[result.get_length()];
+		int[] fake_result = result.to_int();
+
+		for(int i = 0; i<result.get_length(); i++)
+			real_result[i] = nodes_ordered_increasing[fake_result[i]-1];
+
+		graph = old_graph;
+
+		return real_result;
+	}
+
+	private int[] merge_sort(int[] list, int[] weight)
+	{
+		if(weight == null){
+			weight = this.all_neighbors(-1);			
+		}
+
+		if (list.length <= 1)
+			return list;
+		int[] left, right, result;
+
+		int middle = list.length / 2;
+		left = new int[middle];
+		right = new int[list.length - middle];
+		System.arraycopy(list, 0, left, 0, middle);
+		System.arraycopy(list, middle, right, 0, list.length - middle);
+
+		left = merge_sort(left, weight);
+		right = merge_sort(right, weight);
+		result = merge(left, right, weight);
+
+		return result;
+
+
+
+	}
+
+
+
+	private int[] merge(int[] left,int [] right, int[] weight)
+	{
+
+		int lefti = 0, righti = 0, resulti = 0;
+		int leftl = left.length, rightl = right.length;
+		int resultl = leftl + rightl;
+		int[] result = new int[resultl];
+
+
+		while ((lefti < leftl) && (righti < rightl)){
+			if (sort_smallest_first?(weight[left[lefti]-1] <= weight[right[righti]-1]):(weight[left[lefti]-1] >= weight[right[righti]-1])){
+				result[resulti] = left[lefti];
+				resulti++;
+				lefti++;
+			}
+			else{
+				result[resulti] = right[righti];
+				resulti++;
+				righti++;        }
+		}
+
+		while (lefti < leftl){		
+			result[resulti] = left[lefti];
+			resulti++;
+			lefti++;
+		}
+		while (righti < rightl){		
+			result[resulti] = right[righti];
+			resulti++;
+			righti++;
+		}
+
+		return result;
+	}
+
+	private void Bochert_neighbor(node3 result, int n, node3 array){
+
+		result.use_me_and(graph3[n-1], array);
+
+
+		return;
+
+	}
+
+
+
+	private node3 reduction(node3 check_nodes_orig, node3 not_included_extra_nodes, node3 just_try_to_delete_me_MEMORY_NOT_PRESERVED){
+		//try to delete as many check_nodes as possible by looking at other check_nodes and not_included_extra_nodes
+
+		//System.out.println("check_nodes started as: "+check_nodes_orig.print_list());
+
+		node3 check_nodes = check_nodes_orig.copy_by_erasing();
+		node2 set;
+		boolean limited_scope = false;
+		if(just_try_to_delete_me_MEMORY_NOT_PRESERVED != null && just_try_to_delete_me_MEMORY_NOT_PRESERVED.get_length() != 0){
+			set = just_try_to_delete_me_MEMORY_NOT_PRESERVED.to_new_node2();
+			limited_scope = true;
+		}
+		else{
+			set = check_nodes.to_new_node2();			
+		}
+
+		node3 optional_set_of_nodes_connected_to_n = new node3(nodes);
+
+		node3 all_nodes = check_nodes.copy_by_erasing();
+
+		if(not_included_extra_nodes != null)
+			all_nodes.use_me_or(all_nodes, not_included_extra_nodes);
+
+		int deleted = -1;
+		boolean multi_node = false;
+
+		for(int i = 0; i<set.get_length(); i++){
+			if((deleted != -1)&&(i>=deleted)){
+				check_nodes.delete(set.get_full_array()[deleted]);
+				if(limited_scope)just_try_to_delete_me_MEMORY_NOT_PRESERVED.delete(set.get_full_array()[deleted]);
+				set.delete(set.get_full_array()[deleted]);				
+				deleted=-1;
+				multi_node = false;
+				i--;//in case this was the last node, reset to re-evalute the number of nodes left to check (aka, stop if zero)
+			}
+			else{
+				if(deleted == -1){
+					Bochert_neighbor(optional_set_of_nodes_connected_to_n,set.get_full_array()[i],check_nodes_orig);
+					if(deletable(set.get_full_array()[i], all_nodes,null,false, optional_set_of_nodes_connected_to_n)){
+						//						System.out.println("check_nodes was: "+check_nodes_orig.print_list());
+						//						System.out.println(set.get_full_array()[i]+" a was tagged for deletion as it was connected to: "+optional_set_of_nodes_connected_to_n.print_list());
+						deleted = i;
+						i = -1;
+					}
+				}
+				else{
+					if(multi_node){
+						Bochert_neighbor(optional_set_of_nodes_connected_to_n,set.get_full_array()[i],check_nodes_orig);
+						if(deletable(set.get_full_array()[i], all_nodes,null,false, optional_set_of_nodes_connected_to_n)){
+							//							System.out.println(set.get_full_array()[i]+" b was tagged for deletion as it was connected to: "+optional_set_of_nodes_connected_to_n.print_list());
+							check_nodes.delete(set.get_full_array()[i]);
+							if(limited_scope)just_try_to_delete_me_MEMORY_NOT_PRESERVED.delete(set.get_full_array()[deleted]);
+							set.delete(set.get_full_array()[i]);
+							deleted--;
+							i = -1;					
+						}
+					}
+					else if(graph[i][deleted] == 1){//not connected so worth considering again
+						Bochert_neighbor(optional_set_of_nodes_connected_to_n,set.get_full_array()[i],check_nodes_orig);
+						if(deletable(set.get_full_array()[i], all_nodes,null,false, optional_set_of_nodes_connected_to_n)){
+							//							System.out.println(set.get_full_array()[i]+" c was tagged for deletion as it was connected to: "+optional_set_of_nodes_connected_to_n.print_list());
+							check_nodes.delete(set.get_full_array()[i]);
+							if(limited_scope)just_try_to_delete_me_MEMORY_NOT_PRESERVED.delete(set.get_full_array()[deleted]);
+							set.delete(set.get_full_array()[i]);
+							multi_node = true;
+							deleted--;
+							i = -1;					
+						}
+					}
+					else{
+					}
+				}
+
+			}
+		}
+
+		if(limited_scope){
+			return just_try_to_delete_me_MEMORY_NOT_PRESERVED;
+		}
+		else{
+			return check_nodes;
+		}
+	}
+
+	private boolean deletable(int n, node3 all_nodes, node3 lost_nodes,boolean save, node3 optional_set_of_nodes_connected_to_n){
+
+		node3 connected = new node3(nodes);
+		node3 test = new node3(nodes);
+
+		if(optional_set_of_nodes_connected_to_n == null || optional_set_of_nodes_connected_to_n.get_length()==0)
+			connected.use_me_and(graph3[n-1], all_nodes);
+		else
+			connected.copy_array(optional_set_of_nodes_connected_to_n);
+
+		test.use_me_and_not_first(connected, all_nodes);//no need to check the nodes that it's connected to, they can't be connected to the same because they cannot be connected to themself		
+		test.delete(n);//just in case, current implementation doesn't need this tho, later ones might
+		int[] int_nodes = test.to_int();
+
+		for(int i = 0; i<int_nodes.length; i++){
+			test.use_me_and(graph3[int_nodes[i]-1], connected);
+			//System.out.println("====== connected: "+connected.print_list()+" test: "+)
+			if(test.get_length() == connected.get_length()){
+				//System.out.println("node: "+n+" connected to: "+connected.print_list()+" and node: "+int_nodes[i]+" is connected to: "+test.print_list());
+				all_nodes.delete(n);
+				if(save){
+					all_nodes.side = (char)int_nodes[i];
+				}
+				return true;
+			}
+		}
+		if(lost_nodes != null){
+			int_nodes = lost_nodes.to_int();
+
+			for(int i = 0; i<int_nodes.length; i++){
+				test.use_me_and(graph3[int_nodes[i]-1], connected);
+				//System.out.println("====== connected: "+connected.print_list()+" test: "+)
+				if(test.get_length() == connected.get_length()){
+					all_nodes.delete(n);
+					if(save){
+						all_nodes.side = (char)int_nodes[i];
+					}
+					return true;
+				}
+			}			
+		}
+
+
+		return false;
+
+	}
+
+
+	private node3 Newer_Bochert(node3 all_nodes, int current_max, int sought_max, boolean show, int where_from){
+		
+		B_iteration_deep++;
+		B_calls++;
+
+		if(B_iteration_deep == 0)
+			show = level_0_display;
+
+		if(B_calls == hotswap_trigger){
+			hotswap();
+		}
+
+
+		boolean display_internal = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
+
+
+
+		if((all_nodes.get_length() == 0)||(all_nodes.get_length() == 1)){
+			if(display_internal){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("returning because all_nodes is zero or length 1");
+			}
+			B_iteration_deep--;
+			return all_nodes;
+		}
+
+		node3 result = new node3(nodes);		
+
+		if(sought_max <= 1){
+			if(display_internal){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("returning because sought_max <= 1");
+			}
+			result.add(all_nodes.get_index(0));
+			B_iteration_deep--;
+			return result;
+		}
+
+		if(all_nodes.get_length() <= current_max){//if it's equal to, you'll only get the same as the current max
+			//this.insert_spaces_for_iteration("B");
+			//System.out.println("returning because all_nodes < current max, where from: "+where_from);
+			if(display_internal){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("Returning because all_nodes.gl <= current_max");
+			}
+			B_iteration_deep--;
+			return new node3(nodes);
+		}
+
+		node3 original_all_nodes = all_nodes.copy_by_erasing();
+		int toptop = all_nodes.get_index(0);
+		node3 TOP_dont_consider_connected = new node3(nodes);// = result.copy_by_erasing();
+		node3 all_nodes_in_set_deleted_used = new node3(nodes); //TOP_dont_consider_connected;
+		node3 all_nodes_in_set_whole = new node3(nodes);
+		node3 TOP_checked_set = new node3(nodes);
+		node3 checked_set = TOP_checked_set;
+		node3 TOP_nodes_to_consider = new node3(nodes);
+		node3 memory_element = new node3(nodes);
+		node3 temp_element = new node3(nodes);
+		node3 max_star = new node3(nodes);
+		max_star.meta_data = current_max;
+		node3 nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
+		node3 temp_element2 = new node3(nodes);
+		node3 Pointer_ONLY;
+		node3 Pointer_ONLY2;
+		int temp = 0;
+		int check_set = 1;
+		int comp_set = 0;
+		int deepness = 0;
+		boolean I_was_deleted = false;
+		boolean run = true;
+		boolean all_others_empty = true;
+		node3 best_next_ntc = new node3(nodes);
+		node3 best_next_me = new node3(nodes);
+		node3 unused_best_next_ntc = new node3(nodes);
+		node3 unused_best_next_me = new node3(nodes);
+		node3 unique_alpha = new node3(nodes);
+		node3 unique_check = new node3(nodes);
+		node3 nodes_in_common = new node3(nodes);
+		node3 best_unique_alpha = new node3(nodes);
+		node3 best_nodes_in_common = new node3(nodes);
+		int priority;
+
+		
+		Runnable task;
+		Thread worker;
+		Thread thread_index; 
+		List<Thread> thread_ownership = new ArrayList<Thread>();
+		List<semaphore> stillrunninglist = new ArrayList<semaphore>();
+		semaphore stillrunning1;
+
+
+
+		node3[] DCC = new node3[0];
+		node3 alpha3 = new node3(nodes);
+
+		//node3 comp_nodes = new node3(nodes);
+
+
+
+		this.Bochert_neighbor(result, toptop, all_nodes);
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		//  NO WHILE
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		//it's connected to all the nodes
+		if((result.get_length()+1)==all_nodes.get_length()){
+			if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+				//			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(" NO  WHILE thread:"+whoami+" thread_count: "+thread_count+" ,  B_calls: "+B_calls+" toptop (which is: "+toptop+") connected to all other nodes (which are: "+result.print_list()+"), calling Bochert("+result.print_list()+" ,cm: "+(current_max==0?0:current_max-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
+			}
+
+
+
+			result = Newer_Bochert(result,(current_max==0?0:current_max-1),(sought_max==0?0:sought_max-1),display_internal,(where_from<=1?1:4));
+			result.add(toptop);
+			B_iteration_deep--;
+			return result;
+		}
+
+
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		//  SET UP
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		TOP_dont_consider_connected.copy_array(result);
+		TOP_nodes_to_consider.use_me_and_not_first(TOP_dont_consider_connected, all_nodes);
+		TOP_nodes_to_consider.pop_first();// get rid of toptop
+		nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
+
+
+		//find DCCs
+		DCC = new node3[TOP_nodes_to_consider.get_length()+1];
+		DCC[0] = TOP_dont_consider_connected.copy_by_erasing();
+		DCC[0].meta_data = toptop;
+		all_nodes.delete(toptop);
+		for(int i = 1; i< DCC.length; i++){			
+			DCC[i] = new node3(nodes);
+			DCC[i].meta_data = TOP_nodes_to_consider.get_index(i-1);
+			Bochert_neighbor(DCC[i], DCC[i].meta_data, all_nodes); 
+			all_nodes.delete(DCC[i].meta_data);
+		}
+
+
+
+		if(display_internal){
+			for(int i = 0; i<DCC.length; i++){
+				this.insert_spaces_for_iteration("B");
+				System.out.println(" -- DCC["+i+"].md: "+DCC[i].meta_data+" and is: "+DCC[i].print_list());
+			}
+		}
+
+
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		//  TOP WHILE
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+			this.insert_spaces_for_iteration("B");
+			if(display_internal)
+				System.out.println(" TOP WHILE thread:"+whoami+" thread_count: "+thread_count+" time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC of: "+DCC[0].print_list()+" with no comp_set but current max of: "+max_star.meta_data);
+			else
+				System.out.println(" TOP WHILE thread:"+whoami+" thread_count: "+thread_count+" time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC size of: "+DCC[0].get_length()+" with no comp_set but current max of: "+max_star.meta_data);
+		}
+
+
+/*	if(max_star.meta_data <= DCC[0].get_length()){//or equal because if DCC[0].meta_data + DCC[0].get_length() are the nodes, which means one more than DCC[0].get_length()
+			temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), (max_star.meta_data==0?0:max_star.meta_data-1), nodes, display, 2);
+		}
+		else{
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("This was NOT run because ms.md >= DCC[0].gl");
+			}
+			temp_element.zero();
+		}
+
+
+		if((temp_element.get_length())>=max_star.meta_data){
+			if(display){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+max_star.meta_data);
+			}
+			max_star.copy_array(temp_element);
+			max_star.add(toptop);
+			if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+			max_star.meta_data = max_star.get_length();
+		}
+		else{
+		}
+*/
+		
+		
+		
+		try {
+			temp = available_thread();
+				} catch(InterruptedException e) {
+				} 
+			//			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+			if(display_internal){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("temp = "+temp);
+			}
+			//			}
+
+			if(temp == 0){//no new threads
+
+				temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), (max_star.meta_data==0?0:max_star.meta_data-1), nodes, display_internal, (where_from<=1?1:3));
+
+				if((temp_element.get_length())>=max_star.meta_data){
+					if(display_internal){
+						this.insert_spaces_for_iteration("B");
+						System.out.println("found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+max_star.meta_data);
+					}
+					max_star.copy_array(temp_element);
+					max_star.add(toptop);
+					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+					max_star.meta_data = max_star.get_length();
+				}
+				else{
+				}
+
+
+			}
+			else{
+				
+				
+				//				task = new bthread(reach_back, thread_pool, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, display_level, empty_node, degressive_display,temp,status,previous_nodes);
+				stillrunning1 = new semaphore();
+				try{stillrunning1.take();} catch(InterruptedException e){}
+
+				task = new bthread(reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), display, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,(max_star.meta_data==0?0:max_star.meta_data-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3));
+				worker = new Thread(task);
+				worker.setName(String.valueOf(temp));
+
+				previous_nodes[temp].zero();
+				previous_nodes[temp].add(toptop);
+
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("!!!Make a new THREAD!!! Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list());
+				}
+
+				priority = Thread.currentThread().getPriority();
+				if(priority>7)
+					Thread.currentThread().setPriority(priority-1);
+				worker.setPriority(10);
+				worker.start();
+
+
+				thread_ownership.add(worker);
+				stillrunninglist.add(stillrunning1);
+
+
+			}
+
+
+		if(display_internal){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("about to enter main  while loop, ntc: "+nodes_to_consider.print_list()+" Tntc: "+TOP_nodes_to_consider.print_list());
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		//  MAIN WHILE
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		while(check_set < (DCC.length)){	
+
+			display_internal = (((where_from <= 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
+
+
+			Bochert_neighbor(temp_element, DCC[check_set].meta_data, original_all_nodes);//the nodes that have already been checked can be used to eliminate unneeded nodes... in fact... I can do this at every level...
+			temp_element.use_me_and_not_first(DCC[check_set], temp_element);//only extras
+			checked_set.copy_array(temp_element);//remember these deleted nodes...
+
+			all_nodes_in_set_deleted_used = DCC[check_set].copy_by_erasing();//well... shoot... it's necessarily good to remove all the nodes yet... sigh...
+
+			if(display_internal){
+				this.insert_spaces_for_iteration("B");
+				System.out.println("At the top, deciding all_nodes for node: "+DCC[check_set].meta_data+", extra already deleted nodes connected to it is: "+temp_element.print_list()+" and all_nodes before reduction was: "+DCC[check_set].print_list()+" and after reduction: "+all_nodes_in_set_deleted_used.print_list());
+			}
+
+
+
+
+			temp = 0;
+			for(int i = 0; i< check_set; i++){
+
+				memory_element.use_me_and_not_first(all_nodes_in_set_deleted_used, DCC[i]);
+
+				if((temp < (DCC[i].get_length()-memory_element.get_length()))){
+					temp = (DCC[i].get_length()-memory_element.get_length());
+					comp_set = i;
+				}
+
+
+			}
+			alpha3.copy_array(DCC[comp_set]);
+
+
+			//see if you can eliminate completely first
+			run = true;
+			alpha3.similar_differences(all_nodes_in_set_deleted_used, temp_element2, best_next_ntc);
+			if(best_next_ntc.get_length() == 0){
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("RUN == FALSE!!! Don't run this NODE!!! Because comp_set: "+comp_set+" which is node "+DCC[comp_set].meta_data+" connected to: "+alpha3.print_list()+" contains check_set: "+check_set+" which is node "+DCC[check_set].meta_data+" connected to: "+all_nodes_in_set_deleted_used.print_list());
+				}
+				run = false;
+			}
+
+			if(run){			
+
+				best_next_me.use_me_and_not_first(best_next_ntc, all_nodes_in_set_deleted_used);
+
+				unranked_find_best_ntc_dcc(alpha3,check_set, all_nodes_in_set_deleted_used, unused_best_next_ntc, unused_best_next_me);
+				if(unused_best_next_ntc.get_length() < best_next_ntc.get_length()){
+					best_next_ntc.copy_array(unused_best_next_ntc);
+					best_next_me.copy_array(unused_best_next_me);
+				}
+
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("after unranked find best, best_next_ntc was: "+best_next_ntc.print_list()+" and best_next_me: "+best_next_me.print_list());
+				}
+			}
+			else{
+				best_next_ntc.zero();
+				best_next_me.zero();
+			}
+
+
+
+
+			if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+
+				this.insert_spaces_for_iteration("B");
+				if(display_internal)
+					System.out.println(" MAIN WHILE thread:"+whoami+" thread_count: "+thread_count+" time: "+this.disp_time()+" B_calls: "+B_calls+" threads: "+thread_count+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" and common nodes are: "+best_next_me.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
+				else
+					System.out.println(" MAIN WHILE thread:"+whoami+" thread_count: "+thread_count+" time: "+this.disp_time()+" B_calls: "+B_calls+" threads: "+thread_count+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" max_star.md: "+max_star.meta_data);
+
+				if(!run){
+					this.insert_spaces_for_iteration("B");
+					System.out.println(" so in this case run was actually false, which means it found a set that had a node that could contain all of check_set so go no further (and make ntc == 0) ");					
+				}
+				//				else
+				//					System.out.println(" MAIN WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked+(already_been_checked.get_length() == 0?0:1))+" which is node "+alpha[check_set].meta_data+" with alpha length of: "+alpha[check_set].get_length()+" with the comp_set "+comp_set+" which is node "+alpha[comp_set].meta_data+" with alpha length of: "+alpha[comp_set].get_length()+" and common nodes length of: "+memory_element.get_length()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
+
+
+				//if(degressive_display){
+				//	display_level = B_iteration_deep; 
+				//}
+
+			}
+
+
+
+			if(best_next_ntc.get_length() > 0){
+
+
+
+				all_nodes_in_set_deleted_used.memory_next = new node3(nodes);
+				all_nodes_in_set_deleted_used.memory_next.memory_previous = all_nodes_in_set_deleted_used; 
+				all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_next;
+				all_nodes_in_set_deleted_used.use_me_or(best_next_ntc, best_next_me);//copy_array(temp_element);
+				//don't need to reduce against extra_extra, it's already been done at this level
+
+
+				all_nodes_in_set_whole.memory_next = new node3(nodes);
+				all_nodes_in_set_whole.memory_next.memory_previous = all_nodes_in_set_whole; 
+				all_nodes_in_set_whole = all_nodes_in_set_whole.memory_next;
+				//all_nodes_in_set_whole.copy_array(all_nodes_in_set_deleted_used);
+				Bochert_neighbor(all_nodes_in_set_whole, DCC[check_set].meta_data, original_all_nodes);//the nodes that have already been checked can be used to eliminate unneeded nodes... in fact... I can do this at every level...
+
+				checked_set.memory_next = checked_set.copy_by_erasing();
+				checked_set.memory_next.memory_previous = checked_set; 
+				checked_set = checked_set.memory_next;
+
+				nodes_to_consider.memory_next = new node3(nodes);
+				nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
+				nodes_to_consider = nodes_to_consider.memory_next;
+				nodes_to_consider.copy_array(best_next_ntc);
+
+
+				memory_element.memory_next = new node3(nodes);
+				memory_element.memory_next.memory_previous = memory_element; 
+				memory_element = memory_element.memory_next;
+				memory_element.copy_array(best_next_me);
+
+
+				alpha3.memory_next = alpha3.copy_by_erasing(); //new node3(nodes);//DCC[i].copy_by_erasing();
+				alpha3.memory_next.memory_previous = alpha3;
+				alpha3 = alpha3.memory_next;
+
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("reduced ntc is: "+nodes_to_consider.print_list()+" and reduced all nodes is: "+all_nodes_in_set_deleted_used.print_list());
+				}
+
+				deepness++;
+
+
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("Entering while loop with all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" NTC: "+nodes_to_consider.print_list()+" mem_elm: "+memory_element.print_list()+" and first comp_set of: "+comp_set);
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+				//                     START SUPER WHILE
+				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+				while(TOP_nodes_to_consider != nodes_to_consider){
+
+
+					I_was_deleted = true;
+					run = true;
+					while(I_was_deleted && (nodes_to_consider.get_length() > 0)){
+
+						nodes_to_consider.meta_data = nodes_to_consider.pop_first();
+						all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data);
+
+						this.Bochert_neighbor(temp_element2, nodes_to_consider.meta_data, all_nodes_in_set_deleted_used);
+						//this.Bochert_neighbor(all_nodes_extra_extra, nodes_to_consider.meta_data, all_nodes_extra_extra);
+
+						temp_element = reduction(temp_element2, empty_node, null);
+
+						if(display_internal){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("initial check of node: "+nodes_to_consider.meta_data+" which is connected to: "+temp_element.print_list()+" but before reduction it was: "+temp_element2.print_list()+" which was pulled from all_nodes_in_set_deleted_used of: "+all_nodes_in_set_deleted_used.print_list()+"");
+						}
+
+						if((max_star.meta_data>(temp_element.get_length()+deepness))){
+
+							checked_set.add(nodes_to_consider.meta_data);
+							if(display_internal){
+								this.insert_spaces_for_iteration("B");
+								System.out.println("EARLY ELIMINATED OUT!!!! (that is, node: "+nodes_to_consider.meta_data+") aka, no longer can form bigger star because too few left to consider... ms.md: "+max_star.meta_data+" > deepness: "+deepness+" and all_nodes.gl: "+temp_element.get_length()+" which is: "+temp_element.print_list());
+							}
+
+							if((max_star.meta_data>(all_nodes_in_set_deleted_used.get_length()+(deepness-1)))){
+								//check no more
+
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println("EARLY ELIMINATED OUT the rest of the nodes too!!!! because ms.md: "+max_star.meta_data+" > deepness-1: "+(deepness-1)+" and all_nodes_in_set_deleted_used: "+all_nodes_in_set_deleted_used.get_length()+" which is: "+all_nodes_in_set_deleted_used.print_list());
+								}
+
+
+								nodes_to_consider.zero();								
+							}
+
+						}
+						else{
+
+							I_was_deleted = this.deletable(nodes_to_consider.meta_data, all_nodes_in_set_whole, empty_node, false, temp_element);
+
+							if(!I_was_deleted){
+
+								all_others_empty = true;
+								alpha3.memory_next = new node3(nodes);//DCC[i].copy_by_erasing();
+								if(this.get_next_comp_all_nodes(alpha3.memory_next, alpha3, temp_element)){
+									I_was_deleted = true;
+								}
+								alpha3.memory_next.memory_previous = alpha3;
+								alpha3 = alpha3.memory_next;
+								best_next_ntc.use_me_and_not_first(alpha3, temp_element);
+								best_next_me.use_me_and_not_first(best_next_ntc, temp_element);
+
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println("alpha3["+0+"] was: "+alpha3.memory_previous.print_list()+" but it's now: "+alpha3.print_list()+" deepness: "+deepness);
+								}
+
+
+								if(all_others_empty && (alpha3.get_length() != 0)){
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("all_others_empty is not false... so don't run it down yet");
+									}
+									all_others_empty = false;
+								}
+
+
+
+								alpha3.similar_differences(temp_element, best_unique_alpha, unique_check);
+								best_nodes_in_common.use_me_and_not_first(best_unique_alpha, alpha3);
+
+
+								Pointer_ONLY = alpha3.memory_previous;
+								Pointer_ONLY2 = alpha3;
+
+								for(int i = 0; i < deepness; i++){
+
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("In for loop, at top of random for loop, i is: "+i);
+									}
+
+									Pointer_ONLY2.alpha_next = new node3(nodes);//DCC[i].copy_by_erasing();
+
+									if(i+1 == deepness){// the new one...
+										//Bochert_neighbor(temp_element2, nodes_to_consider.memory_previous.meta_data, checked_set);//which of the deleted nodes is connected...
+										temp_element2.copy_array(all_nodes_in_set_whole);//all nodes in the set... includes deleted nodes?
+										temp_element2.use_me_or(temp_element2, checked_set);//add in deleted nodes... incase there was a deleted node from a previous level, current level deleted nodes should still be contained in all_nodes_whole
+										temp_element2.delete(nodes_to_consider.meta_data);//don't include the current node... duh...
+
+										if(display_internal){
+											this.insert_spaces_for_iteration("B");
+											System.out.println("Adding new one... using the options of deleted nodes: "+checked_set.print_list()+" connected to: "+temp_element2.print_list());
+										}
+
+										if(this.get_next_comp_all_nodes_use_deleted(Pointer_ONLY2.alpha_next, temp_element2, temp_element,checked_set)){
+											I_was_deleted = true;
+										}
+
+
+
+									}
+									else{
+
+										if(this.get_next_comp_all_nodes(Pointer_ONLY2.alpha_next, Pointer_ONLY.alpha_next, temp_element)){
+											I_was_deleted = true;
+										}
+										Pointer_ONLY = Pointer_ONLY.alpha_next;
+
+									}
+
+
+									Pointer_ONLY2.alpha_next.alpha_previous = Pointer_ONLY2;
+									Pointer_ONLY2 = Pointer_ONLY2.alpha_next;
+
+
+									unused_best_next_ntc.use_me_and_not_first(Pointer_ONLY2, temp_element);
+									unused_best_next_me.use_me_and_not_first(unused_best_next_ntc, temp_element);
+									if(unused_best_next_ntc.get_length() < best_next_ntc.get_length()){
+										best_next_ntc.copy_array(unused_best_next_ntc);
+										best_next_me.copy_array(unused_best_next_me);
+									}
+
+
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("alpha3["+i+"] was: "+(i+1 == deepness?"NEW":Pointer_ONLY.print_list())+" but it's now: "+Pointer_ONLY2.print_list()+" deepness: "+deepness);
+									}
+
+
+									Pointer_ONLY2.similar_differences(temp_element, unique_alpha, unique_check);
+									nodes_in_common.use_me_and_not_first(unique_alpha, Pointer_ONLY2);
+									if(nodes_in_common.get_length() > best_nodes_in_common.get_length()){
+										best_unique_alpha.copy_array(unique_alpha);
+										best_nodes_in_common.copy_array(nodes_in_common);
+									}
+									else if(nodes_in_common.get_length() == best_nodes_in_common.get_length()){
+										if(unique_alpha.get_length() > best_unique_alpha.get_length()){
+											best_unique_alpha.copy_array(unique_alpha);
+											best_nodes_in_common.copy_array(nodes_in_common);
+										}
+									}
+
+
+									if(all_others_empty && (Pointer_ONLY2.get_length() != 0)){
+										if(display_internal){
+											this.insert_spaces_for_iteration("B");
+											System.out.println("all_others_empty is not false... so don't run it down yet");
+										}
+										all_others_empty = false;
+									}
+
+								}
+
+								if(I_was_deleted){
+									alpha3 = alpha3.memory_previous;
+									alpha3.memory_next = null;
+
+								}
+								else{	
+									//temp_element = reduction(temp_element, empty_node, null);//already been done
+
+									temp_element2.use_me_or(best_unique_alpha, best_nodes_in_common);
+									unranked_find_best_ntc_dcc(temp_element2,check_set, temp_element, unused_best_next_ntc, unused_best_next_me);
+									if(unused_best_next_ntc.get_length() < best_next_ntc.get_length()){
+										best_next_ntc.copy_array(unused_best_next_ntc);
+										best_next_me.copy_array(unused_best_next_me);
+									}
+
+									//if(best_next_ntc.get_length() == 0){
+									//	ranked_find_best_ntc_dcc(alpha3,check_set, temp_element, best_next_ntc, best_next_me);//this is to just use temp_element before it gets corrupted
+									//}
+
+									//temp_element.use_me_or(best_next_ntc, best_next_me);
+
+									//wait until now to reduce them
+									//best_next_ntc = reduction(temp_element, null, best_next_ntc);
+									//best_next_me = reduction(best_next_me, best_next_ntc);
+								}
+							}
+
+							if(I_was_deleted)
+								checked_set.add(nodes_to_consider.meta_data);
+						}
+
+
+
+						if(display_internal){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("I_was_deleted: "+I_was_deleted);
+						}
+
+
+					}
+
+					if(!I_was_deleted){// || (nodes_to_consider.get_length()+lost_nodes.get_length()) > 0){
+
+
+						
+						
+						all_nodes_in_set_deleted_used.memory_next = new node3(nodes);
+						all_nodes_in_set_deleted_used.memory_next.memory_previous = all_nodes_in_set_deleted_used; 
+						all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_next;
+						all_nodes_in_set_deleted_used.use_me_or(best_next_me, best_next_ntc);
+
+
+						all_nodes_in_set_whole.memory_next = new node3(nodes);
+						all_nodes_in_set_whole.memory_next.memory_previous = all_nodes_in_set_whole; 
+						all_nodes_in_set_whole = all_nodes_in_set_whole.memory_next;
+						all_nodes_in_set_whole.copy_array(all_nodes_in_set_deleted_used);
+
+
+						memory_element.memory_next = new node3(nodes);
+						memory_element.memory_next.memory_previous = memory_element; 
+						memory_element = memory_element.memory_next;
+						memory_element.copy_array(best_next_me);
+
+
+
+						if(all_others_empty){
+							memory_element.use_me_or(memory_element, best_next_ntc);
+							best_next_ntc.zero();
+						}
+						else if(best_next_ntc.get_length() > 0){
+
+							nodes_to_consider.memory_next = new node3(nodes);
+							nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
+							nodes_to_consider = nodes_to_consider.memory_next;
+							nodes_to_consider.copy_array(best_next_ntc);
+
+
+							checked_set.memory_next = new node3(nodes);
+							checked_set.memory_next.memory_previous = checked_set;
+							checked_set = checked_set.memory_next;
+							this.Bochert_neighbor(checked_set, nodes_to_consider.memory_previous.meta_data, checked_set.memory_previous);//move to the next set of deleted nodes the ones from the previous set connected to current node
+
+
+							checked_set = checked_set.memory_previous;
+							nodes_to_consider = nodes_to_consider.memory_previous;
+
+						}
+
+						if(display_internal){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("deepness: "+deepness+" considering node "+nodes_to_consider.meta_data+" with nodes still to consider: "+nodes_to_consider.print_list()+" has memory_elment("+memory_element.get_length()+"): "+memory_element.print_list()+" and it's own ntc: "+(nodes_to_consider.memory_next != null?nodes_to_consider.memory_next.print_list():"NULL")+" all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" checked_set: "+checked_set.print_list());
+						}
+
+
+
+
+						//should be checked already higher up
+						if((max_star.meta_data>(all_nodes_in_set_deleted_used.get_length()+deepness))){
+							//need not look further
+
+							if(display_internal){
+								this.insert_spaces_for_iteration("B");
+								System.out.println("FAIL!!! THIS SHOULD NEVER RUN!!!! SHOULD'VE ELMINIATED EARLIER!!!! ELIMINATED OUT!!!! aka, no longer can form bigger star because too few left to consider... ms.md: "+max_star.meta_data+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set_deleted_used.get_length()+" + deepness: "+deepness);
+							}
+
+							checked_set.add(nodes_to_consider.meta_data);
+							memory_element = memory_element.memory_previous;								
+							all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
+							all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
+
+
+
+							alpha3 = alpha3.memory_previous;
+
+
+
+
+						}
+						else{
+
+
+							if(display_internal){
+								this.insert_spaces_for_iteration("B");
+								System.out.println("all_others_empty before loop is: "+all_others_empty+(all_others_empty?" so all alphas were all zero length going into this":" so there is at least one alpha3 that still has nodes"));//"comp_all_nodes.md: "+comp_nodes.meta_data+" list: "+comp_nodes.print_list()+" mem_elm: "+memory_element.print_list()+" mem_elm is in can: "+(temp_element2.get_length() == memory_element.get_length()?"true":"false")+" comp_all_nodes.mem_prev: "+comp_nodes.memory_previous.print_list()+" all_nodes_in_set: "+all_nodes_in_set_deleted_used.print_list()+" lost_nodes.md: "+lost_nodes.meta_data+" checked_set: "+checked_set.print_list());
+
+								this.insert_spaces_for_iteration("B");
+								node3 blap = TOP_checked_set;
+								System.out.print("starting at TOP_checked_set, it's: ");
+								while(blap != null){
+									if(blap == checked_set)
+										System.out.print("[checked set]");
+
+									System.out.print(blap.print_list()+" NEXT ");
+									blap = blap.memory_next;
+								}
+								System.out.println(" then null");
+							}
+
+
+							if(all_others_empty){
+
+								for (int i = 0; i< thread_ownership.size(); i++) {
+
+									thread_index = thread_ownership.get(i); 
+
+
+									if(!thread_index.isAlive()){
+
+										temp = Integer.parseInt(thread_index.getName());		
+
+										thread_ownership.remove(thread_index);
+										stillrunninglist.remove(stillrunninglist.get(i));
+										i--;//because there is one less now
+
+
+										Pointer_ONLY = reach_back[temp];
+
+										if(display_internal){
+											this.insert_spaces_for_iteration("B");
+											System.out.print("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+Pointer_ONLY.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
+											System.out.println(" Did it return a star? "+this.is_star(Pointer_ONLY.to_int(), true));
+										}
+
+
+
+										if((Pointer_ONLY.get_length()+previous_nodes[temp].get_length())>max_star.meta_data){
+											if(display_internal){
+												this.insert_spaces_for_iteration("B");
+												System.out.println("found new max star!! just_a_pointer: "+Pointer_ONLY.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+max_star.meta_data);
+											}
+											max_star.copy_array(Pointer_ONLY);
+
+											max_star.use_me_or(max_star, previous_nodes[temp]);
+
+											max_star.meta_data = max_star.get_length();
+
+											if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+										}
+										else{
+										}
+
+
+										status[temp] = 0;
+										thread_count--;
+
+
+									}
+								}
+								
+
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println(">> B_calls: "+B_calls+" run: "+run+" calling Bochert("+memory_element.print_list()+" ,cm: "+(max_star.meta_data-deepness<1?0:max_star.meta_data-deepness-1)+"(aka: max_star is: "+max_star.print_list()+") ,sm: "+nodes+" , abc: "+temp_element.print_list()+"; ");
+								}
+
+								if((max_star.meta_data-deepness-1<=0?0:max_star.meta_data-deepness-1) >= memory_element.get_length()){
+
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("in run loop, in second number check, but run now false because ms.md ("+max_star.meta_data+") - deepness ("+deepness+" -1 >= me.gl"+memory_element.get_length()+" which is the same thing as all_nodes");
+									}
+
+									Pointer_ONLY = empty_node;
+								}
+								else{
+									try {
+										temp = available_thread();
+											} catch(InterruptedException e) {
+											} 
+
+								//if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println("temp = "+temp);
+									//}
+								}
+
+								if(temp == 0){
+
+									Pointer_ONLY = Newer_Bochert(memory_element, (max_star.meta_data-deepness-1<1?0:max_star.meta_data-deepness-1), nodes, display_internal,3);
+									
+
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println(">> returned with: "+Pointer_ONLY.print_list()+" FYI tho, just_a_pointer.get_length: "+Pointer_ONLY.get_length()+" deepness: "+deepness+" <?> max_star.md: "+max_star.meta_data+" and fyi, empty node: "+empty_node.print_list());
+								}
+
+								if((Pointer_ONLY.get_length()+deepness)>=max_star.meta_data){
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("found new max star!! te.gl: "+Pointer_ONLY.print_list()+" deepness: "+deepness+" previous max_star.md: "+max_star.meta_data);
+									}
+									max_star.copy_array(Pointer_ONLY);
+									Pointer_ONLY = nodes_to_consider;
+									while(Pointer_ONLY != TOP_nodes_to_consider){
+										if(display_internal){
+											this.insert_spaces_for_iteration("B");
+											System.out.println("Adding: "+Pointer_ONLY.meta_data);
+										}
+										max_star.add(Pointer_ONLY.meta_data);
+										Pointer_ONLY = Pointer_ONLY.memory_previous;
+										if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+									}
+									max_star.add(DCC[check_set].meta_data);
+									max_star.meta_data = max_star.get_length();
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("just added: "+DCC[check_set].meta_data+" so max_star is now: "+max_star.print_list());
+									}
+									if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+
+
+								}
+
+									
+								}
+								else{
+
+									
+									stillrunning1 = new semaphore();
+									try{stillrunning1.take();} catch(InterruptedException e){}
+
+									task = new bthread(reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,(max_star.meta_data-deepness-1<=1?0:max_star.meta_data-deepness-1),semasema,stillrunning1,B_iteration_deep,3);	
+									worker = new Thread(task);
+									worker.setName(String.valueOf(temp));
+
+									previous_nodes[temp].zero();
+									Pointer_ONLY = nodes_to_consider;
+									while(Pointer_ONLY != TOP_nodes_to_consider){
+										previous_nodes[temp].add(Pointer_ONLY.meta_data);
+										Pointer_ONLY = Pointer_ONLY.memory_previous;
+									}
+									previous_nodes[temp].add(DCC[check_set].meta_data);
+
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("!!!Make a new THREAD!!! Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list());
+									}
+
+									priority = Thread.currentThread().getPriority();
+									if(priority>7)
+										Thread.currentThread().setPriority(priority-1);
+									worker.setPriority(10);
+									worker.start();
+
+
+									thread_ownership.add(worker);
+									stillrunninglist.add(stillrunning1);
+								}
+
+								}
+								
+								
+/*								else
+									Pointer_ONLY = Newer_Bochert(memory_element, (max_star.meta_data-deepness-1<1?0:max_star.meta_data-deepness-1), nodes, display,3);
+								
+
+								if(display){
+									this.insert_spaces_for_iteration("B");
+									System.out.println(">> returned with: "+Pointer_ONLY.print_list()+" FYI tho, just_a_pointer.get_length: "+Pointer_ONLY.get_length()+" deepness: "+deepness+" <?> max_star.md: "+max_star.meta_data+" and fyi, empty node: "+empty_node.print_list());
+								}
+
+								if((Pointer_ONLY.get_length()+deepness)>=max_star.meta_data){
+									if(display){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("found new max star!! te.gl: "+Pointer_ONLY.print_list()+" deepness: "+deepness+" previous max_star.md: "+max_star.meta_data);
+									}
+									max_star.copy_array(Pointer_ONLY);
+									Pointer_ONLY = nodes_to_consider;
+									while(Pointer_ONLY != TOP_nodes_to_consider){
+										if(display){
+											this.insert_spaces_for_iteration("B");
+											System.out.println("Adding: "+Pointer_ONLY.meta_data);
+										}
+										max_star.add(Pointer_ONLY.meta_data);
+										Pointer_ONLY = Pointer_ONLY.memory_previous;
+										if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+									}
+									max_star.add(DCC[check_set].meta_data);
+									max_star.meta_data = max_star.get_length();
+									if(display){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("just added: "+DCC[check_set].meta_data+" so max_star is now: "+max_star.print_list());
+									}
+									if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+
+
+								}
+								else{
+								}
+*/
+
+								if(display_internal){
+									this.insert_spaces_for_iteration("B");
+									System.out.println("ran it, GOING BACK now");
+								}
+
+								checked_set.add(nodes_to_consider.meta_data);
+								memory_element = memory_element.memory_previous;
+								all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
+								all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
+
+
+								alpha3 = alpha3.memory_previous;
+
+
+
+
+							}
+							else{
+								//go deeper
+
+								if(best_next_ntc.get_length() > 0){
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("did not run it because run was not true at start, PRESSING ON because best_next_ntc: "+best_next_ntc.print_list());
+									}
+
+									checked_set = checked_set.memory_next;
+									nodes_to_consider = nodes_to_consider.memory_next;
+
+									deepness++;
+								}
+								else{
+									if(display_internal){
+										this.insert_spaces_for_iteration("B");
+										System.out.println("did not run it because run was not true at start, GOING BACK because best_next_ntc: "+best_next_ntc.print_list());
+									}
+
+									checked_set.add(nodes_to_consider.meta_data);
+									memory_element = memory_element.memory_previous;								
+									all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
+									all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
+
+									alpha3 = alpha3.memory_previous;
+
+
+								}
+
+							}
+						}
+					}
+					else{
+						if(display_internal){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("GOING BACK because nodes_to_consider is: "+nodes_to_consider.print_list()+" and I_was_deleted: "+I_was_deleted);
+						}
+						//go back to previous
+						all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
+						all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
+						nodes_to_consider = nodes_to_consider.memory_previous;
+						memory_element = memory_element.memory_previous;
+
+						alpha3 = alpha3.memory_previous;
+
+
+						checked_set = checked_set.memory_previous;
+						checked_set.memory_next = null;
+						if(nodes_to_consider.meta_data > 0){
+							checked_set.add(nodes_to_consider.meta_data);
+						}
+						deepness--;
+					}
+				}
+
+
+			}
+
+			//you can add in the previous nodes now, the ones you didn't need to check because they were already checked at the highest level, but this additional info can help isolate what needs to be checked
+			Bochert_neighbor(DCC[check_set],DCC[check_set].meta_data,original_all_nodes);
+			check_set++;
+			
+			
+			for (int i = 0; i< thread_ownership.size(); i++) {
+
+				thread_index = thread_ownership.get(i); 
+
+
+				if(!thread_index.isAlive()){
+
+					temp = Integer.parseInt(thread_index.getName());		
+
+					thread_ownership.remove(thread_index);
+					stillrunninglist.remove(stillrunninglist.get(i));
+					i--;//because there is one less now
+
+
+					Pointer_ONLY = reach_back[temp];
+
+					if(display_internal){
+						this.insert_spaces_for_iteration("B");
+						System.out.print("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+Pointer_ONLY.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
+						System.out.println(" Did it return a star? "+this.is_star(Pointer_ONLY.to_int(), true));
+					}
+
+
+
+					if((Pointer_ONLY.get_length()+previous_nodes[temp].get_length())>max_star.meta_data){
+						if(display_internal){
+							this.insert_spaces_for_iteration("B");
+							System.out.println("found new max star!! just_a_pointer: "+Pointer_ONLY.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+max_star.meta_data);
+						}
+						max_star.copy_array(Pointer_ONLY);
+
+						max_star.use_me_or(max_star, previous_nodes[temp]);
+
+						max_star.meta_data = max_star.get_length();
+
+						if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+					}
+					else{
+					}
+
+
+					status[temp] = 0;
+					thread_count--;
+
+
+				}
+			}
+
+		}
+
+
+		if(display_internal){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("Checking threads for finished threads");
+		}
+
+		for (int i = 0; i< thread_ownership.size(); i++) {
+
+			thread_index = thread_ownership.get(i); 
+
+
+			if(thread_index.isAlive()){
+				try{stillrunninglist.get(i).take();} catch(InterruptedException e) {}
+			}
+
+				temp = Integer.parseInt(thread_index.getName());		
+
+				thread_ownership.remove(thread_index);
+				stillrunninglist.remove(stillrunninglist.get(i));
+
+				i--;//because there is one less now
+
+				Pointer_ONLY = reach_back[temp];
+
+									
+				
+				if(display_internal){
+					this.insert_spaces_for_iteration("B");
+					System.out.println("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+Pointer_ONLY.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
+					System.out.println(" Did it return a star? "+this.is_star(Pointer_ONLY.to_int(), true));
+				}
+
+				if(!this.is_star(Pointer_ONLY.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+				
+				
+				temp_element.use_me_or(Pointer_ONLY, previous_nodes[temp]);
+				if(!this.is_star(temp_element.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+
+
+				if((Pointer_ONLY.get_length()+previous_nodes[temp].get_length())>max_star.meta_data){
+					if(display_internal){
+						this.insert_spaces_for_iteration("B");
+						System.out.println("found new max star!! just_a_pointer: "+Pointer_ONLY.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+max_star.meta_data);
+					}
+					max_star.copy_array(Pointer_ONLY);
+
+					max_star.use_me_or(max_star, previous_nodes[temp]);
+
+					max_star.meta_data = max_star.get_length();
+
+					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
+				}
+				else{
+				}
+
+
+				status[temp] = 0;
+				thread_count--;
+
+		}
+
+		
+		if(display_internal){
+			this.insert_spaces_for_iteration("B");
+			System.out.println("Returning: "+max_star.print_list());
+		}
+
+		if(degressive_display && (display_level > B_iteration_deep)&&(where_from == 1)){
+			display_level = B_iteration_deep-1; 
+		}
+
+		
+		B_iteration_deep--;
+		return max_star;
+
+	}
+
+
+	private boolean does_alpha_already_exist(node3 alpha3, node3 set){
+
+		if(set.length == 0)
+			return true;
+
+		node3 temp = alpha3;
+		while((temp!=null)&&(temp != set)){
+			if(temp.set_equals(set))
+				return true;
+			temp= temp.alpha_next;
+		}
+		return false;
+		 
+	}
+
+
+	private boolean unranked_find_best_ntc_dcc(node3 alpha3,int check_set, node3 check_all_nodes, node3 best_ntc, node3 best_dcc){
+
+		if(check_all_nodes.length == 0){
+			best_ntc.zero();
+			best_dcc.zero();
+			return false;
+		}
+
+		node3 temp = new node3(nodes);
+		int[] cycle;
+		int most_ntc = -1;
+		int most_dcc = -1;
+		int bestest_node = -1;
+		node3 dcc = new node3(nodes);
+		node3 nodes_not_alpha_connected = new node3(nodes); 
+		nodes_not_alpha_connected.invert();//now all nodes
+
+		//for(int i = 0; i<check_set; i++){
+		nodes_not_alpha_connected.use_me_and_not_first(alpha3, nodes_not_alpha_connected); //all nodes not connected to alpha
+		//}
+		nodes_not_alpha_connected.use_me_and(nodes_not_alpha_connected, check_all_nodes); //all nodes that aren't connected to alpha but are connected to check_all_nodes
+
+		//cycle = check_all_nodes.to_int();
+		cycle = nodes_not_alpha_connected.to_int();
+
+
+		for(int i = 0; i<cycle.length; i++){
+			Bochert_neighbor(dcc, cycle[i], check_all_nodes);//dcc
+			temp.use_me_and_not_first(dcc, nodes_not_alpha_connected);//ntc contained in nodes_not_alpha
+
+			if(temp.get_length() > most_ntc){
+				most_ntc = temp.get_length();
+				most_dcc = dcc.get_length();
+				bestest_node = cycle[i];
+			}
+			if(temp.get_length() == most_ntc){
+				if(dcc.get_length() > most_dcc){
+					most_ntc = temp.get_length();
+					most_dcc = dcc.get_length();
+					bestest_node = cycle[i];
+				}
+			}
+		}
+
+		if(most_ntc <= 0){//this means that there are no uncommon nodes
+			//System.out.println("alpha3: "+alpha3.print_list());
+			//System.out.println("check_all_nodes: "+check_all_nodes.print_list());
+			best_dcc.zero();
+			best_ntc.zero();
+			return false;
+		}
+
+		Bochert_neighbor(best_dcc, bestest_node, check_all_nodes);
+		best_ntc.use_me_and_not_first(best_dcc, check_all_nodes);
+		best_ntc.add(bestest_node);
+
+		return true;
+
+	}
+
+
+	private boolean get_next_comp_all_nodes(node3 next, node3 comp_all_nodes, node3 all_nodes_deleting){
+
+		boolean display = false;//(B_calls >= 17)?true:false;
+		boolean contains_check_set = false;
+
+
+		if(display)System.out.println("In get_next_comp_all_nodes, comp_all_nodes: "+comp_all_nodes.print_list()+" all_nodes_deleting: "+all_nodes_deleting.print_list());
+
+		if(comp_all_nodes.get_length() == 0){
+			if(display)System.out.println("returning because comp_all_nodes is zero length");
+			next.zero();
+			return contains_check_set;
+		}
+
+		node3 temp_element = new node3(nodes);
+		node3 temp_extra = new node3(nodes);
+		node3 temp_unique = new node3(nodes);
+		node3 all_nodes_unique = new node3(nodes);
+		node3 common = new node3(nodes);
+
+		temp_extra.use_me_and_not_first(all_nodes_deleting, comp_all_nodes);
+
+		if(temp_extra.get_length() == 0){
+			if(display)System.out.println("returning because comp_all_nodes has no nodes that are not already in all_nodes_deleting");
+			next.zero();
+			contains_check_set = false;
+			return contains_check_set;
+		}
+
+		//go_no_further = false;
+		int[] cycle = temp_extra.to_int();
+		int extra = -1;
+		int node = -1;
+		int minimizing_unique_all_nodes = nodes;
+
+
+		for(int i = 0; i < cycle.length; i++){
+
+			Bochert_neighbor(temp_element, cycle[i], comp_all_nodes);
+			if(display)System.out.println("!!!!!comp_all_nodes: "+comp_all_nodes.print_list());
+			if(display)System.out.println("!!!!!connected to: "+cycle[i]+" is temp element: "+temp_element.print_list()+" graph[55][57]"+graph[55][57]);
+
+			temp_element.similar_differences(all_nodes_deleting, temp_unique, all_nodes_unique);
+			common.use_me_and_not_first(all_nodes_unique, all_nodes_deleting);
+
+			if(display)System.out.println("comparing node: "+cycle[i]+" connected to: "+temp_element.print_list()+" with unique: "+temp_unique.print_list());
+			if(display)System.out.println("check_set connected to: "+all_nodes_deleting.print_list()+" with unique: "+all_nodes_unique.print_list());
+			if(display)System.out.println("common nodes: "+common.print_list());
+
+
+
+			//			all_nodes_unique = reduction(all_nodes_deleting, null, all_nodes_unique);
+			//			if(display)System.out.println("all nodes unique reduced is: "+all_nodes_unique.print_list());
+			if(all_nodes_unique.get_length() == 0){
+				contains_check_set = true;
+				//				System.out.println("this is deletable, no need to run");
+
+				next.copy_array(temp_element);
+				next.meta_data = cycle[i];
+
+				return contains_check_set;
+			}
+
+
+			//			temp_unique = reduction(temp_element, null, temp_unique);
+			//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
+
+
+			if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
+				if(display)System.out.println("min_unique is g.t. all_nodes_unique");
+				minimizing_unique_all_nodes = all_nodes_unique.get_length();
+				extra = temp_unique.get_length();
+				node = cycle[i];				
+			}
+			else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
+				if(temp_unique.get_length() > extra){//guarnteed better
+					if(display)System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
+					minimizing_unique_all_nodes = all_nodes_unique.get_length();
+					extra = temp_unique.get_length();
+					node = cycle[i];
+				}
+			}
+
+		}
+
+		Bochert_neighbor(temp_extra, node, comp_all_nodes);
+		temp_extra.meta_data = node;
+
+		next.copy_array(temp_extra);
+		next.meta_data = node;
+
+		/*		System.out.println("node chosen for next alpha3 was: "+node+" contains_check_set: "+contains_check_set);
+		System.out.println("comp_all_nodes: "+all_nodes_deleting.print_list()+" which was reduced to: "+best_ntc.print_list());
+		node3 delete_this = reduction(all_nodes_deleting, null, null);
+		System.out.println(" it could've been reduced to: "+delete_this.print_list());
+		System.out.println(" alpha3 was: "+comp_all_nodes.print_list()+" is now: "+next.print_list());
+		 */
+
+
+		if(display)System.out.println("returning, node "+node+" won"+" and temp_extra: "+temp_extra.print_list());
+
+
+		return contains_check_set;
+	}
+
+
+	private boolean get_next_comp_all_nodes_use_deleted(node3 next, node3 comp_all_nodes, node3 all_nodes_deleting,node3 checked_set){
+
+		boolean display = false;//(B_calls >= 17)?true:false;
+		boolean contains_check_set = false;
+
+
+		if(display)System.out.println("In get_next_comp_all_nodes, comp_all_nodes: "+comp_all_nodes.print_list()+" all_nodes_deleting: "+all_nodes_deleting.print_list());
+
+		if(comp_all_nodes.get_length() == 0){
+			if(display)System.out.println("returning because comp_all_nodes is zero length");
+			next.zero();
+			return contains_check_set;
+		}
+
+		node3 temp_element = new node3(nodes);
+		node3 temp_extra = new node3(nodes);
+		node3 temp_unique = new node3(nodes);
+		node3 all_nodes_unique = new node3(nodes);
+		node3 common = new node3(nodes);
+
+		//temp_extra.use_me_and_not_first(all_nodes_deleting, comp_all_nodes);
+		temp_extra.copy_array(checked_set);//look into deleted nodes
+
+		if(temp_extra.get_length() == 0){
+			if(display)System.out.println("returning because comp_all_nodes has no nodes that are not already in all_nodes_deleting");
+			next.zero();
+			contains_check_set = false;
+			return contains_check_set;
+		}
+
+		//go_no_further = false;
+		int[] cycle = temp_extra.to_int();
+		int extra = -1;
+		int node = -1;
+		int minimizing_unique_all_nodes = nodes;
+
+
+		for(int i = 0; i < cycle.length; i++){
+
+			Bochert_neighbor(temp_element, cycle[i], comp_all_nodes);
+			if(display)System.out.println("!!!!!comp_all_nodes: "+comp_all_nodes.print_list());
+			if(display)System.out.println("!!!!!connected to: "+cycle[i]+" is temp element: "+temp_element.print_list()+" graph[55][57]"+graph[55][57]);
+
+			temp_element.similar_differences(all_nodes_deleting, temp_unique, all_nodes_unique);
+			common.use_me_and_not_first(all_nodes_unique, all_nodes_deleting);
+
+			if(display)System.out.println("comparing node: "+cycle[i]+" connected to: "+temp_element.print_list()+" with unique: "+temp_unique.print_list());
+			if(display)System.out.println("check_set connected to: "+all_nodes_deleting.print_list()+" with unique: "+all_nodes_unique.print_list());
+			if(display)System.out.println("common nodes: "+common.print_list());
+
+
+
+			//			all_nodes_unique = reduction(all_nodes_deleting, null, all_nodes_unique);
+			//			if(display)System.out.println("all nodes unique reduced is: "+all_nodes_unique.print_list());
+			if(all_nodes_unique.get_length() == 0){
+				contains_check_set = true;
+				//				System.out.println("this is deletable, no need to run");
+
+				next.copy_array(temp_element);
+				next.meta_data = cycle[i];
+
+				return contains_check_set;
+			}
+
+
+			//			temp_unique = reduction(temp_element, null, temp_unique);
+			//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
+
+
+			if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
+				if(display)System.out.println("min_unique is g.t. all_nodes_unique");
+				minimizing_unique_all_nodes = all_nodes_unique.get_length();
+				extra = temp_unique.get_length();
+				node = cycle[i];				
+			}
+			else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
+				if(temp_unique.get_length() > extra){//guarnteed better
+					if(display)System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
+					minimizing_unique_all_nodes = all_nodes_unique.get_length();
+					extra = temp_unique.get_length();
+					node = cycle[i];
+				}
+			}
+
+		}
+
+		Bochert_neighbor(temp_extra, node, comp_all_nodes);
+		temp_extra.meta_data = node;
+
+		next.copy_array(temp_extra);
+		next.meta_data = node;
+
+
+		return contains_check_set;
+	}
+
+
+
+
+	private void insert_spaces_for_iteration(String mode){
+		if (mode == "B"){
+			for (int i = 0; i<=B_iteration_deep; i++)
+				System.out.print(".");
+			System.out.print(B_iteration_deep+" ");
+		}
+		else if (mode == "BK"){
+			for (int i = 0; i<=BK_iteration_deep; i++)
+				System.out.print(" ");
+			System.out.print(BK_iteration_deep+" ");
+		}
+	}		
+
+
+	public int[] BronKerbosch (int[] R, int[] P, int[] X){
+
+		if((BK_calls %100000 == 0))
+			System.out.println("BK is on call number: "+BK_calls);
+
+
+		if (verboseBK) {
+			for (int i = 0; i<=BK_iteration_deep; i++)
+				System.out.print(" ");
+			System.out.println(BK_iteration_deep+" Entering BK with R="+array2string(R)+" and P="+array2string(P)+" and X="+array2string(X));
+
+			if (BK_iteration_deep == 1){
+				System.out.println("Current Node: "+array2string(R)+" current Iteration Count:"+BK_calls);
+			}
+			if (BK_iteration_deep == 2){
+				System.out.println("Current Node (iteration 2 deep): "+array2string(R)+" current Iteration Count:"+BK_calls);
+			}
+		}
+
+		//		long start;		
+
+		BK_iteration_deep++;
+		BK_calls++;
+
+		if (((P == null) || (P.length ==0)) && ((X == null) || (X.length ==0))){
+			BK_iteration_deep--;
+			return R;
+		}
+		else if ((P == null) || P.length ==0){
+			BK_iteration_deep--;
+			return null;
+		}
+
+		int[] current_node = new int[1];
+		int[] pivot_node = new int[1];
+		int[] Pprime = new int[P.length];
+		int[] Pnew, Rnew, Xnew;
+		int[] max = null, temp_max = null;
+		System.arraycopy(P, 0, Pprime, 0, P.length);
+
+
+		System.arraycopy(P, 0, pivot_node, 0, 1); //define pivot
+		for (int i = 0; i < P.length; i++){ //start on first node that isn't pivot
+
+			//			start = System.currentTimeMillis();
+
+			if (!neighbor(pivot_node[0], P[i])){
+
+				System.arraycopy(P, i, current_node, 0, 1); //define current node
+
+				Pprime = remove_node(Pprime,P[i]);
+				Rnew = union(R,current_node);
+				Pnew = intersection(Pprime,all_neighbors(current_node[0]));
+				Xnew = intersection(X,all_neighbors(current_node[0]));
+
+				//System.out.println("Calling BK on R="+array2string(Rnew)+" and P="+array2string(Pnew)+" and X="+array2string(Xnew));
+				temp_max = BronKerbosch(Rnew, Pnew, Xnew);
+				if ((max == null) || ((temp_max != null) &&(temp_max.length > max.length))){
+					max = temp_max;
+				}
+
+				X = union(X, current_node);
+
+			}
+
+
+			//			System.out.println(System.currentTimeMillis()-start);
+			//			this.pause();
+
+		}
+
+		BK_iteration_deep--;
+
+		return max;
+	}
+
+
+	private int[] remove_node(int[] a, int b){
+		int[] new_a = new int[a.length-1];
+		int index = 0;
+
+		while ((index < a.length) && (a[index] != b))
+			index++;
+
+		if ((index < a.length) && (a[index] == b)){ 			
+			System.arraycopy(a, 0, new_a, 0, index);
+			System.arraycopy(a, index+1, new_a, index, a.length-1-index);
+			return new_a;
+		}
+		else		
+			return a;
+	}
+
+	private boolean neighbor(int a, int b){
+		if (graph[a-1][b-1] == 1)
+			return true;
+		else
+			return false;	
+	}
+
+	private int[] all_neighbors(int a){
+		int[] temp_ans = new int[nodes];
+		int ans_index = 0;
+
+		if (a < 0){
+			for (int i = 0; i < nodes; i++){
+				temp_ans[ans_index] = i+1;
+				ans_index++;
+			}			
+		}
+		else		
+			for (int i = 0; i < nodes; i++){
+				if (graph[a-1][i] == 1){
+					temp_ans[ans_index] = i+1;
+					ans_index++;
+				}
+
+			}	
+		if (ans_index != 0){
+			int[] ans = new int[ans_index];
+			System.arraycopy(temp_ans, 0, ans, 0, ans_index);
+			return ans;
+		}
+		else
+			return null;
+	}
+
+	private int[] intersection(int[] a, int[] b){
+		if ((a == null) ||  (b == null))
+			return null;
+
+		int alen = a.length, blen = b.length;
+
+		int[] c = new int[alen];
+		int ia = 0, ib = 0, ic = 0;
+
+		while ((ia < alen) && (ib < blen)){
+			if (a[ia] == b[ib]){
+				c[ic] = a[ia];
+				ia++;
+				ib++;
+				ic++;
+			}
+			else if (a[ia] < b[ib]){ 
+				ia++;
+			}
+			else if (b[ib] < a[ia]){ 
+				ib++;
+			}
+		}
+
+		int[] d = new int[ic];
+
+		System.arraycopy(c, 0, d, 0, d.length);
+
+		return d;
+	}
+
+
+
+	private int[] union(int[] a, int[] b){
+		if (a == null)
+			return b;
+		if (b == null)
+			return a;
+
+		int alen = a.length, blen = b.length;
+
+
+
+		int[] c = new int[alen + blen];
+		int ia = 0, ib = 0, ic = 0;
+
+		while ((ia < alen) || (ib < blen)){
+			if ((ia < alen) && (ib < blen)){
+				if (a[ia] == b[ib]){
+					c[ic] = a[ia];
+					ia++;
+					ib++;
+					ic++;
+				}
+				else if (a[ia] < b[ib]){ 
+					c[ic] = a[ia];
+					ia++;
+					ic++;
+				}
+				else if (b[ib] < a[ia]){ 
+					c[ic] = b[ib];
+					ib++;
+					ic++;
+				}}
+			else if ((ia < alen) && !(ib < blen)){
+				c[ic] = a[ia];
+				ia++;
+				ic++;
+			}
+			else if ((ib < blen) && !(ia < alen)){
+				c[ic] = b[ib];
+				ib++;
+				ic++;
+			}
+		}
+
+
+		int[] d = new int[ic];
+
+		System.arraycopy(c, 0, d, 0, d.length);
+
+		return d;
+	}
+
+
+	public String disp_time(){
+
+		long t = System.currentTimeMillis();
+
+		t=t/1000;
+		long s = t%60;
+		t=t/60;
+		long m = t%60;
+		t=t/60;
+		long h = t%60+7;
+
+
+		return h+":"+m+":"+s;
+	}
+
+	public void disp_graph(){
+		for (int i = 0; i < graph.length; i++){
+			for (int j = 0; j < graph[i].length; j++){
+				System.out.print(graph[i][j]);
+				System.out.print(' ');
+			}
+			System.out.println("");
+		}
+	}
+
+	public String array2string(int[] array){
+		String out = "";
+
+		if (array != null)
+			for(int i = 0; i < array.length; i++)
+				out = out + array[i] + " ";
+
+
+		return out;
+	}
+
+	/*public String barray2string(int[] array){
+		String out = "";
+
+		if (array != null)
+			for(int i = 0; i < array.length; i++)
+				out = out + (array[i]-1) + " ";
+
+
+		return out;
+	}*/
 
 	public boolean is_star(int[] nodes, boolean clique){
 
@@ -140,1103 +2229,22 @@ public class bthread implements Runnable  {
 
 
 
+	public int[] find_P(){
+		int[] P = new int[nodes];
 
-	public String disp_time(){
+		for (int i = 0; i<nodes ; i++)
+			P[i] = i+1;
 
-		long t = System.currentTimeMillis();
-
-		t=t/1000;
-		long s = t%60;
-		t=t/60;
-		long m = t%60;
-		t=t/60;
-		long h = t%60+7;
-
-
-		return h+":"+m+":"+s;
-	}
-
-	
-	private int nonzeros(int[] countme){
-		int length = 0;
-		
-		for(int i = 0; i<countme.length; i++){
-			if(countme[i]!=0)
-				length++;
-		}
-		
-		return length;
-		
-	}
-	
-
-	private void Bochert_neighbor(node3 result, int n, node3 array){
-
-		result.use_me_and(graph3[n-1], array);
-
-
-		return;
-
+		return P;
 	}
 
 
+	public int[] test(){
+
+		int[] temp = new int[100];
 
 
-
-	private void insert_spaces_for_iteration(String mode){
-		if (mode == "B"){
-			System.out.print(whoami);
-			for (int i = 0; i<=B_iteration_deep; i++)
-				System.out.print(".");
-			System.out.print(B_iteration_deep+" ");
-		}
-		else if (mode == "BK"){
-			for (int i = 0; i<=BK_iteration_deep; i++)
-				System.out.print(" ");
-			System.out.print(BK_iteration_deep+" ");
-		}
-	}		
-
-
-
-	private boolean run_it_down(node2 alpha, node3 common, int deepness, int check_set, boolean display, node3 TOP_nodes_to_consider, int comp_set,node3 comp_set_solution){
-
-		node3 look_in_set = new node3(nodes);
-		node3 memory_element = new node3(nodes);
-		node3 index_Tntc;
-
-
-		look_in_set = new node3(nodes);
-
-		for(int j = 0; j<alpha.get_length(); j++){
-			Bochert_neighbor(memory_element, alpha.get_full_array()[j], common);
-			if(memory_element.get_length() == common.get_length()){
-				look_in_set.add(alpha.get_full_array()[j]);
-			}
-
-		}
-
-
-		if(comp_set < check_set){
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
-			}
-			memory_element = Newer_Bochert(look_in_set, 0/*deepness-1*/, nodes/*deepness*/,false, null);
-			comp_set_solution.copy_array(memory_element);
-			if(deepness <= memory_element.get_length()){
-				if(display)	System.out.println("true");
-				return false;
-			}
-			if(display)System.out.println("false");
-		}
-		else if(comp_set == check_set){
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
-			}
-			memory_element = Newer_Bochert(look_in_set,0/* deepness-1*/, nodes/*deepness+1*/,false, null);
-			comp_set_solution.copy_array(memory_element);
-			if((deepness+1) <= memory_element.get_length()){
-				if(display)System.out.println("true");
-				return false;
-			}
-			if(deepness == memory_element.get_length()){
-				index_Tntc = TOP_nodes_to_consider.memory_next;
-
-				while((index_Tntc != null)&&(memory_element.find(index_Tntc.meta_data))){
-					index_Tntc = index_Tntc.memory_next;
-				}
-				if(index_Tntc != null){//ended because an element wasn't found, not because Tntc==null
-					if(display)System.out.println("true");
-					return false;					
-				}
-
-			}
-			if(display)System.out.println("false");
-		}
-		else{//shouldn't ever trigger now that it has comp_set has to be l.t. check_set
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.print("== B(alpha"+comp_set+"("+alpha.meta_data+")"+"&&DCC="+look_in_set.print_list()+"):");
-			}
-			memory_element = Newer_Bochert(look_in_set, 0/*deepness*/, nodes/*deepness+1*/, false, null);
-			comp_set_solution.copy_array(memory_element);
-			if((deepness+1) <= memory_element.get_length()){
-				if(display)System.out.println("true");
-				return false;
-			}
-			if(display)System.out.println("false");
-		}
-
-
-
-
-
-		return true;
+		return temp;
 	}
-
-
-	private node3 reduction(node3 check_nodes, node3 not_included_extra_nodes){
-
-
-		node2 set = check_nodes.to_new_node2();
-
-		node3 all_nodes = check_nodes.copy_by_erasing();
-
-		if(not_included_extra_nodes != null)
-			all_nodes.use_me_or(all_nodes, not_included_extra_nodes);
-
-		int deleted = -1;
-		boolean multi_node = false;
-
-		for(int i = 0; i<set.get_length(); i++){
-			if((deleted != -1)&&(i>=deleted)){
-				check_nodes.delete(set.get_full_array()[deleted]);
-				set.delete(set.get_full_array()[deleted]);
-				deleted=-1;
-				multi_node = false;
-				i--;//in case this was the last node, reset to re-evalute the number of nodes left to check (aka, stop if zero)
-			}
-			else{
-				if(deleted == -1){
-					if(deletable(set.get_full_array()[i], all_nodes,null,false)){
-						deleted = i;
-						i = -1;
-					}
-				}
-				else{
-					if(multi_node){
-						if(deletable(set.get_full_array()[i], all_nodes,null,false)){
-							check_nodes.delete(set.get_full_array()[i]);
-							set.delete(set.get_full_array()[i]);
-							deleted--;
-							i = -1;					
-						}
-					}
-					else if(graph[i][deleted] == 1){//not connected so worth considering again
-						if(deletable(set.get_full_array()[i], all_nodes,null,false)){
-							check_nodes.delete(set.get_full_array()[i]);
-							set.delete(set.get_full_array()[i]);
-							multi_node = true;
-							deleted--;
-							i = -1;					
-						}
-					}
-					else{
-					}
-				}
-
-			}
-		}
-
-
-		return check_nodes;
-	}
-
-	private boolean deletable(int n, node3 all_nodes, node3 lost_nodes,boolean save){
-
-		node3 connected = new node3(nodes);
-		node3 test = new node3(nodes);
-
-		connected.use_me_and(graph3[n-1], all_nodes);
-
-		test.use_me_and_not_first(connected, all_nodes);//no need to check the nodes that it's connected to, they can't be connected to the same because they cannot be connected to themself		
-		test.delete(n);//just in case, current implementation doesn't need this tho, later ones might
-		int[] int_nodes = test.to_int();
-
-		for(int i = 0; i<int_nodes.length; i++){
-			test.use_me_and(graph3[int_nodes[i]-1], connected);
-			//System.out.println("====== connected: "+connected.print_list()+" test: "+)
-			if(test.get_length() == connected.get_length()){
-				all_nodes.delete(n);
-				if(save){
-					all_nodes.side = (char)int_nodes[i];
-				}
-				return true;
-			}
-		}
-		if(lost_nodes != null){
-			int_nodes = lost_nodes.to_int();
-
-			for(int i = 0; i<int_nodes.length; i++){
-				test.use_me_and(graph3[int_nodes[i]-1], connected);
-				//System.out.println("====== connected: "+connected.print_list()+" test: "+)
-				if(test.get_length() == connected.get_length()){
-					all_nodes.delete(n);
-					if(save){
-						all_nodes.side = (char)int_nodes[i];
-					}
-					return true;
-				}
-			}			
-		}
-
-
-		return false;
-
-	}
-
-
-	private node3 Newer_Bochert(node3 all_nodes, int current_max, int sought_max, boolean show, node3 already_been_checked){
-
-
-
-		B_iteration_deep++;
-		B_calls++;
-
-		//		if((all_nodes != null)&&(already_been_checked != null)){
-		//			this.insert_spaces_for_iteration("B");
-		//			System.out.println("already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
-		//		}
-
-		all_nodes = reduction(all_nodes, null);
-		//		if((all_nodes != null)&&(already_been_checked != null)){
-		//			this.insert_spaces_for_iteration("B");
-		//			System.out.println("after reduction already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
-		//		}
-
-		boolean display = (((show == true)&&(B_iteration_deep < (display_level+1)))?true:false);
-
-		//		if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-		//			this.insert_spaces_for_iteration("B");
-		//			System.out.println(">> B_calls: "+B_calls+" calling Bochert("+all_nodes.print_list()+" ,cm: "+current_max+" ,sm: "+sought_max+" , abc: "+(already_been_checked==null?"null":already_been_checked.print_list())+" );");
-		//		}
-
-		if((all_nodes.get_length() == 0)||(all_nodes.get_length() == 1)){
-			B_iteration_deep--;
-			return all_nodes;
-		}
-
-		node3 result = new node3(nodes);		
-
-		if(sought_max <= 1){
-			result.add(all_nodes.get_index(0));
-			B_iteration_deep--;
-			return result;
-		}
-
-		if(all_nodes.get_length() < current_max){
-			B_iteration_deep--;
-			return new node3(nodes);
-		}
-
-		int toptop = all_nodes.get_index(0);
-		node3 TOP_dont_consider_connected = new node3(nodes);// = result.copy_by_erasing();
-		node3 all_nodes_in_set = TOP_dont_consider_connected;
-		node3 TOP_nodes_to_consider = new node3(nodes);
-		node3 TOP_comp_set_solution = new node3(nodes);
-		node3 TOP_lost_nodes = new node3(nodes);
-		node3 lost_nodes = TOP_lost_nodes;
-		node2 alpha_index;
-		node3 comp_set_solution = TOP_comp_set_solution;
-		node3 memory_element = new node3(nodes);
-		node3 temp_element = new node3(nodes);
-		node3 max_star = new node3(nodes);
-		max_star.meta_data = current_max;
-		node3 nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
-		node3 current_alpha = new node3(nodes);
-		node3 just_a_pointer = null;
-		int temp = 0;
-		int check_set = 1;
-		int comp_set = 0;
-		int deepness = 0;
-		boolean I_was_deleted = false;
-		Runnable task;
-		Thread worker;
-		Thread thread_index; 
-		List<Thread> thread_ownership = new ArrayList<Thread>();
-		List<semaphore> stillrunninglist = new ArrayList<semaphore>();
-		semaphore stillrunning1;
-
-
-
-		node2[] alpha = new node2[0];
-		node3[] DCC = new node3[0];
-		int length_extra_alredy_been_checked = 1;
-
-
-		if(already_been_checked != null){
-
-
-
-			already_been_checked.similar_differences(all_nodes, temp_element, memory_element);
-
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.println("already been checked"+already_been_checked.print_list()+" all_nodes: "+all_nodes.print_list());
-				this.insert_spaces_for_iteration("B");
-				System.out.println("extra already been checked"+temp_element.print_list()+" extra all_nodes: "+memory_element.print_list());
-			}
-
-
-			if(memory_element.get_length() == 0){
-				//should never hit here tho...
-				B_iteration_deep--;
-				return empty_node;
-			}
-
-			if(temp_element.get_length() == 0){
-				already_been_checked = null;
-			}
-			else{
-				alpha = new node2[temp_element.get_length()+memory_element.get_length()];
-				for(int i = 0; i< alpha.length; i++){			
-					alpha[i] = new node2(all_nodes.length);
-				}
-
-				length_extra_alredy_been_checked = temp_element.get_length();
-				DCC = new node3[temp_element.get_length()+memory_element.get_length()];
-				for(int i = 0; i<temp_element.get_length(); i++){
-					DCC[i] = new node3(nodes);
-					DCC[i].meta_data = temp_element.get_index(i); 
-					Bochert_neighbor(DCC[i], DCC[i].meta_data, already_been_checked); 
-					already_been_checked.delete(alpha[i].meta_data);		
-					alpha[i].meta_data = -1*alpha[i].meta_data;
-					DCC[i].meta_data = -1*DCC[i].meta_data;
-					//to differentiate from not checked yet sets
-				}
-				for(int i = 0; i<memory_element.get_length(); i++){
-					DCC[i+temp_element.get_length()] = new node3(nodes);
-					DCC[i+temp_element.get_length()].meta_data = memory_element.get_index(i); //need to be checked still
-					Bochert_neighbor(DCC[i+temp_element.get_length()], DCC[i+temp_element.get_length()].meta_data, all_nodes); 
-					alpha[i+temp_element.get_length()].meta_data = DCC[i+temp_element.get_length()].meta_data;
-					all_nodes.delete(alpha[i+temp_element.get_length()].meta_data);		
-				}
-
-
-				TOP_nodes_to_consider = memory_element.copy_by_erasing();// .use_me_and_not_first(TOP_dont_consider_connected, all_nodes);
-				//TOP_nodes_to_consider.pop_first();// get rid of toptop
-				//TOP_dont_consider_connected = new node3(nodes);
-				//dont_consider_connected = TOP_dont_consider_connected;//new node3(nodes);
-				nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
-
-				check_set = length_extra_alredy_been_checked;
-
-			}
-		}
-		if(already_been_checked == null){		
-
-			this.Bochert_neighbor(result, toptop, all_nodes);
-
-
-			//it's connected to all the nodes
-			if((result.get_length()+1)==all_nodes.get_length()){
-				//				if(display){
-				//					this.insert_spaces_for_iteration("B");
-				//					System.out.println(">> B_calls: "+B_calls+" calling Bochert("+result.print_list()+" ,cm: "+(current_max==0?0:current_max-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
-				//				}
-				if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-					//			if(display){
-					this.insert_spaces_for_iteration("B");
-					System.out.println(" NO  WHILE,  B_calls: "+B_calls+" toptop (which is: "+toptop+") connected to all other nodes (which are: "+result.print_list()+"), calling Bochert("+result.print_list()+" ,cm: "+(current_max==0?0:current_max-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
-				}
-
-
-
-				result = Newer_Bochert(result,(current_max==0?0:current_max-1),(sought_max==0?0:sought_max-1),display, null);
-				result.add(toptop);
-				B_iteration_deep--;
-				return result;
-			}
-
-
-			TOP_dont_consider_connected.copy_array(result);
-			all_nodes_in_set = TOP_dont_consider_connected;//new node3(nodes);
-			TOP_nodes_to_consider.use_me_and_not_first(TOP_dont_consider_connected, all_nodes);
-			TOP_nodes_to_consider.pop_first();// get rid of toptop
-			nodes_to_consider = TOP_nodes_to_consider;//new node3(nodes);
-
-			alpha = new node2[TOP_nodes_to_consider.get_length()+1];
-			for(int i = 0; i< alpha.length; i++){			
-				alpha[i] = new node2(all_nodes.length);
-			}
-
-			//find DCCs
-			DCC = new node3[TOP_nodes_to_consider.get_length()+1];
-			DCC[0] = TOP_dont_consider_connected.copy_by_erasing();
-			DCC[0].meta_data = toptop;
-			alpha[0].meta_data = toptop;
-			all_nodes.delete(toptop);
-			for(int i = 1; i< DCC.length; i++){			
-				DCC[i] = new node3(nodes);
-				DCC[i].meta_data = TOP_nodes_to_consider.get_index(i-1);
-				Bochert_neighbor(DCC[i], DCC[i].meta_data, all_nodes); 
-				alpha[i].meta_data = DCC[i].meta_data;
-				all_nodes.delete(alpha[i].meta_data);
-			}
-		}
-
-
-		if(display){
-			for(int i = 0; i<DCC.length; i++){
-				this.insert_spaces_for_iteration("B");
-				System.out.println(" -- DCC["+i+"].md: "+DCC[i].meta_data+" and is: "+DCC[i].print_list());
-			}
-		}
-
-
-
-		//		if(false){
-		if(already_been_checked == null){
-
-			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-				//			if(display){
-				this.insert_spaces_for_iteration("B");
-				if(display)
-					System.out.println(" TOP WHILE  B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+DCC[0].meta_data+" with DCC of: "+DCC[0].print_list()+" with no comp_set but current max of: "+max_star.meta_data);
-				else
-					System.out.println(" TOP WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+DCC[0].meta_data+" with DCC size of: "+DCC[0].get_length()+" with no comp_set but current max of: "+max_star.meta_data);
-			}
-
-//				Thread.sleep(10);
-
-				try {
-			temp = available_thread();
-				} catch(InterruptedException e) {
-				} 
-			//			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.println("temp = "+temp);
-			}
-			//			}
-
-			if(temp == 0){//no new threads
-
-				temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), (max_star.meta_data==0?0:max_star.meta_data-1), nodes, display, null);
-
-				if((temp_element.get_length())>=max_star.meta_data){
-					if(display){
-						this.insert_spaces_for_iteration("B");
-						System.out.println("found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+max_star.meta_data);
-					}
-					max_star.copy_array(temp_element);
-					max_star.add(toptop);
-					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-					max_star.meta_data = max_star.get_length();
-				}
-				else{
-				}
-
-
-			}
-			else{
-				
-				
-				//				task = new bthread(reach_back, thread_pool, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, display_level, empty_node, degressive_display,temp,status,previous_nodes);
-				stillrunning1 = new semaphore();
-				try{stillrunning1.take();} catch(InterruptedException e){}
-
-				task = new bthread(reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), false, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,(max_star.meta_data==0?0:max_star.meta_data-1),semasema,stillrunning1);
-				worker = new Thread(task);
-				worker.setName(String.valueOf(temp));
-
-				previous_nodes[temp].zero();
-				previous_nodes[temp].add(toptop);
-
-				if(display){
-					this.insert_spaces_for_iteration("B");
-					System.out.println("!!!Make a new THREAD!!! Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list());
-				}
-
-
-				worker.start();
-
-				thread_ownership.add(worker);
-				stillrunninglist.add(stillrunning1);
-
-
-			}
-
-		}
-
-
-
-
-		while(check_set < (nodes_to_consider.get_length()+length_extra_alredy_been_checked)){	
-
-			//				if(B_iteration_deep == 0){
-			//					System.out.println("reseting ms.md to 0");
-			//					max_star.meta_data = 0;
-			//				}
-
-			temp = 0;
-			//set alphas
-			for(int i = 0; i< alpha.length; i++){
-
-				if(i != check_set){
-					memory_element.use_me_and_not_first(DCC[check_set], DCC[i]);
-					//memory_element.delete(DCC[check_set].meta_data); //is this true that it shouldn't be included? it can't hurt to remove it, but it might add efficiency if it was kept?
-					memory_element.to_old_node2(alpha[i]);
-
-					if((i<check_set)&&(temp < (DCC[i].get_length()-memory_element.get_length()))){
-						//					if((temp < (DCC[i].get_length()-memory_element.get_length()))){
-						temp = (DCC[i].get_length()-memory_element.get_length());
-						comp_set = i;
-					}
-				}
-				else
-					alpha[i].set_length(0);
-
-
-			}
-
-
-			//set alpha[check_set]
-			memory_element.use_me_and_not_first(DCC[comp_set], DCC[check_set]);
-			//memory_element.delete((DCC[comp_set].meta_data<0?-1*DCC[comp_set].meta_data:DCC[comp_set].meta_data)); //must be removed
-			memory_element.to_old_node2(alpha[check_set]);
-			current_alpha.copy_array(memory_element);
-
-			if(display){
-				System.out.println();
-				for(int i = 0; i<DCC.length; i++){
-					this.insert_spaces_for_iteration("B");
-					System.out.println(" -- alpha["+i+"].md: "+alpha[i].meta_data+" and is: "+alpha[i].print_list());
-				}
-			}
-
-
-
-
-
-			//find DCC12
-			memory_element.use_me_and(DCC[comp_set], DCC[check_set]);
-			//memory_element.copy_array(DCC[comp_set]);
-			//Bochert_neighbor(memory_element, DCC[check_set].meta_data, memory_element);
-
-			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-				//			if(display){
-				this.insert_spaces_for_iteration("B");
-				if(display)
-					System.out.println(" MAIN WHILE  B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+alpha[check_set].meta_data+" with alpha of: "+alpha[check_set].print_list()+" with the comp_set "+comp_set+" which is node "+alpha[comp_set].meta_data+" with alpha of: "+alpha[comp_set].print_list()+" and common nodes are: "+memory_element.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
-				else
-					System.out.println(" MAIN WHILE time: "+this.disp_time()+" B_calls: "+B_calls+" starting on, check set is "+(1+check_set)+" out of "+(nodes_to_consider.get_length()+length_extra_alredy_been_checked)+" which is node "+alpha[check_set].meta_data+" with alpha length of: "+alpha[check_set].get_length()+" with the comp_set "+comp_set+" which is node "+alpha[comp_set].meta_data+" with alpha length of: "+alpha[comp_set].get_length()+" and common nodes length of: "+memory_element.get_length()+" max_star: "+max_star.print_list()+" max_star.md: "+max_star.meta_data);
-
-
-				if(degressive_display){
-					display_level = B_iteration_deep; 
-				}
-
-				/*				if(B_calls >= 83317809){
-				display_level = 100;
-				show = true;
-				display = true;
-			}
-			if(B_calls >= 83318101){
-				pause();
-			}
-				 */			
-			}
-
-
-			//			current_alpha = reduction(current_alpha, DCC[check_set]/*memory_element*/);
-			current_alpha = reduction(current_alpha, memory_element);
-
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.println("reduced current alpha is: "+current_alpha.print_list());
-			}
-
-
-			if(current_alpha.get_length() != 0){
-
-
-				all_nodes_in_set.memory_next = new node3(nodes);
-				all_nodes_in_set.memory_next.memory_previous = all_nodes_in_set; 
-				all_nodes_in_set = all_nodes_in_set.memory_next;
-				all_nodes_in_set.copy_array(current_alpha);
-
-				//Bochert_neighbor(all_nodes_in_set,alpha[check_set].get_full_array()[0],current_alpha);
-				//all_nodes_in_set.copy_array(reduction(all_nodes_in_set, memory_element)); //already reduced
-				temp = all_nodes_in_set.pop_first();
-
-				lost_nodes.memory_next = new node3(nodes);
-				lost_nodes.memory_next.memory_previous = lost_nodes;
-				lost_nodes = lost_nodes.memory_next;
-				Bochert_neighbor(temp_element, temp, memory_element);
-				lost_nodes.use_me_and_not_first(temp_element, memory_element);
-
-
-				nodes_to_consider.memory_next = new node3(nodes);
-				nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
-				nodes_to_consider = nodes_to_consider.memory_next;
-				//nodes_to_consider.copy_array(current_alpha);
-				Bochert_neighbor(temp_element,temp,all_nodes_in_set);
-				nodes_to_consider.use_me_and_not_first(temp_element, all_nodes_in_set);
-				nodes_to_consider.add(temp);
-
-				if(temp_element.get_length()<lost_nodes.get_length()){//if it would be more benificial to just check all nodes, not just not connected nodes
-					if(display){
-						this.insert_spaces_for_iteration("B");
-						System.out.println("chose to do exhaustive search because dcc: "+temp_element.get_length()+" and lost_nodes: "+lost_nodes.get_length());
-					}
-					lost_nodes.zero();
-					nodes_to_consider.use_me_or(nodes_to_consider, temp_element);
-					lost_nodes.meta_data = 1;
-				}else{
-					if(display){
-						this.insert_spaces_for_iteration("B");
-						System.out.println("chose to NOT do an exhaustive search because dcc: "+temp_element.get_length()+" and lost_nodes: "+lost_nodes.get_length()+" which were: "+lost_nodes.print_list());
-					}
-
-				}
-				//lost_nodes_from_ntc
-
-				memory_element.memory_next = new node3(nodes);
-				memory_element.memory_next.memory_previous = memory_element; 
-				memory_element = memory_element.memory_next;
-				memory_element.copy_array(memory_element.memory_previous);
-
-				//comp_set_solution.copy_array(new node3(alpha[comp_set], nodes));
-				comp_set_solution.memory_next = new node3(nodes);
-				comp_set_solution.memory_next.memory_previous = comp_set_solution;
-				comp_set_solution = comp_set_solution.memory_next;
-
-				alpha[comp_set].memory_next = new node2(nodes);
-				alpha[comp_set].memory_next.memory_previous = alpha[comp_set];
-				alpha_index = alpha[comp_set].memory_next;
-				alpha_index.copy_array(alpha_index.memory_previous);
-
-
-
-
-				deepness++;
-
-				//if(B_calls > 100)
-				//pause();
-
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				//                 START SUPER WHILE
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-				while(TOP_nodes_to_consider != nodes_to_consider){
-					I_was_deleted = true;
-					if((nodes_to_consider.get_length()+lost_nodes.get_length()) > 0){
-						do{
-							if(nodes_to_consider.get_length() == 0){
-								nodes_to_consider.meta_data = lost_nodes.pop_first();
-								//all_nodes_in_set.delete(nodes_to_consider.meta_data);
-							}
-							else{
-								nodes_to_consider.meta_data = nodes_to_consider.pop_first();
-								all_nodes_in_set.delete(nodes_to_consider.meta_data);
-							}
-							temp_element.use_me_or(memory_element, all_nodes_in_set);//is this true????!!!!
-							I_was_deleted = deletable(nodes_to_consider.meta_data,temp_element,lost_nodes,true);
-							if(display){
-								this.insert_spaces_for_iteration("B");
-								System.out.println("nodes_to_consider.meta_data: "+nodes_to_consider.meta_data+" was found unneeded?: "+I_was_deleted+" by node: "+(int)temp_element.side);
-							}
-						}while(I_was_deleted&&((nodes_to_consider.get_length()+lost_nodes.get_length()) > 0));
-					}
-					if(!I_was_deleted){// || (nodes_to_consider.get_length()+lost_nodes.get_length()) > 0){
-
-						memory_element.memory_next = new node3(nodes);
-						memory_element.memory_next.memory_previous = memory_element; 
-						memory_element = memory_element.memory_next;
-
-						alpha_index.memory_next = new node2(nodes);
-						alpha_index.memory_next.memory_previous = alpha_index;
-						alpha_index = alpha_index.memory_next;
-						alpha_index.copy_array(alpha_index.memory_previous);
-
-						Bochert_neighbor(memory_element, nodes_to_consider.meta_data , memory_element.memory_previous);
-						temp_element.use_me_and_not_first(memory_element, memory_element.memory_previous);
-						if(temp_element.get_length() > 0){//nodes were removed
-							alpha_index.add(temp_element.to_int());
-						}
-
-						Bochert_neighbor(temp_element,nodes_to_consider.meta_data,all_nodes_in_set);
-						//						temp_element = reduction(temp_element, DCC[check_set]);//memory_element);
-						temp_element = reduction(temp_element, memory_element);
-
-						all_nodes_in_set.memory_next = new node3(nodes);
-						all_nodes_in_set.memory_next.memory_previous = all_nodes_in_set; 
-						all_nodes_in_set = all_nodes_in_set.memory_next;
-						all_nodes_in_set.copy_array(temp_element);
-
-						if(all_nodes_in_set.get_length() > 0){
-							temp = all_nodes_in_set.get_index(0);//.pop_first();
-
-
-							lost_nodes.memory_next = new node3(nodes);
-							lost_nodes.memory_next.memory_previous = lost_nodes;
-							lost_nodes = lost_nodes.memory_next;
-							Bochert_neighbor(temp_element, temp, memory_element);
-							lost_nodes.use_me_and_not_first(temp_element, memory_element);
-
-
-							nodes_to_consider.memory_next = new node3(nodes);
-							nodes_to_consider.memory_next.memory_previous = nodes_to_consider; 
-							nodes_to_consider = nodes_to_consider.memory_next;
-							Bochert_neighbor(temp_element,temp,all_nodes_in_set);
-							nodes_to_consider.use_me_and_not_first(temp_element, all_nodes_in_set);
-							nodes_to_consider.add(temp);
-
-
-							if(temp_element.get_length()<lost_nodes.get_length()){//if it would be more benificial to just check all nodes, not just not connected nodes
-								if(display){
-									this.insert_spaces_for_iteration("B");
-									System.out.println("connected to ntc.mp.md: "+nodes_to_consider.memory_previous.meta_data+" chose to do exhaustive search because dcc length: "+temp_element.get_length()+" and lost_nodes length: "+lost_nodes.get_length());
-								}
-								lost_nodes.zero();
-								nodes_to_consider.use_me_or(nodes_to_consider, temp_element);
-								lost_nodes.meta_data = 1;
-								lost_nodes.memory_previous.meta_data = 1;
-							}else{
-								if(display){
-									this.insert_spaces_for_iteration("B");
-									System.out.println("connected to ntc.mp.md: "+nodes_to_consider.memory_previous.meta_data+" chose to NOT do an exhaustive search because dcc: "+temp_element.get_length()+" and lost_nodes: "+lost_nodes.get_length()+" which were: "+lost_nodes.print_list());
-								}
-
-							}
-
-
-
-							comp_set_solution.memory_next = comp_set_solution.copy_by_erasing();//new node3(nodes);
-							comp_set_solution.memory_next.memory_previous = comp_set_solution;
-							comp_set_solution = comp_set_solution.memory_next;
-
-							lost_nodes = lost_nodes.memory_previous;
-							nodes_to_consider = nodes_to_consider.memory_previous;
-							comp_set_solution = comp_set_solution.memory_previous;
-						}
-
-
-						if(display){
-							this.insert_spaces_for_iteration("B");
-							System.out.println("deepness: "+deepness+" considering node "+nodes_to_consider.meta_data+" common nodes of ("+memory_element.get_length()+"): "+memory_element.print_list()+" and ntc: "+nodes_to_consider.print_list()+" and alpha_index: "+alpha_index.print_list()+" and all_nodes_in_set: "+all_nodes_in_set.print_list()+" temp (next ntc.md): "+temp);
-						}
-
-
-						//						if(show == true){
-						//							System.out.println("ms.md: "+max_star.meta_data+" me.gl: "+memory_element.get_length()+" all_nodes"+all_nodes_in_set.get_length()+deepness+1))
-
-						//						}
-						//						if(display&&(max_star.meta_data>(memory_element.get_length()+all_nodes_in_set.get_length()+deepness+1))&&(run_it_down(alpha_index, memory_element, deepness, check_set, display, TOP_nodes_to_consider, comp_set,comp_set_solution))){
-						//							System.out.println("ms.md: "+max_star.meta_data+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set.get_length()+" + deepness: "+deepness+" + 1");
-						//						}
-
-						if((max_star.meta_data>(memory_element.get_length()+all_nodes_in_set.get_length()+deepness))){
-							//need not look further
-
-							if(display){
-								this.insert_spaces_for_iteration("B");
-								System.out.println("ELIMINATED OUT  ms.md: "+max_star.meta_data+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set.get_length()+" + deepness: "+deepness);
-							}
-
-							memory_element = memory_element.memory_previous;								
-							alpha_index = alpha_index.memory_previous;
-							all_nodes_in_set = all_nodes_in_set.memory_previous;
-
-
-
-						}
-						else{
-							//System.out.println("ntc.md: "+nodes_to_consider.meta_data+"lost_nodes.meta_data == "+lost_nodes.meta_data);
-
-							if(/*(memory_element.get_length()<all_nodes_in_set.get_length())||*/(((all_nodes_in_set.get_length() == 0)||(lost_nodes.meta_data == 1))&&((deepness > comp_set_solution.get_length())/*&&run_it_down(DCC[check_set].to_new_node2(), memory_element, deepness, check_set, display, TOP_nodes_to_consider, check_set,new node3())*/&&run_it_down(/*alpha_index*/DCC[comp_set].to_new_node2(), memory_element, deepness, check_set, display, TOP_nodes_to_consider, comp_set,comp_set_solution)))){
-
-								//								just_a_pointer = ideal_comp(alpha_index, comp_set_solution, memory_element, deepness);
-
-
-								just_a_pointer = new node3(alpha_index, nodes);
-								//node2 prev_set2 = comp_set_solution.to_new_node2();//= new node2(nodes);
-								temp_element.zero();
-
-								/*							for(int i = 0; i<prev_set2.get_length(); i++){
-							Bochert_neighbor(temp_element, prev_set2.get_full_array()[i], temp_element);
-						}
-						just_a_pointer = comp_set_solution;
-
-						just_a_pointer.meta_data = just_a_pointer.get_length();
-						while(just_a_pointer.meta_data < deepness){//find the last set where it was found
-							all_nodes_in_set = all_nodes_in_set.memory_previous;
-							nodes_to_consider = nodes_to_consider.memory_previous;
-							memory_element = memory_element.memory_previous;
-							comp_set_solution = comp_set_solution.memory_previous;
-							alpha_index = alpha_index.memory_previous;
-							lost_nodes = lost_nodes.memory_previous;
-							deepness--;
-							//just_a_pointer.meta_data++;
-						}
-								 */							
-
-								//add back in unconsidered nodes, aka DCC2/1
-								//Bochert_neighbor(temp_element, nodes_to_consider.meta_data, all_nodes_in_set);
-								memory_element.use_me_or(memory_element, all_nodes_in_set);
-
-								if(display){
-									this.insert_spaces_for_iteration("B");
-									System.out.println(">> B_calls: "+B_calls+" calling Bochert("+memory_element.print_list()+" ,cm: "+(max_star.meta_data-deepness<=1?0:max_star.meta_data-deepness-1)+"(aka: max_star is: "+max_star.print_list()+") ,sm: "+nodes+" , abc: "+(just_a_pointer == null?"null":just_a_pointer.print_list())+"; ");
-								}
-
-								//								just_a_pointer = Newer_Bochert(memory_element, (max_star.meta_data-deepness-1<=0?0:max_star.meta_data-deepness-1), nodes, display, just_a_pointer);
-
-if((1+check_set)==(nodes_to_consider.get_length()+length_extra_alredy_been_checked)){
-	temp = 0;//no need to start a new thread, this guy is done...
-}
-else{
-									try {
-										temp = available_thread();
-											} catch(InterruptedException e) {
-											} 
-}
-								//if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-								if(display){
-									this.insert_spaces_for_iteration("B");
-									System.out.println("temp = "+temp);
-									//}
-								}
-
-								if(temp == 0){//no new threads
-
-
-
-
-									just_a_pointer = Newer_Bochert(memory_element, (max_star.meta_data-deepness-1<=1?0:max_star.meta_data-deepness-1), nodes, display, null);//just_a_pointer);
-
-									if(display){
-										this.insert_spaces_for_iteration("B");
-										System.out.println(">> returned with: "+just_a_pointer.print_list()+" FYI tho, just_a_pointer.get_length: "+just_a_pointer.get_length()+" deepness: "+deepness+" <?> max_star.md: "+max_star.meta_data);
-									}
-
-
-									if((just_a_pointer.get_length()+deepness)>=max_star.meta_data){
-										if(display){
-											this.insert_spaces_for_iteration("B");
-											System.out.println("found new max star!! just_a_pointer: "+just_a_pointer.print_list()+" deepness: "+deepness+" previous max_star.md: "+max_star.meta_data+" max_star: "+max_star.print_list());
-										}
-										max_star.copy_array(just_a_pointer);
-										just_a_pointer = nodes_to_consider;
-										while(just_a_pointer != TOP_nodes_to_consider){
-											if(display){
-												this.insert_spaces_for_iteration("B");
-												System.out.println("Adding: "+just_a_pointer.meta_data);
-											}
-											max_star.add(just_a_pointer.meta_data);
-											just_a_pointer = just_a_pointer.memory_previous;
-										}
-										max_star.add(alpha[check_set].meta_data);
-										max_star.meta_data = max_star.get_length();
-										if(display){
-											this.insert_spaces_for_iteration("B");
-											System.out.println("just added alpha.md: "+alpha[check_set].meta_data+" so max_star is now: "+max_star.print_list());
-										}
-										if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-									}
-									else{
-									}
-
-								}
-								else{
-
-									
-									stillrunning1 = new semaphore();
-									try{stillrunning1.take();} catch(InterruptedException e){}
-
-									task = new bthread(reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), false, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,(max_star.meta_data-deepness-1<=1?0:max_star.meta_data-deepness-1),semasema,stillrunning1);	
-									worker = new Thread(task);
-									worker.setName(String.valueOf(temp));
-
-									previous_nodes[temp].zero();
-									just_a_pointer = nodes_to_consider;
-									while(just_a_pointer != TOP_nodes_to_consider){
-										previous_nodes[temp].add(just_a_pointer.meta_data);
-										just_a_pointer = just_a_pointer.memory_previous;
-									}
-									previous_nodes[temp].add(alpha[check_set].meta_data);
-
-									if(display){
-										this.insert_spaces_for_iteration("B");
-										System.out.println("!!!Make a new THREAD!!! Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list());
-									}
-
-
-									worker.start();
-
-									thread_ownership.add(worker);
-									stillrunninglist.add(stillrunning1);
-								}
-
-
-								memory_element = memory_element.memory_previous;
-								alpha_index = alpha_index.memory_previous;
-								all_nodes_in_set = all_nodes_in_set.memory_previous;								
-
-
-
-
-							}
-							else{
-								//go deeper
-
-								if(all_nodes_in_set.get_length() > 0){
-									temp = all_nodes_in_set.pop_first();//becuse it wasn't pulled off above
-									lost_nodes = lost_nodes.memory_next;
-									nodes_to_consider = nodes_to_consider.memory_next;
-									comp_set_solution = comp_set_solution.memory_next;
-
-									deepness++;
-								}
-								else{
-									memory_element = memory_element.memory_previous;								
-									alpha_index = alpha_index.memory_previous;
-									all_nodes_in_set = all_nodes_in_set.memory_previous;
-								}
-
-							}
-						}
-					}
-					else{
-						//go back to previous
-						all_nodes_in_set = all_nodes_in_set.memory_previous;
-						nodes_to_consider = nodes_to_consider.memory_previous;
-						memory_element = memory_element.memory_previous;
-						comp_set_solution = comp_set_solution.memory_previous;
-						alpha_index = alpha_index.memory_previous;
-						lost_nodes = lost_nodes.memory_previous;
-						//System.out.println("going back");
-						deepness--;
-					}
-				}
-
-			}
-
-			check_set++;
-
-
-			//				for (Thread thread : thread_ownership) {
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.println("Checking threads for finished threads");
-			}
-
-			for (int i = 0; i< thread_ownership.size(); i++) {
-
-				thread_index = thread_ownership.get(i); 
-
-
-				if(!thread_index.isAlive()){
-
-					temp = Integer.parseInt(thread_index.getName());		
-
-					thread_ownership.remove(thread_index);
-					stillrunninglist.remove(stillrunninglist.get(i));
-					i--;//because there is one less now
-
-
-					just_a_pointer = reach_back[temp];
-
-					if(display){
-						this.insert_spaces_for_iteration("B");
-						System.out.print("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+just_a_pointer.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
-						System.out.println(" Did it return a star? "+this.is_star(just_a_pointer.to_int(), true));
-					}
-
-
-
-					if((just_a_pointer.get_length()+previous_nodes[temp].get_length())>max_star.meta_data){
-						if(display){
-							this.insert_spaces_for_iteration("B");
-							System.out.println("found new max star!! just_a_pointer: "+just_a_pointer.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+max_star.meta_data);
-						}
-						max_star.copy_array(just_a_pointer);
-
-						max_star.use_me_or(max_star, previous_nodes[temp]);
-
-						max_star.meta_data = max_star.get_length();
-
-						if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-					}
-					else{
-					}
-
-
-					status[temp] = 0;
-					thread_count--;
-
-
-				}
-			}
-
-
-
-		}
-
-
-			if(display){
-				this.insert_spaces_for_iteration("B");
-				System.out.println("Checking threads for finished threads");
-			}
-
-			for (int i = 0; i< thread_ownership.size(); i++) {
-
-				thread_index = thread_ownership.get(i); 
-
-
-				if(thread_index.isAlive()){
-					try{stillrunninglist.get(i).take();} catch(InterruptedException e) {}
-				}
-
-					temp = Integer.parseInt(thread_index.getName());		
-
-					thread_ownership.remove(thread_index);
-					stillrunninglist.remove(stillrunninglist.get(i));
-
-					i--;//because there is one less now
-
-					just_a_pointer = reach_back[temp];
-
-										
-					
-					if(display){
-						this.insert_spaces_for_iteration("B");
-						System.out.println("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+just_a_pointer.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
-						System.out.println(" Did it return a star? "+this.is_star(just_a_pointer.to_int(), true));
-					}
-
-					if(!this.is_star(just_a_pointer.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-					
-					
-					temp_element.use_me_or(just_a_pointer, previous_nodes[temp]);
-					if(!this.is_star(temp_element.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-
-
-					if((just_a_pointer.get_length()+previous_nodes[temp].get_length())>max_star.meta_data){
-						if(display){
-							this.insert_spaces_for_iteration("B");
-							System.out.println("found new max star!! just_a_pointer: "+just_a_pointer.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+max_star.meta_data);
-						}
-						max_star.copy_array(just_a_pointer);
-
-						max_star.use_me_or(max_star, previous_nodes[temp]);
-
-						max_star.meta_data = max_star.get_length();
-
-						if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");alpha[-1]=null;}
-					}
-					else{
-					}
-
-
-					status[temp] = 0;
-					thread_count--;
-
-			}
-
-
-		if(display){
-			this.insert_spaces_for_iteration("B");
-			System.out.println("Returning: "+max_star.print_list());
-		}
-
-		B_iteration_deep--;
-		return max_star;
-
-	}
-
 
 }
