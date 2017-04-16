@@ -1,4 +1,4 @@
-package Clique;
+package Clique2;
 
 //import OldClique.node;
 
@@ -10,9 +10,12 @@ public class node {
 	node next;
 	node previous;
 	node memory_next = null;
+	node memory_head = null;
 	int meta_data = 0;
-//	int[] max_star = {};
-	
+	//when head.meta_data=0 means "not a new star (at least not yet)"
+	//when head.meta_data=1 means "new star" or "top of star in memory"
+	//when head.meta_data=-1 means that this is the memory_head and the length of all the memory and "previous" points to the first node in memory and "next" points to the last node 
+	//
 
 
 
@@ -31,12 +34,31 @@ public class node {
 	}
 
 	public node(int n){
-		node = n;
-		next = this;
-		previous = this;
-		length = null;
-		head = null;
 
+		if (n == -1){
+			node = -1;
+			next = this;
+			previous = this;
+			head = this;
+			memory_head = this;
+			meta_data = -1;
+			length = new node(0);
+			
+			length.head = this;
+			length.length = length;
+			length.next = null;
+			length.previous = null;
+			length.memory_head = this;
+			
+		}
+		else {
+			node = n;
+			next = this;
+			previous = this;
+			length = null;
+			head = null;
+		}
+		
 	}
 
 	public node(int[] n){
@@ -82,129 +104,53 @@ public class node {
 		}
 
 	}
+	
+	
 
-	public node(int[] n, int toptop){
-//come on, don't try to break this - it assumes toptop is a node, and it's not already in n
-		node = -1;
-		next = null;
-		previous = null;
-		head = this;
-		boolean added = false;
-
-
-		if ((n == null)|| (n.length == 0)){		
-			length = new node(1);
-			length.head = this;
-			length.length = length;
-			length.next = null;
-			length.previous = null;
-
-			next = new node(toptop);
-			next.head = this;
-			next.length = length;
+	private void set_memory_next(node mem){
+		memory_next = mem;
+		mem.memory_head = memory_head;
+	}
+	
+	public void set_meta_data(int data){
+		meta_data = data;
 		
+	}
+	
+	public void add_memory(node mem){
+		if (mem == null)
+			return;
+		
+		if(memory_head == this){			
+			previous.memory_next = mem;
+			previous = mem;
+			mem.memory_head = memory_head;
+			length.node++;
 		}
 		else{
-			length = new node(n.length+1);
-			length.head = this;
-			length.length = length;
-			length.next = null;
-			length.previous = null;
-			node currentnode;
-			node previousnode; 
-			
-			if(toptop > n[0]){			
-				currentnode = new node(n[0]);
-				next = currentnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;						
-			}
-			else{
-				currentnode = new node(toptop);
-				next = currentnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;
-				added = true;
-
-				currentnode = new node(n[0]);
-				previousnode.next = currentnode;
-				currentnode.previous = previousnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;						
-			}
-			
-			for(int i = 1; i<n.length ; i++){
-
-				if((toptop > n[i])||(added)){
-					currentnode = new node(n[i]);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;						
-				}
-				else{
-					currentnode = new node(toptop);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;
-					added = true;
-
-					currentnode = new node(n[i]);
-					previousnode.next = currentnode;
-					currentnode.previous = previousnode;
-					currentnode.head = this;
-					currentnode.length = length;
-					previousnode = currentnode;						
-				}
-
-			}
-
-			if(!added){
-				currentnode = new node(toptop);
-				previousnode.next = currentnode;
-				currentnode.previous = previousnode;
-				currentnode.head = this;
-				currentnode.length = length;
-				previousnode = currentnode;
-			}
-
-			
-			next.previous = currentnode;
-			currentnode.next = next;
+			memory_head.previous.memory_next = mem;
+			memory_head.previous = mem;
+			mem.memory_head = memory_head;
+			memory_head.length.node++;
 		}
-
 	}
 
-	
-	public void decriment_length(){
-		length.node--;
+	public void erase_memory(){
+		previous = null;
+		next = null;
+		memory_next = null;
 	}
-
-	public void incriment_length(){
-		length.node++;
-	}
-
 	
 	public int get_meta_data(){
 		return meta_data;
 	}
 	
-	public void set_meta_data(int poo){
-		meta_data = poo;
-	}
-	
-	public void set_memory_next(node mem){
-		memory_next = mem;
-	}
-
 	public node get_memory_next(){
 		return memory_next;
+	}
+
+	public node get_memory_head(){
+		return memory_head;
 	}
 	
 	public void set_head(int new_head){
@@ -232,12 +178,8 @@ public class node {
 	public node get_previous(){
 		return previous;
 	}
-	
-	public void set_previous(node prev){
-		previous = prev;
-	}
 
-	public void print_memory_old(){
+	public void print_memory(){
 		System.out.println("Head: "+head.node+" Lenght: "+length.node+" and contents: "+print_list());
 		
 		node mem_next = memory_next;
@@ -318,6 +260,7 @@ public class node {
 		if (length.node <= 1){
 			if (head == this){
 				next = null;
+				previous = null;
 				length.node = 0;
 				return true;
 			}
@@ -376,12 +319,9 @@ public class node {
 
 		node finder = head;
 		for(int i = 0; i<length.node; i++){
-			if(finder.next.node > n)
-				return false;
-
-			if (finder.next.node == n)
+			if (finder.next.node == n){
 				return true;
-			
+			}
 			finder = finder.next;
 		}
 
@@ -521,7 +461,7 @@ public class node {
 		boolean head_start = true;
 
 		node temp;
-		
+
 		if (head.length.node == 0)
 			return;
 		if (length.node == 0){
@@ -715,247 +655,5 @@ public class node {
 		
 	}
 	
-	
-	public void add_to_end(int n){
-		//this presupposes that the nodes are already in order and that this node is larger than the others
-		//this helps to cut a lot of the overhead
-		
-		node temp = new node(n);
-		temp.head = head;
-		temp.length = length;
-		length.node++;
 
-		if (next != null){
-			temp.previous = next.previous;
-			temp.next = next;
-			next.previous.next = temp;
-			next.previous = temp;
-		}
-		else {
-			next = temp;
-			previous = temp;
-			temp.next = temp;
-			temp.previous = temp;
-		}
-	}
-	
-	public node print_memory_to_consider(){
-		
-		
-		node head = new node();
-		node element;
-		node index_this = this;
-		node index_head = head;
-		node lazy = new node();
-		
-		if ((memory_next == null)||(length.node == 0))
-			return head;
-
-		
-		//find next node that should be considered
-		while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1)){
-			index_this = index_this.memory_next;
-		}
-		
-		element = new node(index_this.memory_next.node);
-
-//		System.out.println("In PMTC: the first element is: "+index_this.memory_next.node+" and length: "+index_this.memory_next.get_length());
-
-		
-		lazy.next = element;
-		element.length = lazy.length;
-		element.head = lazy;
-		lazy.length.node++;
-
-		head.add(lazy);
-
-
-		index_this = index_this.memory_next;
-
-		while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1))
-			index_this = index_this.memory_next;
-		
-		while (index_this.memory_next != null){
-			//find next node that should be considered
-			
-			element = new node(index_this.memory_next.node);
-//			System.out.println("In PMTC: the next element is: "+index_this.memory_next.node+" and length: "+index_this.memory_next.get_length());
-
-			lazy.next = element;
-			element.length = lazy.length;
-			element.head = lazy;
-			lazy.length.node++;
-			
-			head.add(lazy);
-
-			index_this = index_this.memory_next;
-
-			while ((index_this.memory_next != null)&&(index_this.memory_next.meta_data == 1))
-				index_this = index_this.memory_next;
-			
-
-		}
-		
-
-		return head;
-	}
-
-	public void print_memory(){
-		System.out.println("Printing Memory:");
-		
-		node index = this;
-				
-		while (index != null){
-			if (index.next == null)
-				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: NULL");
-			else
-				System.out.println("Node: "+index.head.node+" Meta: "+index.meta_data+" length: "+index.length.node+" set: "+index.print_list());
-
-			index = index.memory_next;
-		}
-		
-	}
-
-	public void print_memory2(){
-		System.out.println("Printing Memory:");
-		
-		node index = this;
-				
-		while (index != null){
-			System.out.print("Node: "+index.head.node);
-			System.out.print(" length: "+index.length.node);
-			if(index.previous != null)
-				System.out.print(" set: "+index.previous.print_list());
-			else
-				System.out.print(" set: NULL");
-			System.out.println(" | "+index.print_list());
-
-			index = index.memory_next;
-		}
-		
-	}
-
-	public boolean similar_differences(node element, int[] memory_unique, int[] element_unique){
-		//returns if there are similarities
-		
-		if (length.node == 0 || element.length.node == 0){
-			memory_unique[0] = length.node;
-			element_unique[0] = element.length.node;
-			return false;
-		}
-
-
-		
-		node index_element = element.get_next();
-		int memory_diff = 0;
-		int element_diff = 0;
-		boolean has_similarities = false;		
-		node memory = next;
-		boolean memory_on_first = true;
-		boolean element_on_first = true;
-		
-		while((memory_on_first)&&(element_on_first)){
-
-			if(index_element.get_value() < memory.get_value()){
-				index_element = index_element.get_next();
-				element_diff++;
-				element_on_first = false;
-			}
-			else if(memory.get_value() < index_element.get_value()){
-				memory = memory.get_next();
-				memory_diff++;
-				memory_on_first = false;
-			}
-			else if(memory.get_value() == index_element.get_value()){
-				memory = memory.get_next();
-				index_element = index_element.get_next();
-				has_similarities = true;
-
-				memory_on_first = false;
-				element_on_first = false;
-			}
-		}		
-
-		while((memory != next)&&(element_on_first)){
-
-			if(index_element.get_value() < memory.get_value()){
-				index_element = index_element.get_next();
-				element_diff++;
-				element_on_first = false;
-			}
-			else if(memory.get_value() < index_element.get_value()){
-				memory = memory.get_next();
-				memory_diff++;
-				
-			}
-			else if(memory.get_value() == index_element.get_value()){
-				memory = memory.get_next();
-				index_element = index_element.get_next();
-				has_similarities = true;
-
-				element_on_first = false;
-			}
-		}		
-
-		while((memory_on_first)&&(index_element != element.next)){
-
-			if(index_element.get_value() < memory.get_value()){
-				index_element = index_element.get_next();
-				element_diff++;
-			}
-			else if(memory.get_value() < index_element.get_value()){
-				memory = memory.get_next();
-				memory_diff++;
-				memory_on_first = false;
-			}
-			else if(memory.get_value() == index_element.get_value()){
-				memory = memory.get_next();
-				index_element = index_element.get_next();
-				has_similarities = true;
-
-				memory_on_first = false;
-			}
-		}		
-
-		while(((memory != next)&&(index_element != element.next))&&(((element_diff+element.get_previous().get_length()) <= head.previous.get_length())||((memory_diff+head.previous.get_length()) <= element.previous.get_length()))){
-			
-			
-			if(index_element.get_value() < memory.get_value()){
-				index_element = index_element.get_next();
-				element_diff++;
-			}
-			else if(memory.get_value() < index_element.get_value()){
-				memory = memory.get_next();
-				memory_diff++;
-			}
-			else if(memory.get_value() == index_element.get_value()){
-				memory = memory.get_next();
-				index_element = index_element.get_next();
-				has_similarities = true;
-			}
-		}		
-
-
-		while((memory_on_first)||(memory != next)){
-			memory_diff++;
-			memory = memory.next;
-			memory_on_first = false;
-		}
-		
-		while((element_on_first)||(index_element != element.next)){
-			element_diff++;
-			index_element = index_element.next;
-			element_on_first = false;
-		}
-
-		
-		
-		
-	
-
-		memory_unique[0] = memory_diff;
-		element_unique[0] = element_diff;
-		return has_similarities;
-	}
-	
 }
