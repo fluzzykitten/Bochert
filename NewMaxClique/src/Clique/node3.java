@@ -292,11 +292,19 @@ public class node3 {
 		
 		
 		String result = "";
+		int current;
 		
 		for(int i = array.length-1; i>=0; i--){
-			result = result + Integer.toBinaryString(array[i]);
+			current = array[i];
+			for(int j = 31; j>=0; j--){
+				
+				result = result + ((current>>>j)&1);
+			}
 		}
 		
+//			for(int i = array.length-1; i>=0; i--){
+//				result = result + ":" + Integer.toBinaryString(array[i]);
+//			}
 		
 		
 		return result;
