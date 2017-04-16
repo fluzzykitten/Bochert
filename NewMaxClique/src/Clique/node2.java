@@ -156,6 +156,28 @@ public class node2 {
 	}
 
 	
+	public boolean find(int n){
+		
+		if(length == 0){
+			return false;
+		}
+		
+		int index = 0;
+//		int[] new_array = new int[get_length()+1];
+		
+		while(index < length){
+			
+			if(array[index] == n){
+				return true;
+			}
+			else
+				index++;
+		}
+
+		return false;
+	}
+
+	
 	private void add_size_increase(int[] n){
 		
 		int index = 0;
@@ -308,7 +330,7 @@ public class node2 {
 	
 	
 public boolean delete(int n){
-		
+			
 		if(length == 0)
 			return false;
 		
