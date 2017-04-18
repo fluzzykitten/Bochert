@@ -875,25 +875,25 @@ public class bthread implements Runnable  {
 
 			thread_index = thread_ownership.get(i); 
 
-			if(display_internal){
+			/*			if(display_internal){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("In check_if_threads_are_done, looking at index: "+i+" which is thread: "+thread_index.getName()+" thread_ownership.length: "+thread_ownership.size()+" and it's alive? "+thread_index.isAlive()+" stop: "+stop+" midthread: "+midthread);
 				semasematext.release();
 			}
-
+			 */
 			if(stop && thread_index.isAlive()){
 
 				try{stillrunninglist.get(i).take();} catch(InterruptedException e) {}
 			}
 
-			if(display_internal){
+			/*			if(display_internal){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("after stop code, looking at index: "+i+" thread_ownership.length: "+thread_ownership.size()+" and it's alive? "+thread_index.isAlive()+" stop: "+stop);
 				semasematext.release();
 			}
-
+			 */
 
 
 			if(!thread_index.isAlive() || stop){//Hokay, this is kinda silly... if stop is active, then it's taken the semaphore, so the thread is done, okay? It's done you stupid java compiler... anyway, occasionally, the dumb thread releases the semaphore but Java doesn't finish killing the thread... so if stop is true, and it's here (so it has the semaphore lock) then it's done, read the results
@@ -904,20 +904,20 @@ public class bthread implements Runnable  {
 
 				Pointer_ONLY = reach_back[temp];
 
-				if(display_internal){
+				/*				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.print("!!! "+thread_index.getName()+" is no longer alive, and it returned: "+Pointer_ONLY.print_list()+" with prev_nodes of: "+previous_nodes[temp].print_list());
 					System.out.println(" Did it return a star? "+this.is_star(Pointer_ONLY.to_int(), true));
 					semasematext.release();
 				}
-
+				 */
 				//combine them, has to contain some dumb duplicates... wait, does it? This is an extra safe-guard against double counting doublicates
 				Pointer_ONLY.use_me_or(Pointer_ONLY, previous_nodes[temp]);
 
 
 				if((Pointer_ONLY.get_length()+depth_charge)>=(best_star[0])){//Poop! Don't make this mistake again, it needs to be >= not > because at nodes go back, it needs to be able to acknowledge that the previous set found a node of this size, and take that, and pass it on up
-					if(display_internal){
+					/*					if(display_internal){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("Found new max in check if threads done. Pointer_ONLY: "+Pointer_ONLY.get_length()+" depth_charge: "+depth_charge+" best_star[0]: "+best_star[0]);
@@ -928,7 +928,7 @@ public class bthread implements Runnable  {
 							System.out.println("In check if threads are done, thread: "+thread_index.getName()+" id: "+thread_index.getId()+" delete_this_nodes_to_consider: "+delete_this_nodes_to_consider.print_list()+" delete_this_all_nodes_in_set_whole: "+delete_this_all_nodes_in_set_whole.print_list()+" midthread: "+midthread+" found new max star!! just_a_pointer: "+Pointer_ONLY.print_list()+" previous_nodes: "+previous_nodes[temp].print_list()+" previous max_star.md: "+(best_star[0]-depth_charge));
 						semasematext.release();
 					}
-
+					 */
 
 					max_star.copy_array(Pointer_ONLY);
 
@@ -978,28 +978,27 @@ public class bthread implements Runnable  {
 			hotswap();
 		}
 
-		boolean display = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
-		//boolean display = ((((where_from <= 4)||!degressive_display)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
+//		boolean display = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
 
 
-		if(display){
+/*		if(display){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("STARTING NEWER_BOCHERT all_nodes: "+all_nodes.print_list()+" where_from: "+where_from+" depth_charge: "+depth_charge+" Prev_nodes.len: "+(mid_entry?mid_previous_nodes[whoami].get_length():previous_nodes[whoami].get_length()));
 			semasematext.release();
 		}
-
+*/
 
 
 		if((all_nodes.get_length() == 0)||(all_nodes.get_length() == 1)){
 
-			if(display){
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("returning because all_nodes is zero or length 1");
 				semasematext.release();
 			}
-			B_iteration_deep--;
+*/			B_iteration_deep--;
 			return all_nodes;
 
 		}
@@ -1007,27 +1006,25 @@ public class bthread implements Runnable  {
 		node3 result = new node3(nodes);		
 
 		if(sought_max <= 1){
-			if(display){
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("returning because sought_max <= 1");
 				semasematext.release();
 			}
-			result.add(all_nodes.get_index(0));
+*/			result.add(all_nodes.get_index(0));
 			B_iteration_deep--;
 			return result;
 		}
 
 		if(all_nodes.get_length()+depth_charge <= (best_star[0])){//if it's equal to, you'll only get the same as the current max
-			//this.insert_spaces_for_iteration("B");
-			//System.out.println("returning because all_nodes < current max, where from: "+where_from);
-			if(display){
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("Returning because all_nodes.gl ("+all_nodes.get_length()+") <= (best_star[0]("+best_star[0]+")-depth_charge("+depth_charge+"))");
 				semasematext.release();
 			}
-			B_iteration_deep--;
+*/			B_iteration_deep--;
 			return new node3(nodes);
 		}
 
@@ -1096,14 +1093,14 @@ public class bthread implements Runnable  {
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		//it's connected to all the nodes
 		if((result.get_length()+1)==all_nodes.get_length()){
-			if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+/*			if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
 				//			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println(" NO  WHILE thread:"+whoami+" thread_count: "+thread_count[0]+" ,  B_calls: "+B_calls+" toptop (which is: "+toptop+") connected to all other nodes (which are: "+result.print_list()+"), calling Bochert("+result.print_list()+" ,cm: "+((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1)+" ,sm: "+(sought_max==0?0:sought_max-1)+" , abc: null; (ntc node was connected to all nodes)");
 				semasematext.release();
 			}
-
+*/
 
 			boolean display_next = false;
 			result = Newer_Bochert(result,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),(sought_max==0?0:sought_max-1),display_next/*display*/,(where_from<=1?1:4),depth_charge+1);
@@ -1140,7 +1137,7 @@ public class bthread implements Runnable  {
 
 
 
-		if(display){
+/*		if(display){
 			for(int i = 0; i<DCC.length; i++){
 				try {semasematext.take();} catch(InterruptedException e) {} 		
 				this.insert_spaces_for_iteration("B");
@@ -1148,7 +1145,7 @@ public class bthread implements Runnable  {
 				semasematext.release();
 			}
 		}
-
+*/
 
 
 		time_analysis[1] = time_analysis[1] + (System.currentTimeMillis() - start);
@@ -1161,7 +1158,7 @@ public class bthread implements Runnable  {
 
 
 
-		if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
+/*		if((where_from <= 1)&&(all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
 
 			try {semasematext.take();} catch(InterruptedException e) {} 			
 			this.insert_spaces_for_iteration("B");
@@ -1171,12 +1168,11 @@ public class bthread implements Runnable  {
 				System.out.println(" TOP WHILE thread:"+whoami+" thread_count: "+thread_count[0]+" mid_thread_count: "+mid_thread_count[0]+" time: "+disp_time_old()+" B_calls: "+B_calls+" starting on, check set is "+(1+0)+" out of "+(DCC.length)+" which is node "+DCC[0].meta_data+" with DCC size of: "+DCC[0].get_length()+" with no comp_set but current max of: "+(best_star[0]));
 			semasematext.release();
 		}
-
+*/
 		if((best_star[0]-depth_charge) <= DCC[0].get_length()){//or equal because if DCC[0].meta_data + DCC[0].get_length() are the nodes, which means one more than DCC[0].get_length()
 
 
 			temp = 0;
-			//System.out.println("#0 outside lowest BT call");
 			if(lowest_backtrack <= B_iteration_deep){
 				try {
 					if((DCC[0].get_length() >= min_new_bthread_size) && (thread_count[0] < thread_pool))
@@ -1184,37 +1180,36 @@ public class bthread implements Runnable  {
 					else{
 						temp = 0;
 					}
-					//System.out.println("#0 inside lowest BT call, temp: "+temp+" thread_count[0]: "+thread_count[0]+" thread_pool: "+thread_pool+" and min_new_thread_size: "+min_new_thread_size+" DCC[0].get_length(): "+DCC[0].get_length());
 				} catch(InterruptedException e) {
 				} 
 			}
 
-			//			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-			boolean display_next = (display&&(DCC[0].meta_data == 0));
-			if(display){
+
+//			boolean display_next = (display&&(DCC[0].meta_data == 0));
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("temp = "+temp+" display_next: "+display_next);
 				semasematext.release();
 			}
-			//			}
+*/			//			}
 
 			if(temp == 0){//no new threads
 
 				B_calls_TOP++;
-				temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), ((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1), nodes, display_next/*display*/, (where_from<=1?1:3), depth_charge+1);
+				temp_element = Newer_Bochert(DCC[0].copy_by_erasing(), ((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1), nodes, false/*display_next*/, (where_from<=1?1:3), depth_charge+1);
 
 				if((temp_element.get_length()+1)>=(best_star[0]-depth_charge)){
 					max_star.copy_array(temp_element);
 					max_star.add(toptop);
 
-					if(display || false){
+/*					if(display || false){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("TOP While found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+(best_star[0]-depth_charge));
 						semasematext.release();
 					}
-
+*/
 					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
 					try{update_max(max_star.get_length()+depth_charge,2,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 					//max_star.meta_data = max_star.get_length();
@@ -1233,22 +1228,22 @@ public class bthread implements Runnable  {
 				stillrunning1 = new semaphore();
 				try{stillrunning1.take();} catch(InterruptedException e){}
 
-				task = new bthread(semasematext, reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),null,depth_charge+1,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);
+				task = new bthread(semasematext, reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), false/*display_next */, nodes, reach_back_B_calls, -1/*(display_next?display_level:-1)*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),null,depth_charge+1,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);
 				worker = new Thread(task);
 				worker.setName(String.valueOf(temp));
 
 				previous_nodes[temp].zero();
 				previous_nodes[temp].add(toptop);
-//				if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
-//					mid_previous_nodes[temp].add(DCC[check_set].meta_data);
+				//				if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
+				//					mid_previous_nodes[temp].add(DCC[check_set].meta_data);
 
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("!!!Make a new BTHREAD!!! Temp: "+temp+" Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list());
 					semasematext.release();
 				}
-
+*/
 				if(priority_threading){
 					priority = Thread.currentThread().getPriority();
 					if(priority>5)
@@ -1263,23 +1258,20 @@ public class bthread implements Runnable  {
 				thread_ownership.add(worker);
 				stillrunninglist.add(stillrunning1);
 
-				//delete, for testing purposes only asdf
-				//check_if_threads_are_done(true, thread_ownership, stillrunninglist, display, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
-
 
 			}
-			if(display_next)
-				try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
+//			if(display_next)
+//				try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
 
 		}
 		else{
-			if(display){
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("This was NOT run because ms.md >= DCC[0].gl");
 				semasematext.release();
 			}
-			temp_element.zero();
+*/			temp_element.zero();
 		}
 
 
@@ -1290,20 +1282,19 @@ public class bthread implements Runnable  {
 
 
 
-		if(display){
+/*		if(display){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("about to enter main  while loop, ntc: "+nodes_to_consider.print_list()+" Tntc: "+TOP_nodes_to_consider.print_list());
 			semasematext.release();
 		}
-
+*/
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		//  MAIN WHILE
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		while(check_set < (DCC.length)){	
 
-			display = ((((where_from <= 4)||!degressive_display)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
-			//display_internal = true;
+//			display = ((((where_from <= 4)||!degressive_display)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
 
 
 
@@ -1313,13 +1304,13 @@ public class bthread implements Runnable  {
 
 			all_nodes_in_set_deleted_used = DCC[check_set].copy_by_erasing();//well... shoot... it's necessarily good to remove all the nodes yet... sigh...
 
-			if(display){
+/*			if(display){
 				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				System.out.println("At the top, deciding all_nodes for node: "+DCC[check_set].meta_data+", extra already deleted nodes connected to it is: "+temp_element.print_list()+" and all_nodes before reduction was: "+DCC[check_set].print_list()+" and after reduction: "+all_nodes_in_set_deleted_used.print_list());
 				semasematext.release();
 			}
-
+*/
 
 
 
@@ -1343,13 +1334,13 @@ public class bthread implements Runnable  {
 			run = true;
 			alpha3.similar_differences(all_nodes_in_set_deleted_used, temp_element2, best_next_ntc);
 			if(best_next_ntc.get_length() == 0){
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("RUN == FALSE!!! Don't run this NODE!!! Because comp_set: "+comp_set+" which is node "+DCC[comp_set].meta_data+" connected to: "+alpha3.print_list()+" contains check_set: "+check_set+" which is node "+DCC[check_set].meta_data+" connected to: "+all_nodes_in_set_deleted_used.print_list());
 					semasematext.release();
 				}
-				run = false;
+*/				run = false;
 			}
 
 			if(run){			
@@ -1362,13 +1353,13 @@ public class bthread implements Runnable  {
 					best_next_me.copy_array(unused_best_next_me);
 				}
 
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("after unranked find best, best_next_ntc was: "+best_next_ntc.print_list()+" and best_next_me: "+best_next_me.print_list());
 					semasematext.release();
 				}
-			}
+*/			}
 			else{
 				best_next_ntc.zero();
 				best_next_me.zero();
@@ -1379,14 +1370,14 @@ public class bthread implements Runnable  {
 
 			if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
 
-				try {semasematext.take();} catch(InterruptedException e) {} 
+/*				try {semasematext.take();} catch(InterruptedException e) {} 
 				this.insert_spaces_for_iteration("B");
 				if(display)
 					System.out.println(" MAIN WHILE lowest_backtrack: "+lowest_backtrack+" thread:"+whoami+" thread_count: "+thread_count[0]+" mid_thread_count: "+mid_thread_count[0]+" time: "+disp_time_old()+" B_calls: "+B_calls+" threads: "+thread_count[0]+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" and common nodes are: "+best_next_me.print_list()+" max_star: "+max_star.print_list()+" max_star.md: "+(best_star[0]-depth_charge));
 				else
 					System.out.println(" MAIN WHILE lowest_backtrack: "+lowest_backtrack+" thread:"+whoami+" thread_count: "+thread_count[0]+" mid_thread_count: "+mid_thread_count[0]+" time: "+disp_time_old()+" B_calls: "+B_calls+" threads: "+thread_count[0]+" starting on, check set is "+(1+check_set)+" out of "+(DCC.length)+" which is node "+DCC[check_set].meta_data+" with the comp_set "+comp_set+" which is node "+DCC[comp_set].meta_data+" max_star.md: "+(best_star[0]-depth_charge));
 				semasematext.release();
-
+*/
 				if(!run){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
@@ -1444,23 +1435,23 @@ public class bthread implements Runnable  {
 				alpha3 = alpha3.memory_next;
 
 
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("reduced ntc is: "+nodes_to_consider.print_list()+" and reduced all nodes is: "+all_nodes_in_set_deleted_used.print_list());
 					semasematext.release();
 				}
-
+*/
 				deepness++;
 
 
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("Entering while loop with all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" NTC: "+nodes_to_consider.print_list()+" mem_elm: "+memory_element.print_list()+" and first comp_set of: "+comp_set+" checked_set: "+checked_set.print_list());
 					semasematext.release();
 				}
-
+*/
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				//                     START SUPER WHILE
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1468,17 +1459,17 @@ public class bthread implements Runnable  {
 
 
 				deepness = 1;// should always be 1 going in from here to account for check_set
-				Pointer_ONLY = mid_section(TOP_nodes_to_consider, nodes_to_consider, all_nodes_in_set_deleted_used, display, depth_charge, deepness, checked_set, all_nodes_in_set_whole, alpha3, DCC, memory_element, TOP_checked_set, check_set, where_from, System.currentTimeMillis(), mid_thread_ownership, mid_stillrunninglist, thread_ownership, stillrunninglist, false);
+				Pointer_ONLY = mid_section(TOP_nodes_to_consider, nodes_to_consider, all_nodes_in_set_deleted_used, false/*display*/, depth_charge, deepness, checked_set, all_nodes_in_set_whole, alpha3, DCC, memory_element, TOP_checked_set, check_set, where_from, System.currentTimeMillis(), mid_thread_ownership, mid_stillrunninglist, thread_ownership, stillrunninglist, false);
 
 
 				if((Pointer_ONLY.get_length())>=(best_star[0]-depth_charge)){
-					if(display){
+/*					if(display){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("After return from mid_section, found new max star!! just_a_pointer ("+Pointer_ONLY.get_length()+"): "+Pointer_ONLY.print_list()+" previous max_star.md: "+(best_star[0]-depth_charge));
 						semasematext.release();
 					}
-					max_star.copy_array(Pointer_ONLY);
+*/					max_star.copy_array(Pointer_ONLY);
 					//max_star.meta_data = max_star.get_length();
 					try{update_max(max_star.get_length()+depth_charge,3,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 
@@ -1488,13 +1479,13 @@ public class bthread implements Runnable  {
 
 				}
 
-				if(display){
+/*				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("GETTING BACK after running midsection");
 					semasematext.release();
 				}	
-				//go back to previous
+*/				//go back to previous
 				all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
 				all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
 				nodes_to_consider = nodes_to_consider.memory_previous;
@@ -1519,17 +1510,9 @@ public class bthread implements Runnable  {
 
 			start = System.currentTimeMillis();
 
-			//			try {semasematext.take();} catch(InterruptedException e) {} 
-			//			this.insert_spaces_for_iteration("B");
-			//			System.out.println("before bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
-			//			semasematext.release();
 
-			check_if_threads_are_done(false, thread_ownership, stillrunninglist, display, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
+			check_if_threads_are_done(false, thread_ownership, stillrunninglist, false/*display*/, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
 
-			//			try {semasematext.take();} catch(InterruptedException e) {} 
-			//			this.insert_spaces_for_iteration("B");
-			//			System.out.println("after bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
-			//			semasematext.release();
 
 			time_analysis[5] = time_analysis[5] + (System.currentTimeMillis() - start);
 
@@ -1537,13 +1520,13 @@ public class bthread implements Runnable  {
 		}
 
 
-		if(display){
+/*		if(display){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("Checking threads for finished threads");
 			semasematext.release();
 		}
-
+*/
 		boolean add_temp_thread = false;
 		if(false && (thread_pool < max_thread_pool) && thread_ownership.size() > 0){//add a temporary thread to the thread pool
 			add_temp_thread = true;
@@ -1559,21 +1542,13 @@ public class bthread implements Runnable  {
 
 		start = System.currentTimeMillis();
 
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("before bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
-		//		semasematext.release();
 
-		
-		
-		
-		check_if_threads_are_done(true, thread_ownership, stillrunninglist, display, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
-		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,null,null);
 
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("after bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
-		//		semasematext.release();
+
+
+		check_if_threads_are_done(true, thread_ownership, stillrunninglist, false/*display*/, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
+		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, false/*display*/, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,null,null);
+
 
 		time_analysis[6] = time_analysis[6] + (System.currentTimeMillis() - start);
 
@@ -1586,13 +1561,13 @@ public class bthread implements Runnable  {
 		}
 
 
-		if(display){
+/*		if(display){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("Returning: "+max_star.print_list());
 			semasematext.release();
 		}
-
+*/
 		if(degressive_display && (display_level > B_iteration_deep)&&(where_from == 1)){
 			display_level = B_iteration_deep-1; 
 		}
@@ -1605,16 +1580,16 @@ public class bthread implements Runnable  {
 
 
 
-	private node3 mid_section(node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal, int depth_charge, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set,	int check_set, int where_from, long start, List<Thread> mid_thread_ownership, List<semaphore> mid_stillrunninglist, List<Thread> thread_ownership, List<semaphore> stillrunninglist, boolean local_mid_entry){
+	private node3 mid_section(node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal_, int depth_charge, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set,	int check_set, int where_from, long start, List<Thread> mid_thread_ownership, List<semaphore> mid_stillrunninglist, List<Thread> thread_ownership, List<semaphore> stillrunninglist, boolean local_mid_entry){
 
 
-		if(display_internal){
+/*		if(display_internal){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("STARTING new Mid_section ntc: "+nodes_to_consider.print_list()+" all_nodes_in_set_whole: "+all_nodes_in_set_whole.print_list()+" depth_charge: "+depth_charge+" deepness: "+deepness+" checked_set: "+checked_set.print_list()+" Tntc=ntc? "+(TOP_nodes_to_consider==nodes_to_consider)+" local_mid_entry: "+local_mid_entry);
 			semasematext.release();
 		}
-
+*/
 		node3 max_star = new node3(nodes);
 
 		node3 delete_this_all_nodes_in_set_whole= all_nodes_in_set_whole.copy_by_erasing();
@@ -1644,11 +1619,6 @@ public class bthread implements Runnable  {
 		nodes_at_this_level_run_by_other_threads = nodes_at_this_level_run_by_other_threads.memory_next;
 		int blagger = 0;//delete this
 
-		//		List<Thread> mid_thread_ownership = new ArrayList<Thread>();
-		//		List<semaphore> mid_stillrunninglist = new ArrayList<semaphore>();
-
-		//		List<Thread> thread_ownership = new ArrayList<Thread>();
-		//		List<semaphore> stillrunninglist = new ArrayList<semaphore>();
 
 		Thread thread_index;
 		Runnable task;
@@ -1656,58 +1626,11 @@ public class bthread implements Runnable  {
 		semaphore stillrunning1; 
 
 
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("Starting mid_section with ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
-		//		semasematext.release();
 
 		time_analysis[2] = time_analysis[2] + (System.currentTimeMillis() - start);
 
 		while(TOP_nodes_to_consider != nodes_to_consider){
 
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////			
-			/*			Pointer_ONLY = nodes_to_consider;
-			blagger = 0;
-			while(Pointer_ONLY != TOP_nodes_to_consider){
-				blagger++;
-				Pointer_ONLY = Pointer_ONLY.memory_previous;
-			}
-
-
-		if((!local_mid_entry)&&((blagger) != (deepness))){
-			try {semasematext.take();} catch(InterruptedException e) {} 
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("FAIL TOP MIDSECTION!!!!!"+(blagger+mid_previous_nodes[whoami].get_length())+" deepness: "+deepness+" depth_charge: "+depth_charge+" pre_depth_memory: "+pre_depth_memory+" B_iteration_deep: "+B_iteration_deep);
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("FAIL EVAL:"+" blagger: "+blagger+" deepness: "+deepness+" previous_nodes: "+mid_previous_nodes[whoami].get_length());
-
-			semasematext.release();
-			System.exit(0);
-			}
-		else if((local_mid_entry)&&((blagger+mid_previous_nodes[whoami].get_length()) != (deepness+1))){
-			try {semasematext.take();} catch(InterruptedException e) {} 
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("FAIL TOP MIDSECTION!!!!!"+(blagger+mid_previous_nodes[whoami].get_length())+" deepness: "+deepness+" depth_charge: "+depth_charge+" pre_depth_memory: "+pre_depth_memory+" B_iteration_deep: "+B_iteration_deep);
-
-			this.insert_spaces_for_iteration("B");
-			System.out.println("FAIL EVAL:"+" blagger: "+blagger+" deepness: "+deepness+" previous_nodes: "+mid_previous_nodes[whoami].get_length());
-
-			semasematext.release();
-			System.exit(0);
-			}
-		else{
-			if(display_internal){
-				try {semasematext.take();} catch(InterruptedException e) {} 
-				this.insert_spaces_for_iteration("B");
-				System.out.println("checked out okay... blagger: "+blagger+" deepness: "+deepness+" previous_nodes: "+mid_previous_nodes[whoami].get_length()+" depth_charge: "+depth_charge);									
-				semasematext.release();
-			}
-			}
-			 */
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 			I_was_deleted = true;
@@ -1723,16 +1646,16 @@ public class bthread implements Runnable  {
 				do{
 
 					temp = 0;
-					//System.out.println("#2 outside lowest BT call");
+
 					if(nodes_to_consider.get_length() > 0){
 
 						if(lowest_backtrack <= B_iteration_deep){
 
 							try {
-								//System.out.println(((nodes_to_consider.get_length() >= min_new_midthread_size)?"true":"false") + "ntc.gl: " + nodes_to_consider.get_length() + " mnms: "+min_new_midthread_size);
+
 								if((nodes_to_consider.get_length() /*+ memory_element.get_length()*/ >= min_new_midthread_size)  && (mid_thread_count[0] < mid_thread_pool))									
 									temp = available_mid_thread();
-								//System.out.println("#2 inside lowest BT call, temp: "+temp+" thread_count[0]: "+thread_count[0]+" thread_pool: "+thread_pool+" and min_new_thread_size: "+min_new_thread_size+" memory_element: "+memory_element.get_length());
+
 
 							} catch(InterruptedException e) {
 							} 
@@ -1753,9 +1676,7 @@ public class bthread implements Runnable  {
 							}
 							if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
 								mid_previous_nodes[temp].add(DCC[check_set].meta_data);
-							//					else{
-							//						mid_previous_nodes[temp].use_me_or(mid_previous_nodes[temp], mid_previous_nodes[whoami]);
-							//					}
+
 
 
 							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1819,33 +1740,19 @@ public class bthread implements Runnable  {
 
 							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-							/*					int[] a = {1024};
-					node3 search_nodes_to_consider = new node3(a,nodes);
-					int[] b = {250,251,252,256,257,258,262,263,264,283,284,285,298,299,300,1017,1018,1025,1026,1027,1030,1031,1032,1034};
-					node3 search_all_nodes_in_set_whole = new node3(b,nodes);
-
-					if(temp_nodes_to_consider.set_equals(search_nodes_to_consider)){
-						try {semasematext.take();} catch(InterruptedException e) {} 
-						this.insert_spaces_for_iteration("B");
-						System.out.println("FOUND THE CALLING THREAD!!!Make a new MIDTHREAD!!! Temp: "+temp+" node being run by thread: "+node_being_run+" temp_Memory_element: "+temp_memory_element.print_list()+" and ntc: "+temp_nodes_to_consider.print_list()+" and prev_nodes is: "+mid_previous_nodes[temp].print_list()+" checked_set: "+temp_checked_set.print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("CALLING THREAD: "+" delete_this_nodes_to_consider: "+delete_this_nodes_to_consider.print_list()+" delete_this_all_nodes_in_set_whole: "+delete_this_all_nodes_in_set_whole.print_list());
-						semasematext.release();						
-					}
-							 */					
-							boolean display_next = (display_internal&&((nodes_to_consider.meta_data == 0)&&(node_being_run == 0)));
-							task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), display_next/*display_global*/, nodes, reach_back_B_calls ,  (display_next?display_level:-1)/*display_level*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,(depth_charge+deepness),priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,display_next /*display_internal*/, /*deepness*/0, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run);
+							//boolean display_next = (display_internal&&((nodes_to_consider.meta_data == 0)&&(node_being_run == 0)));
+							task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), false/*display_next*/, nodes, reach_back_B_calls ,  -1/*(display_next?display_level:-1)*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,(depth_charge+deepness),priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,false/*display_next*/, /*deepness*/0, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run);
 							//task = new bthread(reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+1+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back)	
 							worker = new Thread(task);
 							worker.setName(String.valueOf(temp));
 
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("!!!Make a new MIDTHREAD!!! Temp: "+temp+" node being run by thread: "+node_being_run+" Display_next: "+display_next+" temp_Memory_element: "+temp_memory_element.print_list()+" and ntc: "+temp_nodes_to_consider.print_list()+" and prev_nodes is: "+mid_previous_nodes[temp].print_list()+" checked_set: "+temp_checked_set.print_list());
 								semasematext.release();
 							}
-
+*/
 							if(priority_threading){
 								priority = Thread.currentThread().getPriority();
 								if(priority>5)
@@ -1859,22 +1766,17 @@ public class bthread implements Runnable  {
 							mid_stillrunninglist.add(stillrunning1);
 
 							//go back now
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("GOING BACK after skipping midsection and making a mid thread instead");
 								semasematext.release();
 							}
+*/
 
-							//					checked_set.memory_next = null;//I think this is unnecessary 
-							//					 if(nodes_to_consider.meta_data > 0){
-							//						 checked_set.add(nodes_to_consider.meta_data);
-							//					 }
-							//					 deepness--;
-
-							if(display_next)
+/*							if(display_next)
 								try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
-						}
+*/						}
 					}
 				}while(temp != 0);
 
@@ -1884,27 +1786,17 @@ public class bthread implements Runnable  {
 
 				start = System.currentTimeMillis();
 
-				//nodes_to_consider.meta_data = nodes_to_consider.pop_first(); //set up, this is the node we're looking at
-				//all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data); //remove from the set of nodes that're to considered against
-
-				//				try {semasematext.take();} catch(InterruptedException e) {} 
-				//				this.insert_spaces_for_iteration("B");
-				//				System.out.println("Executing node: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
-				//				semasematext.release();
-
-
 				this.Bochert_neighbor(temp_element2, nodes_to_consider.meta_data, all_nodes_in_set_deleted_used); //find connected nodes
-				//this.Bochert_neighbor(all_nodes_extra_extra, nodes_to_consider.meta_data, all_nodes_extra_extra);
 
 				temp_element = reduction(temp_element2, empty_node, null); //remove obvious extraneous nodes
 
-				if(display_internal){
+/*				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("initial check of node: "+nodes_to_consider.meta_data+" deepness: "+deepness+" which is connected to: "+temp_element.print_list()+" but before reduction it was: "+temp_element2.print_list()+" which was pulled from all_nodes_in_set_deleted_used of: "+all_nodes_in_set_deleted_used.print_list()+" checked_set: "+checked_set.print_list());
 					semasematext.release();
 				}
-
+*/
 				if(((best_star[0]-depth_charge)>(temp_element.get_length()+deepness))){ //is it even possible to produce a larger star?
 
 					checked_set.add(nodes_to_consider.meta_data);
@@ -1914,23 +1806,23 @@ public class bthread implements Runnable  {
 						nodes_at_this_level_run_by_other_threads.zero();//then zero them out
 					}
 
-					if(display_internal){
+/*					if(display_internal){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("EARLY ELIMINATED OUT!!!! (that is, node: "+nodes_to_consider.meta_data+") aka, no longer can form bigger star because too few left to consider... ms.md: "+(best_star[0]-depth_charge)+" > deepness: "+deepness+" and all_nodes.gl: "+temp_element.get_length()+" which is: "+temp_element.print_list());
 						semasematext.release();
 					}
-
+*/
 					if(((best_star[0]-depth_charge)>(all_nodes_in_set_deleted_used.get_length()+(deepness-1)))){//check to see if you're done yet, if there are fewer nodes left, so even if they were all interconnected, they still couldn't produce a bigger star
 						//check no more
 
-						if(display_internal){
+/*						if(display_internal){
 							try {semasematext.take();} catch(InterruptedException e) {} 
 							this.insert_spaces_for_iteration("B");
 							System.out.println("EARLY ELIMINATED OUT the rest of the nodes too!!!! because ms.md: "+(best_star[0]-depth_charge)+" > deepness-1: "+(deepness-1)+" and all_nodes_in_set_deleted_used: "+all_nodes_in_set_deleted_used.get_length()+" which is: "+all_nodes_in_set_deleted_used.print_list());
 							semasematext.release();
 						}
-
+*/
 
 						nodes_to_consider.zero();
 					}
@@ -1958,22 +1850,22 @@ public class bthread implements Runnable  {
 						best_next_ntc.use_me_and_not_first(alpha3, temp_element);
 						best_next_me.use_me_and_not_first(best_next_ntc, temp_element);
 
-						if(display_internal){
+/*						if(display_internal){
 							try {semasematext.take();} catch(InterruptedException e) {} 
 							this.insert_spaces_for_iteration("B");
 							System.out.println("alpha3["+0+"].md: "+alpha3.memory_previous.meta_data+" was: "+alpha3.memory_previous.print_list()+" but .md: "+alpha3.meta_data+" it's now: "+alpha3.print_list()+" deepness: "+deepness);
 							semasematext.release();
 						}
-
+*/
 
 						if(all_others_empty && (alpha3.get_length() != 0)){
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("all_others_empty is not false... so don't run it down yet said because "+alpha3.print_list()+" best next me is: "+best_next_me.print_list());
 								semasematext.release();
 							}
-							all_others_empty = false;
+*/							all_others_empty = false;
 						}
 
 						time_analysis[8] = time_analysis[8] + (System.currentTimeMillis() - start);
@@ -1990,13 +1882,13 @@ public class bthread implements Runnable  {
 						int analysis_start = (local_mid_entry?-1:0);
 						for(int i = analysis_start; i < deepness; i++){
 
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("In for loop, at top of alpha expansion for loop, i is: "+i);
 								semasematext.release();
 							}
-
+*/
 							Pointer_ONLY2.alpha_next = new node3(nodes);//DCC[i].copy_by_erasing();
 
 							if(i+1 == deepness){// the new one...
@@ -2005,13 +1897,13 @@ public class bthread implements Runnable  {
 								temp_element2.use_me_or(temp_element2, checked_set);//add in deleted nodes... in case there was a deleted node from a previous level, current level deleted nodes should still be contained in all_nodes_whole
 								temp_element2.delete(nodes_to_consider.meta_data);//don't include the current node... duh...
 
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("Adding new one... using the options of checked nodes: "+checked_set.print_list()+" connected to (all possible nodes at this level): "+temp_element2.print_list()+" checked_set: "+checked_set.print_list());
 									semasematext.release();
 								}
-
+*/
 								if(this.get_next_comp_all_nodes_use_deleted(Pointer_ONLY2.alpha_next, temp_element2, temp_element,checked_set)){
 									I_was_deleted = true;
 								}
@@ -2036,61 +1928,61 @@ public class bthread implements Runnable  {
 							unused_best_next_me.use_me_and_not_first(unused_best_next_ntc, temp_element);
 							if(unused_best_next_ntc.get_length() < best_next_ntc.get_length()){
 
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("found better next_ntc unused_best_ntc: "+unused_best_next_ntc.print_list()+"best_next_ntc: "+best_next_ntc.print_list()+" unused_best_me: "+unused_best_next_me.print_list()+" best_me: "+best_next_me.print_list()+" checked_set: "+checked_set.print_list());
 									semasematext.release();
 								}
-
+*/
 
 								best_next_ntc.copy_array(unused_best_next_ntc);
 								best_next_me.copy_array(unused_best_next_me);
 							}
 
 
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("alpha3["+i+"].md: "+Pointer_ONLY.meta_data+" was: "+(i+1 == deepness?"NEW":Pointer_ONLY.print_list())+" but .md: "+Pointer_ONLY2.meta_data+" it's now: "+Pointer_ONLY2.print_list()+" deepness: "+deepness+" checked_set: "+checked_set.print_list());
 								semasematext.release();
 							}
-
+*/
 
 							Pointer_ONLY2.similar_differences(temp_element, unique_alpha, unique_check);
 							nodes_in_common.use_me_and_not_first(unique_alpha, Pointer_ONLY2);
 							if(nodes_in_common.get_length() > best_nodes_in_common.get_length()){
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("found better next_ntc unused_best_ntc: "+unused_best_next_ntc.print_list()+"best_next_ntc: "+best_next_ntc.print_list()+" unused_best_me: "+unused_best_next_me.print_list()+" best_me: "+best_next_me.print_list()+" checked_set: "+checked_set.print_list());
 									semasematext.release();
 								}
-								best_unique_alpha.copy_array(unique_alpha);
+*/								best_unique_alpha.copy_array(unique_alpha);
 								best_nodes_in_common.copy_array(nodes_in_common);
 							}
 							else if(nodes_in_common.get_length() == best_nodes_in_common.get_length()){
 								if(unique_alpha.get_length() > best_unique_alpha.get_length()){
-									if(display_internal){
+/*									if(display_internal){
 										try {semasematext.take();} catch(InterruptedException e) {} 
 										this.insert_spaces_for_iteration("B");
 										System.out.println("found better next_ntc unused_best_ntc: "+unused_best_next_ntc.print_list()+"best_next_ntc: "+best_next_ntc.print_list()+" unused_best_me: "+unused_best_next_me.print_list()+" best_me: "+best_next_me.print_list()+" checked_set: "+checked_set.print_list());
 										semasematext.release();
 									}
-									best_unique_alpha.copy_array(unique_alpha);
+*/									best_unique_alpha.copy_array(unique_alpha);
 									best_nodes_in_common.copy_array(nodes_in_common);
 								}
 							}
 
 
 							if(all_others_empty && (Pointer_ONLY2.get_length() != 0)){
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("all_others_empty is not false... so don't run it down yet, said because "+alpha3.print_list()+" best next me is: "+best_next_me.print_list()+" checked_set: "+checked_set.print_list()+" checked_set: "+checked_set.print_list());
 									semasematext.release();
 								}
-								all_others_empty = false;
+*/								all_others_empty = false;
 							}
 
 						}
@@ -2157,13 +2049,13 @@ public class bthread implements Runnable  {
 
 
 
-				if(display_internal){
+/*				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("I_was_deleted: "+I_was_deleted+" ntc.md: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" checked_set: "+checked_set.print_list());
 					semasematext.release();
 				}
-
+*/
 				time_analysis[3] = time_analysis[3] + (System.currentTimeMillis() - start);
 
 			}			
@@ -2222,14 +2114,8 @@ public class bthread implements Runnable  {
 
 				}
 
-				//				if(display_internal){
-				//					try {semasematext.take();} catch(InterruptedException e) {} 
-				//					this.insert_spaces_for_iteration("B");
-				//					System.out.println(" considering node: "+nodes_to_consider.meta_data+" deepness: "+deepness+" with nodes still to consider: "+nodes_to_consider.print_list()+" has memory_elment("+memory_element.get_length()+"): "+memory_element.print_list()+" and it's own ntc: "+(nodes_to_consider.memory_next != null?nodes_to_consider.memory_next.print_list():"NULL")+" all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" checked_set: "+checked_set.print_list());
-				//					semasematext.release();
-				//				}
 
-				if(display_internal){
+/*				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					if(best_next_ntc.get_length() > 0)
@@ -2238,7 +2124,7 @@ public class bthread implements Runnable  {
 						System.out.println("Analysis complete on "+nodes_to_consider.meta_data+" ntc: "+"N/A"+" checked_set: "+"N/A"+" checked_set.prev: "+checked_set.print_list()+" all_nodes_in_set_deleted_used: "+all_nodes_in_set_deleted_used.print_list()+" all_nodes_in_set_whole: "+all_nodes_in_set_whole.print_list()+" memory_element: "+memory_element.print_list()+" nodes_at_this_level_run_by_other_threads: "+"N/A"+" previous nodes to consider (where this nodes was pulled from) is: "+nodes_to_consider.print_list());
 					semasematext.release();
 				}
-
+*/
 
 
 
@@ -2246,13 +2132,13 @@ public class bthread implements Runnable  {
 				if(((best_star[0]-depth_charge)>(all_nodes_in_set_deleted_used.get_length()+deepness))){
 					//need not look further
 
-					if(display_internal){
+/*					if(display_internal){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("FAIL!!! THIS SHOULD NEVER RUN!!!! SHOULD'VE ELMINIATED EARLIER!!!! ELIMINATED OUT!!!! aka, no longer can form bigger star because too few left to consider... ms.md: "+(best_star[0]-depth_charge)+" > me.gl: "+memory_element.get_length()+" all_nodes: "+all_nodes_in_set_deleted_used.get_length()+" + deepness: "+deepness);
 						semasematext.release();
 					}
-
+*/
 					checked_set.add(nodes_to_consider.meta_data);
 
 					if(nodes_at_this_level_run_by_other_threads.length != 0){
@@ -2277,7 +2163,7 @@ public class bthread implements Runnable  {
 				else{
 
 
-					if(display_internal){
+/*					if(display_internal){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("all_others_empty before loop is: "+all_others_empty+(all_others_empty?" so all alphas were all zero length going into this":" so there is at least one alpha3 that still has nodes"));//"comp_all_nodes.md: "+comp_nodes.meta_data+" list: "+comp_nodes.print_list()+" mem_elm: "+memory_element.print_list()+" mem_elm is in can: "+(temp_element2.get_length() == memory_element.get_length()?"true":"false")+" comp_all_nodes.mem_prev: "+comp_nodes.memory_previous.print_list()+" all_nodes_in_set: "+all_nodes_in_set_deleted_used.print_list()+" lost_nodes.md: "+lost_nodes.meta_data+" checked_set: "+checked_set.print_list());
@@ -2295,31 +2181,31 @@ public class bthread implements Runnable  {
 						System.out.println(" then null");
 						semasematext.release();
 					}
-
+*/
 					time_analysis[4] = time_analysis[4] + (System.currentTimeMillis() - start);
 					start = System.currentTimeMillis();
 
 					if(all_others_empty){
 
-						check_if_threads_are_done(false, thread_ownership, stillrunninglist, display_internal, depth_charge, max_star,previous_nodes, reach_back,false,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
+						check_if_threads_are_done(false, thread_ownership, stillrunninglist, false/*display_internal*/, depth_charge, max_star,previous_nodes, reach_back,false,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 
 
-						if(display_internal){
+/*						if(display_internal){
 							try {semasematext.take();} catch(InterruptedException e) {} 
 							this.insert_spaces_for_iteration("B");
 							System.out.println(">> B_calls: "+B_calls+" run: "+run+" calling Bochert("+memory_element.print_list()+" ,cm: "+((best_star[0]-depth_charge)-deepness<1?0:(best_star[0]-depth_charge)-deepness-1)+"(aka: max_star is: "+max_star.print_list()+") ,sm: "+nodes+" , abc: "+temp_element.print_list()+"; ");
 							semasematext.release();
 						}
-
+*/
 						if(((best_star[0]-depth_charge)-deepness-1<=0?0:(best_star[0]-depth_charge)-deepness-1) >= memory_element.get_length()){
 
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("in run loop, in second number check, but run now false because ms.md ("+(best_star[0]-depth_charge)+") - deepness ("+deepness+" -1 >= me.gl"+memory_element.get_length()+" which is the same thing as all_nodes");
 								semasematext.release();
 							}
-
+*/
 							Pointer_ONLY = empty_node;
 						}
 						else{
@@ -2342,47 +2228,47 @@ public class bthread implements Runnable  {
 
 
 							//if((all_nodes.get_length() != 0)&&(B_iteration_deep < (display_level+1))){
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("temp = "+temp);
 								semasematext.release();
 								//}
 							}
-
-							boolean display_next = (display_internal&&(nodes_to_consider.meta_data == 0));
+*/
+							//boolean display_next = (display_internal&&(nodes_to_consider.meta_data == 0));
 							if(temp == 0){
 
 
-								Pointer_ONLY = Newer_Bochert(memory_element, ((best_star[0]-depth_charge)-deepness-1<1?0:(best_star[0]-depth_charge)-deepness-1), nodes, display_next /*display_internal*/,3,depth_charge+deepness);									
+								Pointer_ONLY = Newer_Bochert(memory_element, ((best_star[0]-depth_charge)-deepness-1<1?0:(best_star[0]-depth_charge)-deepness-1), nodes, false/*display_next */,3,depth_charge+deepness);									
 
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println(">> returned with: "+Pointer_ONLY.print_list()+" FYI tho, just_a_pointer.get_length: "+Pointer_ONLY.get_length()+" deepness: "+deepness+" <?> max_star.md: "+(best_star[0]-depth_charge)+" and fyi, empty node: "+empty_node.print_list());
 									semasematext.release();
 								}
-
+*/
 								if((Pointer_ONLY.get_length()+deepness+depth_charge)>=(best_star[0])){
 
 									try{update_max(Pointer_ONLY.get_length()+deepness+depth_charge,4,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 
-									if(display_internal){
+/*									if(display_internal){
 										try {semasematext.take();} catch(InterruptedException e) {} 
 										this.insert_spaces_for_iteration("B");
 										System.out.println("found new max star!! te.gl: "+Pointer_ONLY.print_list()+" deepness: "+deepness+" depth_charge: "+depth_charge+" previous max_star.md: "+(best_star[0]-depth_charge));
 										semasematext.release();
 									}
-									max_star.copy_array(Pointer_ONLY);
+*/									max_star.copy_array(Pointer_ONLY);
 									Pointer_ONLY = nodes_to_consider;
 									while(Pointer_ONLY != TOP_nodes_to_consider){
-										if(display_internal){
+/*										if(display_internal){
 											try {semasematext.take();} catch(InterruptedException e) {} 
 											this.insert_spaces_for_iteration("B");
 											System.out.println("Adding: "+Pointer_ONLY.meta_data);
 											semasematext.release();
 										}
-										max_star.add(Pointer_ONLY.meta_data);
+*/										max_star.add(Pointer_ONLY.meta_data);
 										Pointer_ONLY = Pointer_ONLY.memory_previous;
 										if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
 									}
@@ -2393,13 +2279,13 @@ public class bthread implements Runnable  {
 										max_star.use_me_or(max_star, mid_previous_nodes[whoami]);
 									}
 
-									if(display_internal){
+/*									if(display_internal){
 										try {semasematext.take();} catch(InterruptedException e) {} 
 										this.insert_spaces_for_iteration("B");
 										System.out.println("In Midsection, new Max_star it's: "+max_star.print_list());
 										semasematext.release();
 									}
-									if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
+*/									if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
 
 
 								}
@@ -2412,7 +2298,7 @@ public class bthread implements Runnable  {
 								stillrunning1 = new semaphore();
 								try{stillrunning1.take();} catch(InterruptedException e){}
 
-								task = new bthread(semasematext, reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);	
+								task = new bthread(semasematext, reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), false/*display_next */, nodes, reach_back_B_calls, /*(display_next?display_level:-1)*/-1, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);	
 								worker = new Thread(task);
 								worker.setName(String.valueOf(temp));
 
@@ -2439,25 +2325,25 @@ public class bthread implements Runnable  {
 								}
 								worker.start();
 
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("Before adding new thread, thread ownership is now size: "+thread_ownership.size());
 									semasematext.release();
 								}
-
+*/
 
 								thread_ownership.add(worker);
 								stillrunninglist.add(stillrunning1);
 
 
-								if(display_internal){
+/*								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
 									System.out.println("!!!Make a new BTHREAD!!! Temp: "+temp+" Telling thread to find max clique in: "+memory_element.print_list()+" and prev_nodes is: "+previous_nodes[temp].print_list()+" after adding new thread, thread ownership is now size: "+thread_ownership.size());
 									semasematext.release();
 								}
-
+*/
 
 								//delete, for testing purposes only asdf
 								//check_if_threads_are_done(true, thread_ownership, stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
@@ -2471,13 +2357,13 @@ public class bthread implements Runnable  {
 
 
 
-						if(display_internal){
+/*						if(display_internal){
 							try {semasematext.take();} catch(InterruptedException e) {} 
 							this.insert_spaces_for_iteration("B");
 							System.out.println("ran it, GOING BACK now");
 							semasematext.release();
 						}
-
+*/
 						checked_set.add(nodes_to_consider.meta_data);
 
 						if(nodes_at_this_level_run_by_other_threads.length != 0){
@@ -2503,34 +2389,27 @@ public class bthread implements Runnable  {
 						//go deeper
 
 						if(best_next_ntc.get_length() > 0){
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("did not run it because run was not true at start, PRESSING ON because best_next_ntc: "+best_next_ntc.print_list());
 								semasematext.release();
 							}
-
+*/
 							checked_set = checked_set.memory_next;
 							nodes_to_consider = nodes_to_consider.memory_next;					
 							nodes_at_this_level_run_by_other_threads = nodes_at_this_level_run_by_other_threads.memory_next;
 
-							//							try {semasematext.take();} catch(InterruptedException e) {} 
-							//							this.insert_spaces_for_iteration("B");
-							//							System.out.println("Going deeper, ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list()+" ntc.mp.mp: "+nodes_to_consider.memory_previous.memory_previous.print_list());
-							//							semasematext.release();
-
-
-							//							deepness++;
 
 						}
 						else{
-							if(display_internal){
+/*							if(display_internal){
 								try {semasematext.take();} catch(InterruptedException e) {} 
 								this.insert_spaces_for_iteration("B");
 								System.out.println("did not run it because run was not true at start, GOING BACK because best_next_ntc: "+best_next_ntc.print_list());
 								semasematext.release();
 							}
-
+*/
 							checked_set.add(nodes_to_consider.meta_data);
 
 							if(nodes_at_this_level_run_by_other_threads.length != 0){
@@ -2552,13 +2431,13 @@ public class bthread implements Runnable  {
 				}
 			}
 			else{
-				if(display_internal){
+/*				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
 					System.out.println("GOING BACK because nodes_to_consider is: "+nodes_to_consider.print_list()+" and I_was_deleted: "+I_was_deleted+" before going back deepness is: "+deepness);
 					semasematext.release();
 				}
-				//go back to previous
+*/				//go back to previous
 				all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
 				all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
 				nodes_to_consider = nodes_to_consider.memory_previous;
@@ -2584,49 +2463,16 @@ public class bthread implements Runnable  {
 
 				deepness--;
 			}
-			//			try {semasematext.take();} catch(InterruptedException e) {} 
-			//			this.insert_spaces_for_iteration("B");
-			//			System.out.println("before check_if_threads done FALSE with max_star: "+max_star.print_list());
-			//			semasematext.release();
 
-			check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
-
-			//			try {semasematext.take();} catch(InterruptedException e) {} 
-			//			this.insert_spaces_for_iteration("B");
-			//			System.out.println("after check_if_threads done FALSE with max_star: "+max_star.print_list());
-			//			semasematext.release();
+			check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, false /*display_internal*/, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 
 		}	
 
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("before check_if_threads done TRUE with max_star: "+max_star.print_list());
-		//		semasematext.release();
-
-		//		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
-		check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
-
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("after check_if_threads done TRUE with max_star: "+max_star.print_list());
-		//		semasematext.release();
-
-		//		if(display_internal){
-		//			try {semasematext.take();} catch(InterruptedException e) {} 
-		//			this.insert_spaces_for_iteration("B");
-		//			System.out.println("GOING BACK because nodes_to_consider is: "+nodes_to_consider.print_list()+" and I_was_deleted: "+I_was_deleted+" before going back deepness is: "+deepness);
-		//			semasematext.release();
-		//		}
-
-
-		//		try {semasematext.take();} catch(InterruptedException e) {} 
-		//		this.insert_spaces_for_iteration("B");
-		//		System.out.println("Ending mid_section with max_star: "+max_star.print_list());
-		//		semasematext.release();
+		check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, false /*display_internal*/, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 
 		if(local_mid_entry){//finish threads
-			check_if_threads_are_done(true, thread_ownership, stillrunninglist, display_internal, depth_charge, max_star,previous_nodes, reach_back,false,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
-			check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
+			check_if_threads_are_done(true, thread_ownership, stillrunninglist, false /*display_internal*/, depth_charge, max_star,previous_nodes, reach_back,false,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
+			check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, false/*display_internal*/, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 		}
 
 
