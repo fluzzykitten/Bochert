@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/NewMaxClique/src/Clique/graph.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="Clique.graph"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-d ../graph_binaries -g &quot;hamming6-4.clq&quot; -e &quot;MANN_a45.clq,MANN_a81.clq,keller5.clq,keller6.clq&quot; -m true -t 24 -v -20"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="NewMaxClique"/>
+</launchConfiguration>
