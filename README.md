@@ -55,5 +55,17 @@ A multi-threaded, infinitely scalable solution to find an exact max clique
                         algorithm display, 1 >= increasing algorithm
                         verbosity level, default -1
 
+** note ** other algorithms do not use multithreading
+
 Examples
 ----
+java -jar bochert.jar
+  same as:
+java -jar bochert.jar -d ../graph_binaries -e "brock200_1.clq,MANN_a45.clq,MANN_a81.clq,keller5.clq,keller6.clq" -m true -t 24 -v -1
+  These will run bochert algorithm against all graphs in graph.binaries directory excluding graphs specified
+
+java -jar bochert.jar -g MANN_a27.clq
+  run bochert against specified graph
+
+java -jar bochert.jar -o mcq1 -g MANN_a27.clq
+  this will run MCQ1 algorithm against graph specified (no other algorithms impliment multithreading)  
