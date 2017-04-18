@@ -1,44 +1,41 @@
 package Clique;
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.Random;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.spec.IvParameterSpec;
- 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
 
-//import org.hyperic.sigar.Mem;
-//import org.hyperic.sigar.Cpu;
-//import org.hyperic.sigar.CpuInfo;
-//import org.hyperic.sigar.Sigar;
-//import org.hyperic.sigar.SigarException;
-//import org.hyperic.sigar.ProcCpu;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
-//import Clique2.graph;
-
-//import OldClique.node; 
-
+import MaxClique.*;
 
 public class graph {
 
 	private int[][] graph; // the adjacency matrix
 	private node3[] graph3; // the adjacency matrix
 	private int[][] old_graph; //when changing the graph around, can keep the old one to ensure that the returned set is indeed a clique
+	private String graphs_directory = "..\\graph_binaries\\";
+	private String include_graphs = "";
+	private String exclude_graphs = "\"MANN_a45.clq\",\"MANN_a81.clq\",\"keller5.clq\",\"keller6.clq\""; 
 	private int nodes; // total number of nodes
 	private int BK_iteration_deep = 0; // iterations deep into BronKerbosch
 	private long BK_calls = 0; // calls to BronKerbosch
@@ -56,7 +53,7 @@ public class graph {
 	private int[] nodes_ordered_increasing; // array of nodes with decreasing edge count - first node has highest num edges
 	private int[] index_ordered_nodes; //array of nodes, where int[0] represents the index of the first node into nodes_ordered_decreasing, and int[1] represents the index of the second, etc 
 	boolean start_showing_crap = false;
-	private int display_level = 0;
+	private int display_level = -1;
 	private node3 empty_node;
 	private int previous_depth = 0;
 	private int count_down = 20;
@@ -91,11 +88,12 @@ public class graph {
 	long[] time_analysis = new long[10];
 	int exit_loop = 15000;
 	int middle_loop_run = 0;
-	boolean show_me_intermitent_maxes = false;
-	
+	private boolean disp_found_max = true;
+	private int size_announced_max = 0;
+
 	Random generator = new Random();
 	int randseed = -1;
-	
+
 	String IV = "AAAAAAAAAAAAAAAA";
 	byte[] plaintext = new byte[32];
 	byte[] encryptionKey = new byte[16];
@@ -472,7 +470,7 @@ public class graph {
 
 
 			//			bthread(node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int thread_count1){
-			Runnable task = new bthread(semasematext, reach_back1, num_threads, graph3, graph, send, display, nodes, reach_back_B_calls1, display_level, empty_node, degressive_display,0,status,previous_nodes,0,semasema,stillrunning,-1,0,semaMax,0,priority_threading,new int[1], thread_count, mid_semasema, mid_thread_count, mid_num_threads, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP1,max_thread_scaling_factor*num_threads,max_thread_scaling_factor*mid_num_threads,time_analysis,exit_loop1,reach_back_middle_loop_run,show_me_intermitent_maxes);	
+			Runnable task = new bthread(semasematext, reach_back1, num_threads, graph3, graph, send, display, nodes, reach_back_B_calls1, display_level, empty_node, degressive_display,0,status,previous_nodes,0,semasema,stillrunning,-1,0,semaMax,0,priority_threading,new int[1], thread_count, mid_semasema, mid_thread_count, mid_num_threads, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP1,max_thread_scaling_factor*num_threads,max_thread_scaling_factor*mid_num_threads,time_analysis,exit_loop1,reach_back_middle_loop_run,disp_found_max);	
 
 
 			//bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, 	node3[] mid_previous_nodes1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1){
@@ -497,7 +495,7 @@ public class graph {
 			B_calls_TOP = reach_back_B_calls_TOP1[0];
 			middle_loop_run = reach_back_middle_loop_run[0];
 
-						return merge_sort(unreorganize_nodes(reach_back1[0]), all_neighbors(-1));
+			return merge_sort(unreorganize_nodes(reach_back1[0]), all_neighbors(-1));
 			//return(reach_back1[0].to_int());
 		}
 
@@ -759,7 +757,7 @@ public class graph {
 
 
 		this.Bochert_neighbor(result, toptop, all_nodes);		
-		
+
 		time_analysis[0] = time_analysis[0] + (System.currentTimeMillis() - start);
 		start = System.currentTimeMillis();
 
@@ -854,6 +852,12 @@ public class graph {
 			max_star.add(toptop);
 			if(!this.is_star(max_star.to_int(), true)){System.out.println("B_calls: "+B_calls+" not star anymore :(");DCC[-1]=null;}
 			max_star.meta_data = max_star.get_length();
+
+			if(size_announced_max < (B_iteration_deep + max_star.get_length()) && disp_found_max){
+				System.out.println("** Found a new max clique of size: "+(B_iteration_deep + max_star.get_length()));
+				size_announced_max = (B_iteration_deep + max_star.get_length());
+			}
+
 		}
 		else{
 		}
@@ -1386,6 +1390,12 @@ public class graph {
 										this.insert_spaces_for_iteration("B");
 										System.out.println("found new max star!! te.gl: "+Pointer_ONLY.print_list()+" deepness: "+deepness+" previous max_star.md: "+max_star.meta_data);
 									}
+
+									if(size_announced_max < (B_iteration_deep + max_star.get_length()) && disp_found_max){
+										System.out.println("** Found a new max clique of size: "+(B_iteration_deep + max_star.get_length()));
+										size_announced_max = (B_iteration_deep + max_star.get_length());
+									}
+
 									max_star.copy_array(Pointer_ONLY);
 									Pointer_ONLY = nodes_to_consider;
 									while(Pointer_ONLY != TOP_nodes_to_consider){
@@ -2124,7 +2134,7 @@ public class graph {
 		old_graph = graph;
 	}
 
-	public graph(String file_name){
+	public graph(String file_name, int display_level,String graphs_directory){
 
 		try {
 
@@ -2141,7 +2151,7 @@ public class graph {
 			 */					
 
 			//			File myFile = new File("src\\Clique\\graph_binaries\\"+file_name);
-			File myFile = new File("..\\graph_binaries\\"+file_name);
+			File myFile = new File(graphs_directory+file_name);
 			FileReader fileReader = new FileReader(myFile);
 
 			BufferedReader reader = new BufferedReader(fileReader);
@@ -2152,10 +2162,12 @@ public class graph {
 
 
 			while (((line = reader.readLine()) != null) && (line.charAt(0) != 'p')){
-				System.out.println(line);
+				if (display_level >= -1)
+					System.out.println(line);
 			}
 
-			System.out.println(line);
+			if (display_level >= -1)
+				System.out.println(line);
 			line = line.substring(7);
 
 			while ((line.length() > count) && (line.charAt(0) == ' '))
@@ -2259,7 +2271,7 @@ public class graph {
 	}
 
 	public void invert_graph(){
-		
+
 		for(int i = 0; i<graph.length; i++)
 			for(int j = 0; j<graph.length; j++){
 				if(i == j)
@@ -2269,10 +2281,10 @@ public class graph {
 				else 
 					graph[i][j] = 1;
 			}
-		
+
 		graph3 = this.make_graph3(graph);
 	}
-	
+
 	public void disp_graph(int[][] graph){
 		for (int i = 0; i < graph.length; i++){
 			for (int j = 0; j < graph[i].length; j++){
@@ -2322,7 +2334,7 @@ public class graph {
 		for (int i = 0; i < nodes.length ; i++){
 			for (int j = 0; j<nodes.length ; j++){
 				if (i != j && graph[nodes[i]-1][nodes[j]-1] == comparitor){
-					//System.out.println(nodes[i]+" "+nodes[j]+" failed");
+					System.out.println(nodes[i]+" "+nodes[j]+" failed");
 					return false;	
 				}
 
@@ -2352,6 +2364,47 @@ public class graph {
 		return temp;
 	}
 
+	public String[] create_list_of_graphs(String directory, String include, String exclude){
+
+		try {
+
+			File dir = new File(directory);
+			if (dir.isDirectory()){
+
+				Collection<String> dir_listing = new ArrayList<String>( Arrays.asList(dir.list()));
+				String[] include_array = include.split("\\s*,\\s*");
+				String[] exclude_array = exclude.split("\\s*,\\s*");
+				for (int i = 0; i<include_array.length; i++)
+					if(include_array[i].indexOf("\"") != -1)include_array[i] = include_array[i].substring(1, include_array[i].length()-1);
+				for (int i = 0; i<exclude_array.length; i++)
+					if(exclude_array[i].indexOf("\"") != -1)exclude_array[i] = exclude_array[i].substring(1, exclude_array[i].length()-1);
+				Collection<String> include_items = new ArrayList<String>( Arrays.asList(include_array));
+				Collection<String> exclude_items = new ArrayList<String>( Arrays.asList(exclude_array));
+
+				System.out.println("got here, include: "+include_items.toString());
+
+				if (include.length() != 0){
+					dir_listing.retainAll( include_items );
+				}
+				if (exclude.length() != 0){
+					dir_listing.removeAll(exclude_items);
+				}
+
+				return (String[]) dir_listing.toArray(new String[dir_listing.size()]);
+
+			}
+			else{
+				System.out.println("Not a directory: " + directory);
+				return new String[0];
+			}
+
+		} catch(Exception ex) {
+			ex.printStackTrace();
+		} 
+
+		return new String[0];
+	}
+
 
 	//random integer in range [a,b] inclusive
 	public int randInt(int a,int b){
@@ -2366,7 +2419,7 @@ public class graph {
 		return (nextDouble() > (1.0/(double)d) ? -1 : 1);
 	}
 
-	public int[][] createLeemon3SAT(int numVar, int numClauses, boolean force3satTrue, int graphnum){
+	public int[][] createLeemon3SAT(int numVar, int numClauses, boolean force3satTrue){
 
 		int sat[][] = new int[3][numClauses];
 		int numVert = 3*numClauses;
@@ -2396,7 +2449,7 @@ public class graph {
 				else
 					graph[perm[i]][perm[j]] = 0;
 
-/*		
+		/*		
 		try {
 
 			File file = new File("..\\graph_binaries\\AESLeemon3SATGen-g"+graphnum+"-v"+numVar+"-"+(force3satTrue?"forced":"unforced")+".clq");
@@ -2428,96 +2481,96 @@ public class graph {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-*/
-		
+		 */
+
 		return graph;
-		
-		
+
+
 	}
 
 	public void start_random_with_seed(int s){
 		generator = new Random(s);
 		randseed = s;
 	}
-	
+
 	public void init_AES_rand(int G, int N)
 	{	
-	//	System.out.println("poopoo - G:"+G+" N:"+N);
-	plaintext = new byte[32];
-	encryptionKey = new byte[16];
-	
-    for (byte i=0; i<8; i++) {
-    	encryptionKey[8+i] = (byte)(G>>>(i*8));//255;
-    	encryptionKey[i] = (byte)(N>>>(i*8));//255;
-    }
+		//	System.out.println("poopoo - G:"+G+" N:"+N);
+		plaintext = new byte[32];
+		encryptionKey = new byte[16];
 
-//    for (byte i=0; i<16; i++) {
-//    	encryptionKey[i] = (byte)i;//255;
-//    }
+		for (byte i=0; i<8; i++) {
+			encryptionKey[8+i] = (byte)(G>>>(i*8));//255;
+			encryptionKey[i] = (byte)(N>>>(i*8));//255;
+		}
 
-    
-//    System.out.println(encryptionKey[0]+" "+encryptionKey[1]+" "+encryptionKey[2]+" "+encryptionKey[3]+" "+encryptionKey[4]+" "+encryptionKey[5]+" "+encryptionKey[6]+" "+encryptionKey[7]+" "+encryptionKey[8]+" "+encryptionKey[9]+" "+encryptionKey[10]+" "+encryptionKey[11]+" "+encryptionKey[12]+" "+encryptionKey[13]+" "+encryptionKey[14]+" "+encryptionKey[15]);    
-//    System.exit(0);
-    
-//    for (int i=0; i<plaintext.length; i++)
-//    	plaintext[i] = (byte)i;
+		//    for (byte i=0; i<16; i++) {
+		//    	encryptionKey[i] = (byte)i;//255;
+		//    }
+
+
+		//    System.out.println(encryptionKey[0]+" "+encryptionKey[1]+" "+encryptionKey[2]+" "+encryptionKey[3]+" "+encryptionKey[4]+" "+encryptionKey[5]+" "+encryptionKey[6]+" "+encryptionKey[7]+" "+encryptionKey[8]+" "+encryptionKey[9]+" "+encryptionKey[10]+" "+encryptionKey[11]+" "+encryptionKey[12]+" "+encryptionKey[13]+" "+encryptionKey[14]+" "+encryptionKey[15]);    
+		//    System.exit(0);
+
+		//    for (int i=0; i<plaintext.length; i++)
+		//    	plaintext[i] = (byte)i;
 	}
 
-	
+
 	public void tickplaintext(){
-		
+
 		for(int i = 0; i<8; i++){
 			plaintext[i] = (byte)(plaintext[i] + 1);
 			if(plaintext[i] != 0)
 				break;
 		}
-				
+
 	}
-	
+
 	public double nextDouble(){
 
-//		if(true)
-//			return generator.nextDouble();
-		
+		//		if(true)
+		//			return generator.nextDouble();
+
 		if(current_byte == 8){
-		
-		try{
-		      cipher = encrypt(plaintext, encryptionKey);
-				 		 
-		    } catch (Exception e) {
-		      e.printStackTrace();
-		    } 
-		
-//		System.out.print("cipher: ");
-//		for(int i = 15; i>=0; i--)
-//			System.out.print(Integer.toHexString(cipher[i])+" ");
-//		System.out.println();
-		
-		current_byte = 0;
-		tickplaintext();
+
+			try{
+				cipher = encrypt(plaintext, encryptionKey);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			} 
+
+			//		System.out.print("cipher: ");
+			//		for(int i = 15; i>=0; i--)
+			//			System.out.print(Integer.toHexString(cipher[i])+" ");
+			//		System.out.println();
+
+			current_byte = 0;
+			tickplaintext();
 		}
 
-//		System.out.println(cipher[current_byte*4+0]+" "+((long)cipher[current_byte*4+1])+" "+((long)cipher[current_byte*4+2])+" "+(((long)cipher[current_byte*4+3])));
+		//		System.out.println(cipher[current_byte*4+0]+" "+((long)cipher[current_byte*4+1])+" "+((long)cipher[current_byte*4+2])+" "+(((long)cipher[current_byte*4+3])));
 
 		long javadumb1 = (long)(cipher[current_byte*4+0]&0x0ff);
 		long javadumb2 = (long)(cipher[current_byte*4+1]&0x0ff);
 		long javadumb3 = (long)(cipher[current_byte*4+2]&0x0ff);
 		long javadumb4 = (long)(cipher[current_byte*4+3]&0x0ff);
-		
+
 		long num = javadumb1+(javadumb2<<8)+(javadumb3<<16)+(javadumb4<<24);
 		//long num = ((long)cipher[current_byte*4+0])+((long)cipher[current_byte*4+1]<<8)+((long)cipher[current_byte*4+2]<<16)+(((long)cipher[current_byte*4+3])<<24);
-//		num = num>>>1;//because all longs in java are signed, and I don't want negatives
-//		System.out.println("num sum: "+Integer.toHexString((int)num)+" = "+num);
+		//		num = num>>>1;//because all longs in java are signed, and I don't want negatives
+		//		System.out.println("num sum: "+Integer.toHexString((int)num)+" = "+num);
 		long dividend = (long)(0xfffffff);
 		dividend = (dividend<<4)+0xf;
-//		dividend = dividend>>>1;
-//		System.out.println("dividing by: "+dividend);
-		
+		//		dividend = dividend>>>1;
+		//		System.out.println("dividing by: "+dividend);
+
 		current_byte++;
-				
+
 		return (double)num/(double)dividend;
 	}
-	
+
 	public int[][] create3SAT(int variables, int clauses){
 
 
@@ -2670,707 +2723,461 @@ public class graph {
 		return graph;
 	}
 
-	
 
-		  public static byte[] encrypt(byte[] plainText, byte[] encryptionKey) throws Exception {
-				Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
-				SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
-				c.init(Cipher.ENCRYPT_MODE, k);
-				byte[] encryptedData = c.doFinal(plainText);
-				return encryptedData;
-		  }
-		 
-		  public static byte[] decrypt(byte[] cipherText, byte[] encryptionKey) throws Exception{
-				Cipher d = Cipher.getInstance("AES/ECB/NoPadding");
-				SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
-				d.init(Cipher.DECRYPT_MODE, k);
-				byte[] data = d.doFinal(cipherText);
-				return data;
-		  }
 
-		  private int get_node_with_max_degree(node3 graphmain){
-			  
-			  int big_node = -1;
-			  int big_size = -1;
-			  int[] graphnodes = graphmain.to_int();
-			  node3 test = new node3(nodes);
-			  
-			  for(int i = 0; i<graphnodes.length; i++){
-				  this.Bochert_neighbor(test, graphnodes[i], graphmain);
-				  if(test.length > big_size){
-					  big_size = test.length;
-					  big_node = graphnodes[i];
-				  }
-			  }
-			  
-			  return big_node;
-		  }
-		  
-		  private void connected_compent(node3 graphmain/*preserved*/, node3 sub1, node3 sub2){
-			  
-			  int[] considerations; 
-			  sub1.zero();
-			  sub2.copy_array(graphmain);
-			  
-			  boolean added_one = true;
-			  sub1.add(sub2.pop_first());
-			  int[] sub1_int;
-			  
-			  while(added_one){
-				  
-				  sub2.delete(sub1);
-				  sub1_int = sub1.to_int();
-				  considerations = sub2.to_int();
-				  added_one = false;
-				  
-				  for(int i = 0; i<considerations.length; i++){
-					  for(int j = 0; j<sub1_int.length; j++){
-						  if(graph[sub1_int[j]-1][considerations[i]-1]==1){
-							  sub1.add(considerations[i]);
-							  added_one = true;
-							  break;
-						  }
-					  }
-					  
-				  }
-			  }
-			  
-		  }
-	
-		  public int[] domination(node3 graphmain){
-			  
-			  int[] checkset = graphmain.to_int();
-			  node3 node1 = new node3(nodes);
-			  node3 node2 = new node3(nodes);
-			  node3 node1_unique = new node3(nodes);
-			  node3 node2_unique = new node3(nodes);
-			  int[] return_val = new int[2];//rv[0]=dominated, rv[1]=dominator
-			  
-			  			  
-			  
-			  for(int i = 0; i<checkset.length; i++)
-				  for(int j = i+1; j< checkset.length; j++)
-					  if(graph[checkset[i]-1][checkset[j]-1] == 1){
-//						  System.out.println("checking node1: "+(checkset[i])+" against node2: "+(checkset[j]));
-						  this.Bochert_neighbor(node1, checkset[i], graphmain);
-						  this.Bochert_neighbor(node2, checkset[j], graphmain);
-					  
-						  node1.similar_differences(node2, node1_unique, node2_unique);
-						  node1_unique.delete(checkset[j]);
-						  node2_unique.delete(checkset[i]);
-//						  System.out.println("found node1_u: "+node1_unique.print_list()+" node2_u: "+node2_unique.print_list());
-						  if(node1_unique.length == 0){
-//							  return checkset[j];
-							  return_val[0] = checkset[j];
-							  return_val[1] = checkset[i];
-							  return return_val;
-						  }
-						  else if(node2_unique.length == 0){
-//							  return checkset[i];
-							  return_val[0] = checkset[i];
-							  return_val[1] = checkset[j];
-							  return return_val;
-						  }
-					  }			  
-			  
-			  return null;
-		  }
-		  
-		  private boolean contains_anti_triangle(node3 graphmain){
+	public static byte[] encrypt(byte[] plainText, byte[] encryptionKey) throws Exception {
+		Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+		SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
+		c.init(Cipher.ENCRYPT_MODE, k);
+		byte[] encryptedData = c.doFinal(plainText);
+		return encryptedData;
+	}
 
-//			  System.out.println("checking for ats, graphmain: "+graphmain.print_list());
-			  
-			  int[] checkset = graphmain.to_int();
-			  node3 node1 = new node3(nodes);
-			  node3 node2 = new node3(nodes);
-			  node3 node1_unique = new node3(nodes);
-			  node3 node2_unique = new node3(nodes);
-			  node3 node1_nc = new node3(nodes);
-			  node3 node2_nc = new node3(nodes);
-			  
-			  
-			  for(int i = 0; i<checkset.length; i++)
-				  for(int j = i+1; j<checkset.length; j++)
-					  if(graph[checkset[i]-1][checkset[j]-1] == 0){
-						  this.Bochert_neighbor(node1, checkset[i], graphmain);
-						  this.Bochert_neighbor(node2, checkset[j], graphmain);
-//						  System.out.println("checking node1: "+(checkset[i])+" contains: "+node1.print_list()+" against node2: "+(checkset[j])+" contains: "+node2.print_list());
-					  
-						  node1_nc.use_me_and_not_first(node1, graphmain);
-						  node1_nc.delete(checkset[i]);
-						  node2_nc.use_me_and_not_first(node2, graphmain);
-						  node2_nc.delete(checkset[j]);
-//						  System.out.println("found node1_nc: "+node1_nc.print_list()+" node2_nc: "+node2_nc.print_list());
-						  
-						  node1_unique.use_me_and(node1_nc, node2_nc);
+	public static byte[] decrypt(byte[] cipherText, byte[] encryptionKey) throws Exception{
+		Cipher d = Cipher.getInstance("AES/ECB/NoPadding");
+		SecretKeySpec k = new SecretKeySpec(encryptionKey, "AES");
+		d.init(Cipher.DECRYPT_MODE, k);
+		byte[] data = d.doFinal(cipherText);
+		return data;
+	}
 
-						  if(node1_unique.length != 0)
-							  return true;
-					  }			  
-			  
-			  
-			  return false;
-		  }
-		  
-		  public int[][] copy_graph(){
-			  
-			  int[][] new_graph = new int[nodes][nodes];
+	private int get_node_with_max_degree(node3 graphmain){
 
-			  for(int i = 0; i<new_graph.length; i++){
-				  new_graph[i] = graph[i].clone();
-			  }				  
-			  
-			  return new_graph;
-		  }
-		  public node3[] make_graph3(int[][] usegraph){
-				node3[] newgraph3 = new node3[nodes];
-				for(int i = 0; i<nodes; i++){
-					newgraph3[i] = new node3(usegraph[i],nodes,true);
-					//							System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
+		int big_node = -1;
+		int big_size = -1;
+		int[] graphnodes = graphmain.to_int();
+		node3 test = new node3(nodes);
+
+		for(int i = 0; i<graphnodes.length; i++){
+			this.Bochert_neighbor(test, graphnodes[i], graphmain);
+			if(test.length > big_size){
+				big_size = test.length;
+				big_node = graphnodes[i];
+			}
+		}
+
+		return big_node;
+	}
+
+	private void connected_compent(node3 graphmain/*preserved*/, node3 sub1, node3 sub2){
+
+		int[] considerations; 
+		sub1.zero();
+		sub2.copy_array(graphmain);
+
+		boolean added_one = true;
+		sub1.add(sub2.pop_first());
+		int[] sub1_int;
+
+		while(added_one){
+
+			sub2.delete(sub1);
+			sub1_int = sub1.to_int();
+			considerations = sub2.to_int();
+			added_one = false;
+
+			for(int i = 0; i<considerations.length; i++){
+				for(int j = 0; j<sub1_int.length; j++){
+					if(graph[sub1_int[j]-1][considerations[i]-1]==1){
+						sub1.add(considerations[i]);
+						added_one = true;
+						break;
+					}
 				}
-				return newgraph3;
-		  }
-		  
-		  public int[][] fold(node3 graphmain, int[] v, int[] double_node_list, int[] hidden_node_list, int[] index){
-			  
-			  int[] checkset = graphmain.to_int();
-			  node3 connected = new node3(nodes);
-			  int[] connected_list;
-			  int[][] new_graph;
-			  
-//			  int[] double_node_list;
-//			  int[] hidden_node_list;
-			  //int index = 0;
-			  node3 combined = new node3(nodes);
-			  int[] combined_list;
-			  index[0] = 0;
-			  
-			  boolean second_connection = false;
-			  boolean need_second_inversion = false;
-			  
-			  
-			  for(int i = 0; i<checkset.length; i++){
-				  this.Bochert_neighbor(connected, checkset[i], graphmain);
-				  if(connected.length == 1){ //special case
+
+			}
+		}
+
+	}
+
+	public int[] domination(node3 graphmain){
+
+		int[] checkset = graphmain.to_int();
+		node3 node1 = new node3(nodes);
+		node3 node2 = new node3(nodes);
+		node3 node1_unique = new node3(nodes);
+		node3 node2_unique = new node3(nodes);
+		int[] return_val = new int[2];//rv[0]=dominated, rv[1]=dominator
+
+
+
+		for(int i = 0; i<checkset.length; i++)
+			for(int j = i+1; j< checkset.length; j++)
+				if(graph[checkset[i]-1][checkset[j]-1] == 1){
+					//						  System.out.println("checking node1: "+(checkset[i])+" against node2: "+(checkset[j]));
+					this.Bochert_neighbor(node1, checkset[i], graphmain);
+					this.Bochert_neighbor(node2, checkset[j], graphmain);
+
+					node1.similar_differences(node2, node1_unique, node2_unique);
+					node1_unique.delete(checkset[j]);
+					node2_unique.delete(checkset[i]);
+					//						  System.out.println("found node1_u: "+node1_unique.print_list()+" node2_u: "+node2_unique.print_list());
+					if(node1_unique.length == 0){
+						//							  return checkset[j];
+						return_val[0] = checkset[j];
+						return_val[1] = checkset[i];
+						return return_val;
+					}
+					else if(node2_unique.length == 0){
+						//							  return checkset[i];
+						return_val[0] = checkset[i];
+						return_val[1] = checkset[j];
+						return return_val;
+					}
+				}			  
+
+		return null;
+	}
+
+	private boolean contains_anti_triangle(node3 graphmain){
+
+		//			  System.out.println("checking for ats, graphmain: "+graphmain.print_list());
+
+		int[] checkset = graphmain.to_int();
+		node3 node1 = new node3(nodes);
+		node3 node2 = new node3(nodes);
+		node3 node1_unique = new node3(nodes);
+		node3 node2_unique = new node3(nodes);
+		node3 node1_nc = new node3(nodes);
+		node3 node2_nc = new node3(nodes);
+
+
+		for(int i = 0; i<checkset.length; i++)
+			for(int j = i+1; j<checkset.length; j++)
+				if(graph[checkset[i]-1][checkset[j]-1] == 0){
+					this.Bochert_neighbor(node1, checkset[i], graphmain);
+					this.Bochert_neighbor(node2, checkset[j], graphmain);
+					//						  System.out.println("checking node1: "+(checkset[i])+" contains: "+node1.print_list()+" against node2: "+(checkset[j])+" contains: "+node2.print_list());
+
+					node1_nc.use_me_and_not_first(node1, graphmain);
+					node1_nc.delete(checkset[i]);
+					node2_nc.use_me_and_not_first(node2, graphmain);
+					node2_nc.delete(checkset[j]);
+					//						  System.out.println("found node1_nc: "+node1_nc.print_list()+" node2_nc: "+node2_nc.print_list());
+
+					node1_unique.use_me_and(node1_nc, node2_nc);
+
+					if(node1_unique.length != 0)
+						return true;
+				}			  
+
+
+		return false;
+	}
+
+	public int[][] copy_graph(){
+
+		int[][] new_graph = new int[nodes][nodes];
+
+		for(int i = 0; i<new_graph.length; i++){
+			new_graph[i] = graph[i].clone();
+		}				  
+
+		return new_graph;
+	}
+	public node3[] make_graph3(int[][] usegraph){
+		node3[] newgraph3 = new node3[nodes];
+		for(int i = 0; i<nodes; i++){
+			newgraph3[i] = new node3(usegraph[i],nodes,true);
+			//							System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
+		}
+		return newgraph3;
+	}
+
+	public int[][] fold(node3 graphmain, int[] v, int[] double_node_list, int[] hidden_node_list, int[] index){
+
+		int[] checkset = graphmain.to_int();
+		node3 connected = new node3(nodes);
+		int[] connected_list;
+		int[][] new_graph;
+
+		//			  int[] double_node_list;
+		//			  int[] hidden_node_list;
+		//int index = 0;
+		node3 combined = new node3(nodes);
+		int[] combined_list;
+		index[0] = 0;
+
+		boolean second_connection = false;
+		boolean need_second_inversion = false;
+
+
+		for(int i = 0; i<checkset.length; i++){
+			this.Bochert_neighbor(connected, checkset[i], graphmain);
+			if(connected.length == 1){ //special case
+				v[0] = checkset[i];
+				graphmain.delete(checkset[i]);
+				graphmain.delete(connected);
+				return new int[0][0];
+			}
+			if(connected.length <= 4)
+				if(!contains_anti_triangle(connected)){
+					//						  System.out.println("found that node: "+checkset[i]+" is foldable and is connected to: "+connected.print_list());
+
 					v[0] = checkset[i];
-					graphmain.delete(checkset[i]);
-					graphmain.delete(connected);
-					return new int[0][0];
-				  }
-				  if(connected.length <= 4)
-					  if(!contains_anti_triangle(connected)){
-//						  System.out.println("found that node: "+checkset[i]+" is foldable and is connected to: "+connected.print_list());
-						  
-						  v[0] = checkset[i];
-						  connected_list = connected.to_int();
-						  new_graph = this.copy_graph();
-						  //double_node_list = new int[connected_list.length];
-						  //hidden_node_list = new int[connected_list.length];
-						  if((connected.length == 4)&&((graph[connected_list[0]-1][connected_list[2]-1] == 0)&&(graph[connected_list[0]-1][connected_list[3]-1] == 0)&&(graph[connected_list[1]-1][connected_list[2]-1] == 0)&&(graph[connected_list[1]-1][connected_list[3]-1] == 0))){//special case, can't do normal naming method
-							  need_second_inversion = true;
-						  }
-						  //combine nodes, save them as j-node, change new graph accordingly
-						  for(int j = 0; j<connected_list.length; j++){
-							  second_connection = false;
-							  for(int k = j+1; k<connected_list.length; k++){
-								  if(graph[connected_list[j]-1][connected_list[k]-1] == 0){
-									  
-									  if(need_second_inversion){//inverted
-	//									  System.out.println("nsi, inverted");
-										  double_node_list[index[0]] = connected_list[k];
-										  hidden_node_list[index[0]] = connected_list[j];
-										  }
-									  else if(((double_node_list[0] == connected_list[j])||(double_node_list[1] == connected_list[j])||(double_node_list[2] == connected_list[j]))){//inverted
-	//									  System.out.println("nsi, inverted");
-										  double_node_list[index[0]] = connected_list[k];
-										  hidden_node_list[index[0]] = connected_list[j];										  
-									  }
-									  else if(!second_connection){//normal
-	//									  System.out.println("!sc, normal");
-										  double_node_list[index[0]] = connected_list[j];
-										  hidden_node_list[index[0]] = connected_list[k];
-										  }
-									  else{//inverted
-	//									  System.out.println("nsi, inverted");
-										  double_node_list[index[0]] = connected_list[k];
-										  hidden_node_list[index[0]] = connected_list[j];
-									  }
+					connected_list = connected.to_int();
+					new_graph = this.copy_graph();
+					//double_node_list = new int[connected_list.length];
+					//hidden_node_list = new int[connected_list.length];
+					if((connected.length == 4)&&((graph[connected_list[0]-1][connected_list[2]-1] == 0)&&(graph[connected_list[0]-1][connected_list[3]-1] == 0)&&(graph[connected_list[1]-1][connected_list[2]-1] == 0)&&(graph[connected_list[1]-1][connected_list[3]-1] == 0))){//special case, can't do normal naming method
+						need_second_inversion = true;
+					}
+					//combine nodes, save them as j-node, change new graph accordingly
+					for(int j = 0; j<connected_list.length; j++){
+						second_connection = false;
+						for(int k = j+1; k<connected_list.length; k++){
+							if(graph[connected_list[j]-1][connected_list[k]-1] == 0){
 
-	//								  System.out.println("combining node: "+double_node_list[index[0]]+" with now hidden node: "+hidden_node_list[index[0]]);
+								if(need_second_inversion){//inverted
+									//									  System.out.println("nsi, inverted");
+									double_node_list[index[0]] = connected_list[k];
+									hidden_node_list[index[0]] = connected_list[j];
+								}
+								else if(((double_node_list[0] == connected_list[j])||(double_node_list[1] == connected_list[j])||(double_node_list[2] == connected_list[j]))){//inverted
+									//									  System.out.println("nsi, inverted");
+									double_node_list[index[0]] = connected_list[k];
+									hidden_node_list[index[0]] = connected_list[j];										  
+								}
+								else if(!second_connection){//normal
+									//									  System.out.println("!sc, normal");
+									double_node_list[index[0]] = connected_list[j];
+									hidden_node_list[index[0]] = connected_list[k];
+								}
+								else{//inverted
+									//									  System.out.println("nsi, inverted");
+									double_node_list[index[0]] = connected_list[k];
+									hidden_node_list[index[0]] = connected_list[j];
+								}
 
-									  //update new graph
-									  combined.use_me_or(graph3[connected_list[j]-1], graph3[connected_list[k]-1]);
-									  combined_list = combined.to_int();
-									  for(int l = 0; l<combined_list.length; l++){
-										  if(connected_list[j] != combined_list[l]){
-											  //System.out.println("connecting node: "+connected_list[j]+" to node: "+combined_list[l]);
-											  new_graph[double_node_list[index[0]]-1][combined_list[l]-1] = 1;
-											  new_graph[combined_list[l]-1][double_node_list[index[0]]-1] = 1;
-										  }
-									  }
+								//								  System.out.println("combining node: "+double_node_list[index[0]]+" with now hidden node: "+hidden_node_list[index[0]]);
 
-	//								  System.out.println("resulting connections are: "+combined.print_list());
-									  
-									  index[0]++;
-									  
-									  if(need_second_inversion)
-										  need_second_inversion = false;
-									  else
-										  second_connection = true;
-								  }
-							  }
-						  }
-						  
-//						  System.out.println("double_node_list: "+this.array2string(double_node_list));
-						  
-						  //add one edge betwen each pair of new nodes
-						  for(int j = 0; j<index[0]; j++)
-							  for(int k = j+1; k<index[0]; k++){
-	//							  System.out.println("connected nodes "+double_node_list[j]+" and "+double_node_list[k]);
-								  new_graph[double_node_list[j]-1][double_node_list[k]-1] = 1;
-								  new_graph[double_node_list[k]-1][double_node_list[j]-1] = 1;
-							  }
-						  //test
-						  for(int ii = 0; ii<nodes; ii++)
-							  if(new_graph[ii][ii] == 1){
-								  System.out.println("double_node_list: "+this.array2string(double_node_list));
-								  System.out.println("2it has a node connected to itself: "+ii);
-								  System.exit(0);
-							  }
+								//update new graph
+								combined.use_me_or(graph3[connected_list[j]-1], graph3[connected_list[k]-1]);
+								combined_list = combined.to_int();
+								for(int l = 0; l<combined_list.length; l++){
+									if(connected_list[j] != combined_list[l]){
+										//System.out.println("connecting node: "+connected_list[j]+" to node: "+combined_list[l]);
+										new_graph[double_node_list[index[0]]-1][combined_list[l]-1] = 1;
+										new_graph[combined_list[l]-1][double_node_list[index[0]]-1] = 1;
+									}
+								}
 
-						  //delete N[v], or at least all but the combined nodes
-						  for(int j = 0; j<index[0]; j++){
-							  connected.delete(double_node_list[j]);
-						  }
-						  graphmain.delete(connected);//delete non reused nodes
-						  graphmain.delete(checkset[i]);//delete node v
-						  
-						  for(int ii = 0; ii<nodes; ii++)
-							  if(new_graph[ii][ii] == 1){
-								  System.out.println("it has a node connected to itself: "+ii);
-								  System.exit(0);
-							  }
-								  
-						  
-						  return new_graph;
-					  }
-					  
-				  
-			  }
-			  
-			  return null;
-		  }
-		  
-		  public node3 mirrors(node3 graphmain, int v){
-			  
-			  node3 not_connected_list = new node3(nodes);
-			  node3 connected = new node3(nodes);
-			  this.Bochert_neighbor(connected, v, graphmain);
-			  not_connected_list.use_me_and_not_first(connected,graphmain);
-			  not_connected_list.delete(v);
-			  
-			  int[] checkset = not_connected_list.to_int();
-			  node3 connected_unique = new node3(nodes);
-			  node3 sub = new node3(nodes);
-			  node3 sub_unique = new node3(nodes);
-			  
-			  node3 mirror_list = new node3(nodes);
-			  
-			  for(int i = 0; i < checkset.length; i++){
-				  this.Bochert_neighbor(sub, checkset[i], graphmain);
-				  connected.similar_differences(sub, connected_unique, sub_unique);
-				  if(this.is_star(connected_unique.to_int(), true)){
-					  mirror_list.add(checkset[i]);
-				  }
-			  }
-			  
-			  return mirror_list;
-		  }
-		  
-		  public node3 mis(node3 checkset, int depth, boolean display){
-if(display)	System.out.println(depth+": starting mis, checkset: "+checkset.print_list());
-boolean next_display = false;
+								//								  System.out.println("resulting connections are: "+combined.print_list());
+
+								index[0]++;
+
+								if(need_second_inversion)
+									need_second_inversion = false;
+								else
+									second_connection = true;
+							}
+						}
+					}
+
+					//						  System.out.println("double_node_list: "+this.array2string(double_node_list));
+
+					//add one edge betwen each pair of new nodes
+					for(int j = 0; j<index[0]; j++)
+						for(int k = j+1; k<index[0]; k++){
+							//							  System.out.println("connected nodes "+double_node_list[j]+" and "+double_node_list[k]);
+							new_graph[double_node_list[j]-1][double_node_list[k]-1] = 1;
+							new_graph[double_node_list[k]-1][double_node_list[j]-1] = 1;
+						}
+					//test
+					for(int ii = 0; ii<nodes; ii++)
+						if(new_graph[ii][ii] == 1){
+							System.out.println("double_node_list: "+this.array2string(double_node_list));
+							System.out.println("2it has a node connected to itself: "+ii);
+							System.exit(0);
+						}
+
+					//delete N[v], or at least all but the combined nodes
+					for(int j = 0; j<index[0]; j++){
+						connected.delete(double_node_list[j]);
+					}
+					graphmain.delete(connected);//delete non reused nodes
+					graphmain.delete(checkset[i]);//delete node v
+
+					for(int ii = 0; ii<nodes; ii++)
+						if(new_graph[ii][ii] == 1){
+							System.out.println("it has a node connected to itself: "+ii);
+							System.exit(0);
+						}
 
 
-			  node3 sub1 = new node3(nodes);
-			  node3 sub2 = new node3(nodes);
-			  int v;
-			  int[] vint;
+					return new_graph;
+				}
 
-			  
-			  if(checkset.length <= 1)
-				  return checkset.copy_by_erasing();
-			  
-			  //connected components 
-			  connected_compent(checkset, sub1, sub2);
-			  if(sub2.length != 0){
-				  if(display)			  System.out.println(depth+": splitting for connected component, component 1: "+sub1.print_list()+" component 2: "+sub2.print_list());
-				  sub1 = mis(sub1, depth+1,next_display);
-				  sub2 = mis(sub2, depth+1,next_display);
-				  sub1.use_me_or(sub1, sub2);
-				  return sub1;
-			  }
 
-			  //dominance
-			  vint = this.domination(checkset);
-			  if(vint != null){
-//				  if((vint[0] == -300)||((display)&&((vint[0]==1)||(vint[0]==23)||(vint[0]==6)||(vint[0]==31))))
-//					  next_display = true;
-				  checkset.delete(vint[0]);
-				  if(display)			 System.out.println(depth+" found that node: "+vint[0]+" is dominated by node: "+vint[1]);
-				  return mis(checkset, depth,next_display);
-			  }				  
-			  
-			  //foldable
-			  vint = new int[1];
-			  int[] double_node_list = new int[nodes];
-			  int[] hidden_node_list = new int[nodes];
-			  int[] index = new int[1];
-			  int[][] new_graph = this.fold(checkset, vint, double_node_list, hidden_node_list, index);
-			  if(new_graph != null){
-//				  if((vint[0] == 76)||(vint[0] == 33)||(vint[0] == 59)||(vint[0] == 54)){
-//					  next_display = true;
-//				  }
-				  if(display)			 System.out.println(depth+": folding node: "+vint[0]+" checking set: "+checkset.print_list());
-				  if(new_graph.length == 0){//special case of one node
-					  node3 returned_set = mis(checkset, depth+1,next_display);
-					  returned_set.add(vint[0]);	
-					  return returned_set;
-				  }
-				  else{
-				  int[][] saved_old_graph = graph;
-				  graph = new_graph;
-				  graph3 = this.make_graph3(graph);
-				  
-				  node3 returned_set = mis(checkset, depth+1,next_display);
-				  
-				  for(int i = 0; i<index[0]+1; i++){//will only have one node, or the vint[0], never can it have two in the same max ind set because they're connected
-					  if(i == index[0]){//didn't find any double nodes in the ind set
-						  returned_set.add(vint[0]);
-					  }
-					  else if(returned_set.find(double_node_list[i])){
-						  returned_set.add(hidden_node_list[i]);
-						  break;
-					  }//add the nodes back in that were taken if it's double node was chosen
-				  }
-				  
-				  graph = saved_old_graph;
-				  graph3 = make_graph3(graph);
-				  if(display) System.out.println(depth+": after folding, returning with: "+returned_set.print_list());
-				  return returned_set;
-				  }
-			  }
-			  
-			  
-			  //find node of max degree
-			  v = this.get_node_with_max_degree(checkset);
-			  
-			  //find mirrors
-			  node3 mirrors = mirrors(checkset,v);
+		}
 
-//			  if(display &&((v == 77)||(v==60)||(v==65)||(v==61)||(v==62)||(v==69)||(v==47)||(v==2)||(v==17)||(v==72)||(v==34)||(v==10)||(v==29)||(v==12)||(v==25)||(v==58)||(v==14)||(v==15)||(v==51)||(v==27)||(v==74)))
-//				  next_display = true;
-			  
-			  sub1.use_me_and_not_first(mirrors, checkset);
-			  sub1.delete(v);
-			  if(display)			  System.out.println(depth+": G-v-M, v: "+v+" mirrors: "+mirrors.print_list()+" searching: "+sub1.print_list());
-			  sub1 = mis(sub1,depth,next_display);
-//			  System.out.println(depth+": no optimzing, G-v-M is: "+sub1.print_list());
+		return null;
+	}
 
-			  next_display = false;
+	public node3 mirrors(node3 graphmain, int v){
 
-//			  if(display &&(false))
-//				  next_display = true;
+		node3 not_connected_list = new node3(nodes);
+		node3 connected = new node3(nodes);
+		this.Bochert_neighbor(connected, v, graphmain);
+		not_connected_list.use_me_and_not_first(connected,graphmain);
+		not_connected_list.delete(v);
 
-			  this.Bochert_neighbor(sub2, v, checkset);
-			  sub2.use_me_and_not_first(sub2, checkset);
-			  sub2.delete(v);
-			  if(display)			  			  System.out.println(depth+": 1+G-N[v], searching: "+sub2.print_list());
-			  sub2 = mis(sub2, depth+1,next_display);
-			  sub2.add(v);
-			  
-			  if(sub1.length > sub2.length)
-				  return sub1;
-			  else
-				  return sub2;
-		  }
-		  
+		int[] checkset = not_connected_list.to_int();
+		node3 connected_unique = new node3(nodes);
+		node3 sub = new node3(nodes);
+		node3 sub_unique = new node3(nodes);
+
+		node3 mirror_list = new node3(nodes);
+
+		for(int i = 0; i < checkset.length; i++){
+			this.Bochert_neighbor(sub, checkset[i], graphmain);
+			connected.similar_differences(sub, connected_unique, sub_unique);
+			if(this.is_star(connected_unique.to_int(), true)){
+				mirror_list.add(checkset[i]);
+			}
+		}
+
+		return mirror_list;
+	}
+
+	public node3 mis(node3 checkset, int depth, boolean display){
+		if(display)	System.out.println(depth+": starting mis, checkset: "+checkset.print_list());
+		boolean next_display = false;
+
+
+		node3 sub1 = new node3(nodes);
+		node3 sub2 = new node3(nodes);
+		int v;
+		int[] vint;
+
+
+		if(checkset.length <= 1)
+			return checkset.copy_by_erasing();
+
+		//connected components 
+		connected_compent(checkset, sub1, sub2);
+		if(sub2.length != 0){
+			if(display)			  System.out.println(depth+": splitting for connected component, component 1: "+sub1.print_list()+" component 2: "+sub2.print_list());
+			sub1 = mis(sub1, depth+1,next_display);
+			sub2 = mis(sub2, depth+1,next_display);
+			sub1.use_me_or(sub1, sub2);
+			return sub1;
+		}
+
+		//dominance
+		vint = this.domination(checkset);
+		if(vint != null){
+			//				  if((vint[0] == -300)||((display)&&((vint[0]==1)||(vint[0]==23)||(vint[0]==6)||(vint[0]==31))))
+			//					  next_display = true;
+			checkset.delete(vint[0]);
+			if(display)			 System.out.println(depth+" found that node: "+vint[0]+" is dominated by node: "+vint[1]);
+			return mis(checkset, depth,next_display);
+		}				  
+
+		//foldable
+		vint = new int[1];
+		int[] double_node_list = new int[nodes];
+		int[] hidden_node_list = new int[nodes];
+		int[] index = new int[1];
+		int[][] new_graph = this.fold(checkset, vint, double_node_list, hidden_node_list, index);
+		if(new_graph != null){
+			//				  if((vint[0] == 76)||(vint[0] == 33)||(vint[0] == 59)||(vint[0] == 54)){
+			//					  next_display = true;
+			//				  }
+			if(display)			 System.out.println(depth+": folding node: "+vint[0]+" checking set: "+checkset.print_list());
+			if(new_graph.length == 0){//special case of one node
+				node3 returned_set = mis(checkset, depth+1,next_display);
+				returned_set.add(vint[0]);	
+				return returned_set;
+			}
+			else{
+				int[][] saved_old_graph = graph;
+				graph = new_graph;
+				graph3 = this.make_graph3(graph);
+
+				node3 returned_set = mis(checkset, depth+1,next_display);
+
+				for(int i = 0; i<index[0]+1; i++){//will only have one node, or the vint[0], never can it have two in the same max ind set because they're connected
+					if(i == index[0]){//didn't find any double nodes in the ind set
+						returned_set.add(vint[0]);
+					}
+					else if(returned_set.find(double_node_list[i])){
+						returned_set.add(hidden_node_list[i]);
+						break;
+					}//add the nodes back in that were taken if it's double node was chosen
+				}
+
+				graph = saved_old_graph;
+				graph3 = make_graph3(graph);
+				if(display) System.out.println(depth+": after folding, returning with: "+returned_set.print_list());
+				return returned_set;
+			}
+		}
+
+
+		//find node of max degree
+		v = this.get_node_with_max_degree(checkset);
+
+		//find mirrors
+		node3 mirrors = mirrors(checkset,v);
+
+		//			  if(display &&((v == 77)||(v==60)||(v==65)||(v==61)||(v==62)||(v==69)||(v==47)||(v==2)||(v==17)||(v==72)||(v==34)||(v==10)||(v==29)||(v==12)||(v==25)||(v==58)||(v==14)||(v==15)||(v==51)||(v==27)||(v==74)))
+		//				  next_display = true;
+
+		sub1.use_me_and_not_first(mirrors, checkset);
+		sub1.delete(v);
+		if(display)			  System.out.println(depth+": G-v-M, v: "+v+" mirrors: "+mirrors.print_list()+" searching: "+sub1.print_list());
+		sub1 = mis(sub1,depth,next_display);
+		//			  System.out.println(depth+": no optimzing, G-v-M is: "+sub1.print_list());
+
+		next_display = false;
+
+		//			  if(display &&(false))
+		//				  next_display = true;
+
+		this.Bochert_neighbor(sub2, v, checkset);
+		sub2.use_me_and_not_first(sub2, checkset);
+		sub2.delete(v);
+		if(display)			  			  System.out.println(depth+": 1+G-N[v], searching: "+sub2.print_list());
+		sub2 = mis(sub2, depth+1,next_display);
+		sub2.add(v);
+
+		if(sub1.length > sub2.length)
+			return sub1;
+		else
+			return sub2;
+	}
+
 	public static void main(String args[]) throws Exception
 	{
-	
-/*
-			
-		short shorttemp = 0b111111111111111;
-		byte bytetemp = 0b1111111;	
-		System.out.println(shorttemp);
-		System.out.println(bytetemp);
-		
-		shorttemp = -1;
-		bytetemp = -1;	
-		System.out.println(Integer.toHexString(shorttemp));
-		System.out.println(Integer.toHexString(bytetemp));
-		
-		byte[] copykey = ByteBuffer.allocate(8).putInt(0xfedcba98).array();
-		
-		byte[] key = new byte[16];
-		for(int i = 0; i<copykey.length; i++){
-			System.out.println("copy "+Integer.toHexString(copykey[i]));
-			key[i] = copykey[i];
-		}
-		
-		byte[] dataToSend = new byte[32];
 
-		Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
-		SecretKeySpec k =
-		new SecretKeySpec(key, "AES");
-		c.init(Cipher.ENCRYPT_MODE, k);
-		byte[] encryptedData = c.doFinal(dataToSend);
 
-		System.out.print("enctyped data: ");
-		for(int i = 0; i < encryptedData.length; i++){
-			System.out.print(encryptedData[i]+" ");
-		}
-		System.out.println();
-		
-		Cipher d = Cipher.getInstance("AES/ECB/NoPadding");
-		d.init(Cipher.DECRYPT_MODE, k);
-		byte[] data = d.doFinal(encryptedData);
-
-		System.out.print("data: ");
-		for(int i = 0; i < data.length; i++){
-			System.out.print(data[i]+" ");
-		}
-		System.out.println();
-
-		if(1==1)
-			System.exit(0);
-*/		
-/*		int[][] alp ={{0,1,0,0,0,0,0,0},
-					  {1,0,1,1,0,0,0,0},
-					  {0,1,0,0,0,0,0,0},
-					  {0,1,0,0,0,0,0,0},
-					  {0,0,0,0,0,1,1,0},
-					  {0,0,0,0,1,0,0,0},
-					  {0,0,0,0,1,0,0,0},
-					  {0,0,0,0,0,0,0,0}};
-		
-	int[][] blp ={{0,1,1,1,1,0,0,0},
-				  {1,0,0,0,0,1,0,0},
-				  {1,0,0,1,1,0,0,0},
-				  {1,0,1,0,1,0,0,0},
-				  {1,0,1,1,0,0,0,0},
-				  {0,1,0,0,0,0,0,0},
-				  {0,0,0,0,0,0,0,0},
-				  {0,0,0,0,0,0,0,0}};
-		
-		graph glp = new graph(blp);
-		int[] allnodes = glp.all_neighbors(-1);
-		
-		node3 var1 = new node3(allnodes, glp.nodes), var2 = new node3(glp.nodes), var3 = new node3(glp.nodes);
-		
-		var2 = glp.mirrors(var1, 1);
-		
-		System.out.println("var1: "+var1.print_list()+" var2: "+var2.print_list()+" var3: "+var3.print_list());
-
-		var3 = glp.mis(var1,0);
-		
-		System.out.println("max ind set: "+var3.print_list());
-		
-		if (1==1)
-			return;*/
-		
-/*System.out.println("shoot1");
+		/*System.out.println("shoot1");
 	    try {
-		      
+
 		      System.out.println("==Java==");
 		      System.out.println("plain:   " + plaintext);
-		 
+
 		      byte[] cipher = encrypt(plaintext, encryptionKey);
-		 
+
 		      System.out.print("cipher:  ");
 		      for (int i=0; i<cipher.length; i++)
 		        System.out.print(new Integer(cipher[i])+" ");
 		      System.out.println("");
-		 
+
 		      String decrypted = decrypt(cipher, encryptionKey);
-		 
+
 		      System.out.println("decrypt: " + decrypted);
-		 
+
 		    } catch (Exception e) {
 		      e.printStackTrace();
 		    } 
-*/
-
-
-		//int[] isstar = {2,4,6,8,10,11,13,14,19,30,32,36,39,40,45,48,49,54,57,59,63,66,69,70,75,77,81,83,87,90,93,96,98,101,103,106,110,113,115,118,121,124,128,130,133,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,183,186,189,192,195,198,201,204,207,210,213,216,219,222,225,228,231,234,237,240,243,245,249,252,254,257,261,264,267,270,272,276,279,282,285,288,291,294,297,300,303,306,309,312,315,316,321,324,325,329,333,336,339,342,343,348,351,352,357,360,363,366,369,372,375,378};
-		//int[] isstar = {26,47,54,69,104,119,120,134,144,148,157,182};
-		//int[] isstar = {2,4,6,8,10,11,13,14,19,30,32,36,39,40,45,48,49,54,57,59,63,66,69,70,75,77,81,83,87,90,93,96,98,101,103,106,110,113,115,118,121,124,128,130,133,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,183,186,189,192,195,198,201,204,207,210,213,216,219,222,225,228,231,234,237,240,243,245,249,252,254,257,261,264,267,270,272,276,279,282,285,288,291,294,297,300,303,306,309,312,315,316,321,324,325,329,333,336,339,342,343,348,351,352,357,360,363,366,369,372,375,378};
-
-
-		//		System.out.println("Hello?");
-
-		int[][] testie={{0,1,0,0,0,0,1,1,0,0,1},
-				{1,0,1,0,0,0,1,1,0,0,0},
-				{0,1,0,1,1,1,0,1,0,0,0},
-				{0,0,1,0,1,1,0,0,0,0,0},
-				{0,0,1,1,0,1,0,1,1,0,0},
-				{0,0,1,1,1,0,0,0,1,0,0},
-				{1,1,0,0,0,0,0,1,1,1,1},
-				{1,1,1,0,1,0,1,0,1,1,1},
-				{0,0,0,0,1,1,1,1,0,1,1},
-				{0,0,0,0,0,0,1,1,1,0,1},
-				{1,0,0,0,0,0,1,1,1,1,0}};
-		//			graph g = new graph(testie);
-
-		int[][] testie1={	
-				{0,1,1,1,1,1,1},
-				{1,0,1,1,1,1,1},
-				{1,1,0,1,1,1,1},
-				{1,1,1,0,1,1,1},
-				{1,1,1,1,0,1,1},
-				{1,1,1,1,1,0,1},
-				{1,1,1,1,1,1,0}};
-
-		int[][] testie2={	{0,0,1,1,1,1,0},
-				{0,0,1,1,1,1,1},
-				{1,1,0,1,1,1,1},
-				{1,1,1,0,1,1,1},
-				{1,1,1,1,0,1,1},
-				{1,1,1,1,1,0,1},
-				{0,1,1,1,1,1,0}};
-
-		int[][] testie3={
-				{0,1,1,1,1,1,1,1,1,0},
-				{1,0,1,1,1,1,1,1,0,1},
-				{1,1,0,1,1,1,1,0,1,1},
-				{1,1,1,0,1,1,0,1,1,1},
-				{1,1,1,1,0,0,1,1,1,1},
-				{1,1,1,1,0,0,1,1,1,1},
-				{1,1,1,0,1,1,0,1,1,1},
-				{1,1,0,1,1,1,1,0,1,1},
-				{1,0,1,1,1,1,1,1,0,1},
-				{0,1,1,1,1,1,1,1,1,0}};
-
-		int[][] testie4={
-				{1,0,1,0,1,0,1,1,1},
-				{0,1,0,1,0,1,1,1,1},
-				{1,0,1,0,1,0,1,1,1},
-				{0,1,0,1,0,1,1,1,1},
-				{1,0,1,0,1,0,1,1,1},
-				{0,1,0,1,0,1,1,1,1},
-				{1,1,1,1,1,1,0,1,1},
-				{1,1,1,1,1,1,1,0,1},
-				{1,1,1,1,1,1,1,1,0}};
-
-
-		int[][] testie5={
-				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
-				{0,0,0,0,0,0,1,1,0,1,1,1,1,1},//1
-				{0,0,1,0,0,1,1,1,1,0,0,0,1,1},//2
-				{0,1,0,1,0,1,1,1,0,0,0,0,0,0},//3
-				{0,0,1,0,0,0,0,0,0,0,0,0,0,0},//4
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0},//5
-				{0,1,1,0,0,0,1,1,1,0,0,0,0,0},//6
-				{1,1,1,0,0,1,0,1,1,1,1,1,0,0},//7
-				{1,1,1,0,0,1,1,0,1,1,1,1,0,0},//8
-				{0,1,0,0,0,1,1,1,0,0,0,0,0,0},//9
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//0
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//1
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//2
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,1}, //3
-				{1,1,0,0,0,0,0,0,0,0,0,0,1,0} //4
-		};
-		int[][] testie5b={
-				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
-				{0,0,0,0,0,0,1,1,0,1,1,1,1,1},//1
-				{0,0,1,0,0,1,1,1,1,0,0,0,1,1},//2
-				{0,1,0,1,0,1,0,1,0,0,0,0,0,0},//3
-				{0,0,1,0,0,0,0,0,0,0,0,0,0,0},//4
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0},//5
-				{0,1,1,0,0,0,1,1,0,0,0,0,0,0},//6
-				{1,1,0,0,0,1,0,1,0,1,1,1,0,0},//7
-				{1,1,1,0,0,1,1,0,0,1,1,1,0,0},//8
-				{0,1,0,0,0,0,0,0,0,0,0,0,0,0},//9
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//0
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//1
-				{1,0,0,0,0,0,1,1,0,0,0,0,0,0},//2
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,1}, //3
-				{1,1,0,0,0,0,0,0,0,0,0,0,1,0} //4
-		};
-
-		int[][] testie6={
-				//				{1,2,3,4,5,6,7},
-				{0,1,0,0,1,0,1},
-				{1,0,1,1,1,0,1},
-				{0,1,0,1,1,1,1},
-				{0,1,1,0,0,0,1},
-				{1,1,1,0,0,1,1},
-				{0,0,1,0,1,0,1},
-				{1,1,1,1,1,1,0}};
-
-		int[][] testie7={
-				//1,2,3,4,5,6,7,8,9,0,1,2,3,4
-				{0,1,1,0,0,0,0},//1
-				{1,0,1,0,0,0,0},//2
-				{1,1,0,1,0,0,0},//3
-				{0,0,1,0,1,0,0},//4
-				{0,0,0,1,0,1,0},//5
-				{0,0,0,0,1,0,1},//6
-				{0,0,0,0,0,1,0},//7
-		};
-
-		int[][] testie8={
-				//   1 2 3 4 5 6 7 8	
-				{0,0,0,1,0,0,1,1,0,0},//1
-				{0,0,1,0,1,0,1,1,0,0},//2
-				{0,1,0,1,1,1,1,1,1,1},//3
-				{1,0,1,0,0,1,1,1,0,0},//4
-				{0,1,1,0,0,0,1,1,0,0},//5
-				{0,0,1,1,0,0,1,1,1,1},//6
-				{1,1,1,1,1,1,0,1,0,0},//7
-				{1,1,1,1,1,1,1,0,0,0},//8
-				{0,0,1,0,0,1,0,0,0,1},//9
-				{0,0,1,0,0,1,0,0,1,0} //10
-		};
-
-		graph g = new graph(testie8);
-
-		/*node3 TOP_checked_set = new node3(10);
-		TOP_checked_set.memory_next = new node3(10);//deepness 1
-		TOP_checked_set.memory_next.add(1);//added to deepness 1
-		TOP_checked_set.memory_next.add(2);//added to deepness 1
-		TOP_checked_set.memory_next.memory_next = new node3(10);//deepness 2
-		TOP_checked_set.memory_next.memory_next.add(1);//added to deepness 1
-		TOP_checked_set.memory_next.memory_next.memory_next = new node3(10);//deepness 3
-
-		node3 DCC_check_set = new node3(10);
-		DCC_check_set.add(1); DCC_check_set.add(2); DCC_check_set.add(3); DCC_check_set.add(4); DCC_check_set.add(5); 
-		DCC_check_set.add(6); DCC_check_set.add(7); DCC_check_set.add(8); DCC_check_set.add(9); DCC_check_set.add(10); 
-
-		node3 TOP_nodes_to_consider = new node3(10);
-		TOP_nodes_to_consider.memory_next = new node3(10);//deepness 1
-		TOP_nodes_to_consider.memory_next.meta_data = 1;
-		TOP_nodes_to_consider.memory_next.memory_next = new node3(10);//deepness 2
-		TOP_nodes_to_consider.memory_next.memory_next.meta_data = 7;
-		TOP_nodes_to_consider.memory_next.memory_next.memory_next = new node3(10);//deepness 3
-		TOP_nodes_to_consider.memory_next.memory_next.memory_next.meta_data = 8;
-
-		node3 memory_element = new node3(10);
-		memory_element.add(3);
-		memory_element.add(4);
-		memory_element.add(5);
-		memory_element.add(6);
-
-		g.graph3 = new node3[g.nodes];
-		for(int i = 0; i<g.nodes; i++){
-			g.graph3[i] = new node3(g.graph[i],g.nodes,true);
-			//				System.out.println("node: "+(i+1)+" connected to: "+graph3[i].print_literal());//.print_list());
-		}
-
-
-		g.scour_checked_set(3, TOP_checked_set, DCC_check_set, TOP_nodes_to_consider, memory_element);
 		 */
 
+
+
+
+		graph g = new graph();
 		long start;
 		int [] temp = new int[0];
 		long elapsedTimeMillis;
@@ -3378,23 +3185,273 @@ boolean next_display = false;
 		int[] p = g.find_P();
 
 
-		/*		g.graph3 = new node3[g.nodes];
-		for(int i = 0; i<g.nodes; i++){
-			g.graph3[i] = new node3(g.graph[i],g.nodes,true);
+
+
+		Options options = new Options();
+		options.addOption("h","help", false, "this menu");
+		options.addOption("d","directory", true, "directory for graph binaries, default is \"../graph_binaries\"");		
+		options.addOption("g","graphs", true, ".clq graphs to run, default is all graphs in directory of graph binaries. Can be comma delimiated list, eg \"brock200_1.clq,brock200_2.clq,brock200_3.clq,brock200_4.clq\"");
+		options.addOption("e","exclude", true, "graphs to exclude. Default is \"MANN_a45.clq,MANN_a81.clq,keller5.clq,keller6.clq\"");
+		options.addOption("m","max",true,"display incrimental max as it's found, default is true");
+		options.addOption("t","threads",true,"threads to allow, default is 24");
+		options.addOption("v","verbosity",true,"set verbosity, -2 minimal display, -1 display graph meta no algorithm out, 0 graph meta and algorithm display, 1 >= increasing algorithm verbosity level, default -1");
+		options.addOption("o","other",true,"use other algorithm to find max Clique. Options include:\n"
+				+ "     BK (BronKerbosch with pivot)\n"
+				+ "     MC (Tomiata's MC)\n"
+				+"      MC0 (Tomiata's MC)\n"
+				+"      MCQ1 (Tomiata's MCQ style 1)\n"
+				+"      MCQ2 (Tomiata's MCQ style 2)\n"
+				+"      MCQ3 (Tomiata's MCQ style 3)\n"
+				+"      MCSa1 (Tomiata's MCSa style 1)\n"
+				+"      MCSa2 (Tomiata's MCSa style 2)\n"
+				+"      MCSa3 (Tomiata's MCSa style 3)\n"
+				+"      MCSb1 (Tomiata's MCSb style 1)\n"
+				+"      MCSb2 (Tomiata's MCSb style 2)\n"
+				+"      MCSb3 (Tomiata's MCSb style 3)\n"
+				+"      BBMC1 (San Segundo's BBMC style 1)\n"
+				+"      BBMC2 (San Segundo's BBMC style 1)\n"
+				+"      BBMC3 (San Segundo's BBMC style 1)\n");
+
+
+		String include_graphs;
+		String graphs_directory;
+		int num_threads;
+		int mid_num_threads;
+		boolean disp_found_max;		
+		int display_level; 
+		String exclude_graphs;
+		String other_algorithm;
+
+
+		CommandLineParser parser = new DefaultParser();
+		HelpFormatter formatter = new HelpFormatter();
+		CommandLine cmd = null;
+
+		try {
+			cmd = parser.parse( options, args);
+		} catch (ParseException e){
+			System.out.println(e.getMessage());
+			formatter.printHelp("bochert [options] \n"
+					+ "A multi-threaded, infinitely scalable solution to find an exact max clique from a graph.clq (nP problem-set solution)\n\n", options);
+		}
+
+		if(cmd.hasOption("h")){
+			formatter.printHelp("bochert [options] \n"
+					+ "A multi-threaded, infinitely scalable solution to find an exact max clique from a graph.clq (nP problem-set solution)\n\n", options);
+			System.exit(0);
+		}
+
+		if(cmd.hasOption("d")){
+			graphs_directory = cmd.getOptionValue("d");
+			if (graphs_directory.charAt(graphs_directory.length()-1) != '\\')
+				graphs_directory = graphs_directory + "\\";
+			System.out.println("directory set to: " + graphs_directory);
+		}
+		else{
+			graphs_directory = "..\\graph_binaries\\";
+		}
+
+		if(cmd.hasOption("g")){
+			include_graphs = cmd.getOptionValue("g");
+			System.out.println("graphs included set to: " + include_graphs);
+		}
+		else{
+			include_graphs = "";
+		}
+
+		if(cmd.hasOption("e")){
+			exclude_graphs = cmd.getOptionValue("e");
+			System.out.println("graphs excluded set to: " + exclude_graphs);
+		}
+		else{
+			exclude_graphs = "\"MANN_a45.clq\",\"MANN_a81.clq\",\"keller5.clq\",\"keller6.clq\"";
+		}
+
+		if(cmd.hasOption("m")){
+			disp_found_max = Boolean.parseBoolean(cmd.getOptionValue("m"));
+			System.out.println("display incrimental max set to: " + disp_found_max);
+		}
+		else{
+			disp_found_max = true;
+		}
+
+		if(cmd.hasOption("t")){
+			num_threads = Integer.parseInt(cmd.getOptionValue("t"));
+			mid_num_threads = num_threads / 2;
+			num_threads = num_threads - mid_num_threads;
+			System.out.println("total allowed threads set to: " + (num_threads + mid_num_threads));
+		}
+		else{
+			num_threads = 12;
+			mid_num_threads = 12;
+		}
+
+		if(cmd.hasOption("v")){
+			display_level = Integer.parseInt(cmd.getOptionValue("v"));
+			System.out.println("Set verbosity to: " + (display_level));
+			if ((display_level < -1) && (disp_found_max))
+				System.out.println("verbosity set to "+display_level+" but displaying incrimental maxes. To prevent this, run again with option \"-m false\"");
+		}
+		else{
+			display_level = -1; 
+		}
+
+		if(cmd.hasOption("o")){
+			other_algorithm = cmd.getOptionValue("o");
+			System.out.println("Other algorithm Set to: " + (other_algorithm));
+		}
+		else{
+			other_algorithm = ""; 
 		}
 
 
-		node3 all_nodes = new node3(g.all_neighbors(-1),g.nodes);
 
-		System.out.println(">> all_nodes was: "+all_nodes.print_list());
-		g.reduction(all_nodes);
-		System.out.println(">> all_nodes is now: "+all_nodes.print_list());
-		g.pause();
-		 */
+		String s[] = g.create_list_of_graphs(graphs_directory, include_graphs, exclude_graphs);
 
-		String s[] = new String[35];
+		System.out.println("***********************************************************************************************************");
+		System.out.println("Running on graphs: ");
+		for(int i = 0; i < s.length; i++)
+			System.out.print(s[i]+" ");
+		System.out.println();
 
-		s[0] = "brock200_1.clq";
+
+		for(int i = 0; i<s.length; i++){//i<s.length; i++){
+			if (display_level >= -1){
+				System.out.println("***********************************************************************************************************");
+				System.out.println("graph#"+i+" "+s[i]);
+			}
+
+
+			if (other_algorithm.equalsIgnoreCase("BK")){
+
+				System.out.println("Running BronKerbosch on graph ("+(i+1)+"/"+(s.length)+"): "+s[i]+" Number of nodes: "+g.nodes);
+				start = System.currentTimeMillis();
+
+				g = new graph(s[i],display_level,graphs_directory);
+
+				r = null; 
+				x = null;
+				p = g.find_P();
+
+				g.BK_calls = 0;
+				temp = g.BronKerbosch(r, p, x);
+				elapsedTimeMillis = System.currentTimeMillis()-start;
+
+				System.out.println("BronKerbosch took: "+elapsedTimeMillis+" milliseconds and found max clique of size: "+temp.length+" and nodes:");
+				System.out.println(g.array2string(temp));
+			}
+			else if (other_algorithm != ""){
+
+				MaxClique other_clique = new MaxClique();
+
+				System.out.println("Running "+other_algorithm+" on graph ("+(i+1)+"/"+(s.length)+"): "+s[i]+" Number of nodes: "+g.nodes);
+
+				other_clique.readDIMACS(graphs_directory + s[i]);
+				MC mc = null;
+
+				if (other_algorithm.equalsIgnoreCase("MC"))         mc = new MC(other_clique.n,other_clique.A,other_clique.degree);
+				else if (other_algorithm.equalsIgnoreCase("MC0"))   mc = new MC0(other_clique.n,other_clique.A,other_clique.degree);
+				else if (other_algorithm.equalsIgnoreCase("MCQ1"))  mc = new MCQ(other_clique.n,other_clique.A,other_clique.degree,1);
+				else if (other_algorithm.equalsIgnoreCase("MCQ2"))  mc = new MCQ(other_clique.n,other_clique.A,other_clique.degree,2);
+				else if (other_algorithm.equalsIgnoreCase("MCQ3"))  mc = new MCQ(other_clique.n,other_clique.A,other_clique.degree,3);
+				else if (other_algorithm.equalsIgnoreCase("MCSa1")) mc = new MCSa(other_clique.n,other_clique.A,other_clique.degree,1);
+				else if (other_algorithm.equalsIgnoreCase("MCSa2")) mc = new MCSa(other_clique.n,other_clique.A,other_clique.degree,2);
+				else if (other_algorithm.equalsIgnoreCase("MCSa3")) mc = new MCSa(other_clique.n,other_clique.A,other_clique.degree,3);
+				else if (other_algorithm.equalsIgnoreCase("MCSb1")) mc = new MCSb(other_clique.n,other_clique.A,other_clique.degree,1);
+				else if (other_algorithm.equalsIgnoreCase("MCSb2")) mc = new MCSb(other_clique.n,other_clique.A,other_clique.degree,2);
+				else if (other_algorithm.equalsIgnoreCase("MCSb3")) mc = new MCSb(other_clique.n,other_clique.A,other_clique.degree,3);
+				else if (other_algorithm.equalsIgnoreCase("BBMC1")) mc = new BBMC(other_clique.n,other_clique.A,other_clique.degree,1);
+				else if (other_algorithm.equalsIgnoreCase("BBMC2")) mc = new BBMC(other_clique.n,other_clique.A,other_clique.degree,2);
+				else if (other_algorithm.equalsIgnoreCase("BBMC3")) mc = new BBMC(other_clique.n,other_clique.A,other_clique.degree,3);
+				else{
+					System.out.println("Unknown algorithm used: "+other_algorithm);
+					System.exit(0);
+				}
+
+				System.gc();
+				//if (args.length > 2) mc.timeLimit = 1000 * (long)Integer.parseInt(args[2]);
+				elapsedTimeMillis = System.currentTimeMillis();
+				mc.search();
+				elapsedTimeMillis = System.currentTimeMillis() - elapsedTimeMillis;
+
+				System.out.println(other_algorithm + " took: " + elapsedTimeMillis + " milliseconds and found max clique of size: "+mc.maxSize+" and nodes:");
+				System.out.println(mc.Arraylist_solution.toString());
+
+			}    
+
+
+
+			else {
+
+
+				g = new graph(s[i],display_level,graphs_directory);
+
+				g.timings[0] = 0;
+				g.timings[1] = 0;
+				g.timings[2] = 0;
+
+				g.include_graphs = include_graphs;
+				g.graphs_directory = graphs_directory;
+				g.exclude_graphs = exclude_graphs;
+
+				g.level_0_display = true;
+				g.display_level = display_level;
+				g.start_showing_crap = false;
+				g.sort_smallest_first = false;
+				g.sort = true;
+				g.degressive_display = false;
+				g.priority_threading = false;
+				g.disp_found_max = disp_found_max;
+				g.num_threads = num_threads; // set to zero to disable multithreading
+				g.mid_num_threads = mid_num_threads;
+				g.min_new_bthread_size = 10;//(int)(g.nodes*0.5); //number of nodes needed to make it worth calling a new thread
+				g.min_new_midthread_size = 10;//(int)(g.nodes*0.04); //number of nodes needed to make it worth calling a new thread, should look only at ntc, not memory element because ntc dictates more closely how many times the loop will be run
+				g.hotswap_trigger = -17;//115//116//1986;//12063; //-34530;//35105
+				g.lowest_backtrack = 0;//set to nodes if you want to enable the depth first option, not as efficient but easier to track progress
+
+				g.B_calls = 0;
+				g.B_calls_background = 0;
+
+				System.out.println();
+				System.out.println();
+				System.out.println("Running Bochert on graph ("+(i+1)+"/"+(s.length)+"): "+s[i]+" Number of nodes: "+g.nodes);
+
+				start = System.currentTimeMillis();
+
+				temp = g.pre_Newer_Bochert(false);
+
+				elapsedTimeMillis = System.currentTimeMillis()-start;
+
+				if (display_level < -1){
+					System.out.println();
+					System.out.println("Bochert took: "+elapsedTimeMillis+" milliseconds and found max clique of size: "+temp.length+" and nodes:");
+					System.out.println(g.array2string(temp));
+				}
+				else {
+					System.out.println();
+					System.out.println("max clique from Bochert is: ");
+					System.out.println(g.array2string(temp));
+					System.out.println("total calls to Bochert: "+g.B_calls);
+					System.out.println("background calls to Bochert were: "+g.B_calls_background);
+					System.out.println("background to foreground were: "+((double)g.B_calls_background)/((double)g.B_calls));
+
+					System.out.println("__ it took:"+elapsedTimeMillis+" milliseconds");
+					System.out.println("is clique?: "+g.is_star(temp, true)+" and length is: "+temp.length);
+				}
+
+				if (!g.is_star(temp, true)){
+					System.out.println("is clique?: "+g.is_star(temp, true)+" and length is: "+temp.length);
+					System.out.print("POOP! Something went wrong, returned a not clique");
+				}
+
+				System.out.println();
+
+			}
+
+
+
+
+			/*		s[0] = "brock200_1.clq";
 		s[1] = "brock200_2.clq";
 		s[2] = "brock200_3.clq";
 		s[3] = "brock200_4.clq";
@@ -3429,97 +3486,39 @@ boolean next_display = false;
 		s[32] = "MANN_a45.clq";
 		s[33] = "MANN_a81.clq";
 		s[34] = "MANN_a9.clq";
-
-//		for(int i = 0; i<s.length; i++){//i<s.length; i++){
-//			if (((i != 32) && (i != 33)) && (i != 18) && (i != 19)){
-//		 System.out.print(i);
+		if (((i != 32) && (i != 33) && (i != 18)) && (i != 19)){
+			 */
 
 
-/*		String s[] = new String[35];
 
-		s[0] = "C125.9.clq";
-		s[1] = "keller4.clq";
-		s[2] = "brock200_2.clq";
-		s[3] = "p_hat300-1.clq";
-		s[4] = "brock200_4.clq";
-		s[5] = "gen200_p0.9_44.clq";
-		s[6] = "gen200_p0.9_55.clq";
-		s[7] = "hamming8-4.clq";
-		s[8] = "p_hat300-2.clq";
-		s[9] = "C250.9.clq";
-		s[10] = "p_hat300-3.clq";
-		s[11] = "brock400_4.clq";
-		s[12] = "brock400_2.clq";
-		s[13] = "p_hat700-1.clq";
-		s[14] = "DSJC500.5.clq";
-		s[15] = "MANN_a27.clq";
-		s[16] = "gen400_p0.9_55.clq";
-		s[17] = "gen400_p0.9_75.clq";
-		s[18] = "gen400_p0.9_65.clq";
-		s[19] = "C500.9.clq";
-		s[20] = "p_hat700-2.clq";
-		s[21] = "p_hat700-3.clq";
-		s[22] = "brock800_4.clq";
-		s[23] = "brock800_2.clq";
-		s[24] = "keller5.clq";
-		s[25] = "DSJC1000.5.clq";
-		s[26] = "p_hat1500-1.clq";
-		s[27] = "hamming10-4.clq";
-		s[28] = "C1000.9.clq";
-		s[29] = "MANN_a45.clq";
-		s[30] = "p_hat1500-2.clq";
-		s[31] = "p_hat1500-3.clq";
-		s[32] = "C2000.9.clq";
-		s[33] = "keller6.clq";
-		s[34] = "MANN_a81.clq";
 
-		//		for(int i = 0; i<s.length; i++){//i<s.length; i++){
-		//			if (((i == 0) && (i != -22)) && (i != -24) && (i != -25)){
-*/
-		
-		System.out.println("Bochert forced seed 0");
-		System.out.println("nv:c:nodes:clique:runs:ms:tf");
+			/////////////////////////////////////////////
+			// Create random graphs with Leemon's 3SAT generator
+			/////////////////////////////////////////////
+			if (false){	
+				System.out.println("Bochert forced seed 0");
+				System.out.println("nv:c:nodes:clique:runs:ms:tf");
 
-		for(int v = 3; v<51; v++){
-			if(true){
+				int v=51; //arbitrarily pick large number of variables for 3sat
 
-				int graphnum = 1;
-				g.init_AES_rand((short)graphnum,(short)(4.27*v));
+				g.init_AES_rand((short)1,(short)(4.27*v));
 				System.out.print(v+":"+(int)(4.27*v)+":"+(int)(4.27*v*3)+":");
 				g.start_random_with_seed(0);
-				
-				for(int i = 0; i<1000; i++)
-					System.out.println(g.nextDouble());
-				
-				if(true)
-					System.exit(0);
-				
-				//g = new graph(g.create3SAT(v,(int)(4.27*v)));
-				g = new graph(g.createLeemon3SAT(v,(int)(4.27*v),true,graphnum));
-				//g = new graph(testie8);
-				//g = new graph("hamming8-4.clq");
-				//g.create3SAT(v,(int)(4.27*v));
-				//g = new graph(s[i]);
-				
+
+				g = new graph(g.createLeemon3SAT(v,(int)(4.27*v),true));
+
 				g.display_level = -1;
 
 				g.timings[0] = 0;
 				g.timings[1] = 0;
 				g.timings[2] = 0;
 
-
-				//				System.out.println("Number of nodes: "+g.nodes);
-
-
-				//				System.out.println();
-				//				System.out.println();
-				//				System.out.println("AND NOW THE NEWER VERSION");
 				g.start_showing_crap = false;
 				g.sort_smallest_first = false;
 				g.sort = true;
 				g.degressive_display = false;
 				g.priority_threading = false;
-				g.show_me_intermitent_maxes = true;
+				g.disp_found_max = true;
 				g.num_threads = 0; // set to zero to disable multithreading
 				g.mid_num_threads = 8;
 				g.min_new_bthread_size = 0;//(int)(g.nodes*0.5); //number of nodes needed to make it worth calling a new thread
@@ -3536,13 +3535,13 @@ boolean next_display = false;
 				x = null;
 				p = g.find_P();
 
-				
+
 				temp = g.pre_Newer_Bochert(false);
 				//temp = g.BronKerbosch(r, p, x);	
 				//g.invert_graph();
 				//temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
 
-				
+
 				elapsedTimeMillis = System.currentTimeMillis()-start;
 				System.out.println(temp.length+":"+g.middle_loop_run+":"+elapsedTimeMillis+":"+g.is_star(temp, false));
 
@@ -3551,12 +3550,12 @@ boolean next_display = false;
 				//				System.out.println(g.array2string(temp));
 				//				System.out.println("total calls to Bochert: "+g.B_calls+" and of those, total calls to TOP while were: "+g.B_calls_TOP);
 
-								
-								//temp = g.pre_Newer_Bochert(false);
-//								g.invert_graph();
-//								temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
-								//System.out.println("\nis star?: "+g.is_star(temp, false)+" and length is: "+temp.length+"\n set: "+g.array2string(temp)+"\n");
-								
+
+				//temp = g.pre_Newer_Bochert(false);
+				//								g.invert_graph();
+				//								temp = g.mis(new node3(g.all_neighbors(-1),g.nodes), 0, false).to_int();
+				//System.out.println("\nis star?: "+g.is_star(temp, false)+" and length is: "+temp.length+"\n set: "+g.array2string(temp)+"\n");
+
 				//				bthread emptybthread = new bthread();
 				//				System.out.println("calls to bthread: "+emptybthread.total_calls_to_bthread+" and interior Bochert calls were: "+emptybthread.B_calls);
 
@@ -3578,12 +3577,12 @@ boolean next_display = false;
 
 				//				System.out.println();
 
+
+
+
+
 			}
 		}
-
-
-
-
 	}
 
 }

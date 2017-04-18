@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Delete resource &apos;Previous_don&apos;t_modify&apos;" deleteContents="false" description="Delete resource &apos;Previous_don&apos;t_modify&apos;" element1="/Previous_don&apos;t_modify" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1492547853341"/>&#x0A;<refactoring comment="Delete resource &apos;Old_NewMaxClique&apos;" deleteContents="false" description="Delete resource &apos;Old_NewMaxClique&apos;" element1="/Old_NewMaxClique" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1492547866723"/>
+</session>

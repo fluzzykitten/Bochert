@@ -30,7 +30,7 @@ public class bthread implements Runnable  {
 	private boolean level_0_display = false;
 	static private node3[] reach_back;
 	private node3 find;
-//	private boolean display_global = false;
+	//	private boolean display_global = false;
 	static private long[] reach_back_B_calls;
 	static private long[] reach_back_B_calls_TOP;
 	private int whoami;
@@ -54,6 +54,10 @@ public class bthread implements Runnable  {
 	static int[] best_star = new int[1];
 	static boolean priority_threading = false;
 
+	static boolean disp_found_max = true;
+	static int size_announced_max = 0;
+
+
 	static int[] mid_thread_count = new int[1];
 	static int mid_thread_pool = 1;
 	static int mid_max_thread_pool = 1;
@@ -69,16 +73,16 @@ public class bthread implements Runnable  {
 	static int min_new_bthread_size = 10;
 	static int min_new_midthread_size = 10;
 	static int total_calls_to_bthread = 0;
-    long[] time_analysis = new long[10];
-    static long[] reach_back_time_analysis;
+	long[] time_analysis = new long[10];
+	static long[] reach_back_time_analysis;
 
-    static int[] exit_loop;
-    int middle_loop_run = 0;
-    static int[] reach_back_middle_loop_run;
-    int waittime = 10000;
+	static int[] exit_loop;
+	int middle_loop_run = 0;
+	static int[] reach_back_middle_loop_run;
+	int waittime = 10000;
 
-	
-/*	private int[][] graph; // the adjacency matrix
+
+	/*	private int[][] graph; // the adjacency matrix
 	private node3[] graph3; // the adjacency matrix
 	private int[][] old_graph; //when changing the graph around, can keep the old one to ensure that the returned set is indeed a clique
 	private int nodes; // total number of nodes
@@ -145,14 +149,14 @@ public class bthread implements Runnable  {
     int middle_loop_run = 0;
     int[] reach_back_middle_loop_run;
     int waittime = 0;	
-  */  
+	 */  
 	static int total_calls_to_midthread = 0;
 	private node3 find_not_used;
 	node3 ZTOP_nodes_to_consider; 
 	node3 Znodes_to_consider; 
 	node3 Zall_nodes_in_set_deleted_used; 
 	boolean Zdisplay_internal; 
-//	int Zdepth_charge; 
+	//	int Zdepth_charge; 
 	int Zdeepness; 
 	node3 Zchecked_set; 
 	node3 Zall_nodes_in_set_whole; 
@@ -164,9 +168,9 @@ public class bthread implements Runnable  {
 	int Zwhere_from;
 	public boolean mid_entry = false;
 
-	int I_declared_max_size = 0;
-	boolean show_me_intermitent_maxes = false;
-	
+	//	int I_declared_max_size = 0;
+	//	boolean show_me_intermitent_maxes = false;
+
 
 	bthread(){
 
@@ -175,6 +179,7 @@ public class bthread implements Runnable  {
 
 	bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, int nodes1, long[] reach_back_B_calls1, node3 empty_node1, boolean degressive_display1, int[] status1, node3[] previous_nodes1, semaphore semasema1, semaphore semaMax1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1){
 		// all of the meta data to run thread
+
 		reach_back_middle_loop_run = reach_back_middle_loop_run1;
 		reach_back_time_analysis = reach_back_time_analysis1;
 		semasematext = semasematext1;
@@ -193,7 +198,7 @@ public class bthread implements Runnable  {
 		semasema = semasema1;
 		semaMax = semaMax1;
 		priority_threading = priority_threading1;
-		best_star = best_star1;
+		//best_star = best_star1;
 		thread_count = thread_count1;
 		mid_reach_back = mid_reach_back1;
 		min_new_bthread_size = min_new_bthread_size1;
@@ -206,11 +211,12 @@ public class bthread implements Runnable  {
 		exit_loop = exit_loop1;
 
 	}
-	
+
 	bthread(boolean display1, int whoami1, semaphore stillrunning1, node3[] previous_nodes1, node3[] mid_previous_nodes1, int display_level1, int B_iteration_deep1, int pre_depth_memory1, node3 find1, int who_ran_me1, int previously_known_max1){
-	//newer Bochert
+		//newer Bochert
+
 		total_calls_to_bthread++;
-		
+
 		level_0_display = display1; 
 		whoami = whoami1;
 		stillrunning = stillrunning1;
@@ -220,18 +226,19 @@ public class bthread implements Runnable  {
 		B_iteration_deep = B_iteration_deep1;
 		pre_depth_memory = pre_depth_memory1;
 
-		
+
 		find = find1;
 		previously_known_max = previously_known_max1;
 		who_ran_me = who_ran_me1;
-		
-		
+
+
 	}
-	
-	
+
+
 	bthread(boolean display1, int whoami1, semaphore stillrunning1, node3[] previous_nodes1, node3[] mid_previous_nodes1, int display_level1, int B_iteration_deep1, int pre_depth_memory1, node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal, int depth_charge, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set, int check_set, int where_from1){ 			
-	//mid section
-	
+		//mid section
+
+
 		mid_entry = true;
 		total_calls_to_midthread++;
 
@@ -243,12 +250,12 @@ public class bthread implements Runnable  {
 		display_level = display_level1;
 		B_iteration_deep = B_iteration_deep1;
 
-		
+
 		ZTOP_nodes_to_consider = TOP_nodes_to_consider;
 		Znodes_to_consider = nodes_to_consider;
 		Zall_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used;  
 		Zdisplay_internal = display_internal ;
-//		Zdepth_charge = depth_charge ;
+		//		Zdepth_charge = depth_charge ;
 		Zdeepness = deepness ;
 		Zchecked_set = checked_set ; 
 		Zall_nodes_in_set_whole = all_nodes_in_set_whole ; 
@@ -258,15 +265,16 @@ public class bthread implements Runnable  {
 		ZTOP_checked_set = TOP_checked_set ;
 		Zcheck_set = check_set ;
 		Zwhere_from = where_from1;
-		
+
 	}
-	
-	
-	bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, 	node3[] mid_previous_nodes1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1, boolean show_me_intermitent_maxes1){
 
+
+	bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1, node3[] mid_reach_back1, 	node3[] mid_previous_nodes1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1, int max_thread_pool1, int mid_max_thread_pool1, long[] reach_back_time_analysis1, int[] exit_loop1,int[] reach_back_middle_loop_run1, boolean disp_found_max1){
+		disp_found_max = disp_found_max1;
 		total_calls_to_bthread++;
+		if(best_star1!=null) best_star = best_star1;
 
-		show_me_intermitent_maxes = show_me_intermitent_maxes1;
+		//		show_me_intermitent_maxes = show_me_intermitent_maxes1;
 		reach_back_middle_loop_run = reach_back_middle_loop_run1;
 		reach_back_time_analysis = reach_back_time_analysis1;
 		semasematext = semasematext1;
@@ -279,7 +287,7 @@ public class bthread implements Runnable  {
 		graph = graph1;
 		reach_back_B_calls = reach_back_B_calls1;
 		reach_back_B_calls_TOP = reach_back_B_calls_TOP1;
-		if(display_level1>0) display_level = display_level1;
+		display_level = display_level1;
 		empty_node = empty_node1;
 		degressive_display = degressive_display1;
 		whoami = whoami1;
@@ -297,7 +305,7 @@ public class bthread implements Runnable  {
 		if(semaMax1 != null) semaMax = semaMax1;
 		pre_depth_memory = pre_depth_memory1;
 		priority_threading = priority_threading1;
-		if(best_star1 != null)best_star = best_star1;
+		//if(best_star1 != null)best_star = best_star1;
 		if(thread_count1 != null) thread_count = thread_count1;
 		if(mid_reach_back1 != null) mid_reach_back = mid_reach_back1;
 		min_new_bthread_size = min_new_bthread_size1;
@@ -315,85 +323,85 @@ public class bthread implements Runnable  {
 		exit_loop = exit_loop1;
 	}
 
-	
-//	task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), display_next/*display_global*/, nodes, reach_back_B_calls ,  (display_next?display_level:-1)/*display_level*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,depth_charge+1,priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,display_next /*display_internal*/, depth_charge, deepness, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run);
-	bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1,node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set,	int check_set, node3[] mid_reach_back1,node3[] mid_previous_nodes1, int where_from1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1,int max_thread_pool1, int mid_max_thread_pool1,long[] reach_back_time_analysis1,int[] exit_loop1,int[] reach_back_middle_loop_run1, boolean show_me_intermitent_maxes1){
-//Midthread  
+
+	//	task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), display_next/*display_global*/, nodes, reach_back_B_calls ,  (display_next?display_level:-1)/*display_level*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,depth_charge+1,priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,display_next /*display_internal*/, depth_charge, deepness, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run);
+	bthread(semaphore semasematext1, node3[] reach_back1, int thread_pool1, node3[] graph31, int[][] graph1, node3 find1, boolean display1, int nodes1, long[] reach_back_B_calls1, int display_level1, node3 empty_node1, boolean degressive_display1, int whoami1, int[] status1, node3[] previous_nodes1, int previously_known_max1, semaphore semasema1, semaphore stillrunning1, int B_iteration_deep1,int who_ran_me1, semaphore semaMax1, int pre_depth_memory1, boolean priority_threading1, int[] best_star1, int[] thread_count1, semaphore mid_semasema1, int[] mid_thread_count1, int mid_thread_pool1, int[] mid_status1,node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set,	int check_set, node3[] mid_reach_back1,node3[] mid_previous_nodes1, int where_from1, int min_new_bthread_size1, int min_new_midthread_size1, int lowest_backtrack1, long[] reach_back_B_calls_TOP1,int max_thread_pool1, int mid_max_thread_pool1,long[] reach_back_time_analysis1,int[] exit_loop1,int[] reach_back_middle_loop_run1){
+		//Midthread  
 		mid_entry = true;
-			total_calls_to_midthread++;
-			
-			semasematext = semasematext1;
-			show_me_intermitent_maxes = show_me_intermitent_maxes1;
+		total_calls_to_midthread++;
 
-			reach_back_middle_loop_run = reach_back_middle_loop_run1;
-			reach_back_time_analysis = reach_back_time_analysis1;
-			reach_back = reach_back1;
-			graph3 = graph31;
-			find_not_used = find1;
-			level_0_display = display1; 
-			nodes = nodes1;
-			lowest_backtrack = lowest_backtrack1; //this doesn't matter here, it only matters for calling bthread, this thread (mid thread) will never have a use for this because, in theory, it's already low enough level to call more threads
-			graph = graph1;
-			reach_back_B_calls = reach_back_B_calls1;
-			reach_back_B_calls_TOP = reach_back_B_calls_TOP1;
-			if(display_level1>0) display_level = display_level1;
-			empty_node = empty_node1;
-			degressive_display = degressive_display1;
-			whoami = whoami1;
-//			if(thread_pool1 > 0){ 
-				thread_pool = thread_pool1;
-				max_thread_pool = max_thread_pool1; 
-//			}
-			if(status1 != null) status = status1;
-			previous_nodes = previous_nodes1;
-			previously_known_max = previously_known_max1;
-			if(semasema1 != null) semasema = semasema1;
-			stillrunning = stillrunning1;
-			B_iteration_deep = B_iteration_deep1;
-			who_ran_me = who_ran_me1;
-			if(semaMax1 != null) semaMax = semaMax1;
-			pre_depth_memory = pre_depth_memory1;
-			priority_threading = priority_threading1;
-			if(best_star1 != null)best_star = best_star1;
-			if(thread_count1 != null) thread_count = thread_count1;
-			if(mid_reach_back1 != null) mid_reach_back = mid_reach_back1;
-			mid_previous_nodes = mid_previous_nodes1;
-			min_new_bthread_size = min_new_bthread_size1;
-			min_new_midthread_size = min_new_midthread_size1;
-			
-//			if(mid_semasema1 != null){
-				mid_thread_count = mid_thread_count1;
-				mid_thread_pool = mid_thread_pool1;
-				mid_max_thread_pool = mid_max_thread_pool1; 
-				mid_status = mid_status1;
-				mid_semasema = mid_semasema1;
-//			}
+		semasematext = semasematext1;
+		//			show_me_intermitent_maxes = show_me_intermitent_maxes1;
 
-			
-			ZTOP_nodes_to_consider = TOP_nodes_to_consider;
-			Znodes_to_consider = nodes_to_consider;
-			Zall_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used;  
-			Zdisplay_internal = display_internal ;
-//			Zdepth_charge = depth_charge ;
-			Zdeepness = deepness ;
-			Zchecked_set = checked_set ; 
-			Zall_nodes_in_set_whole = all_nodes_in_set_whole ; 
-			Zalpha3 = alpha3 ;
-			ZDCC = DCC ;
-			Zmemory_element =  memory_element ;
-			ZTOP_checked_set = TOP_checked_set ;
-			Zcheck_set = check_set ;
-			Zwhere_from = where_from1;
-			exit_loop = exit_loop1;
-			
-		}
+		reach_back_middle_loop_run = reach_back_middle_loop_run1;
+		reach_back_time_analysis = reach_back_time_analysis1;
+		reach_back = reach_back1;
+		graph3 = graph31;
+		find_not_used = find1;
+		level_0_display = display1; 
+		nodes = nodes1;
+		lowest_backtrack = lowest_backtrack1; //this doesn't matter here, it only matters for calling bthread, this thread (mid thread) will never have a use for this because, in theory, it's already low enough level to call more threads
+		graph = graph1;
+		reach_back_B_calls = reach_back_B_calls1;
+		reach_back_B_calls_TOP = reach_back_B_calls_TOP1;
+		if(display_level1>0) display_level = display_level1;
+		empty_node = empty_node1;
+		degressive_display = degressive_display1;
+		whoami = whoami1;
+		//			if(thread_pool1 > 0){ 
+		thread_pool = thread_pool1;
+		max_thread_pool = max_thread_pool1; 
+		//			}
+		if(status1 != null) status = status1;
+		previous_nodes = previous_nodes1;
+		previously_known_max = previously_known_max1;
+		if(semasema1 != null) semasema = semasema1;
+		stillrunning = stillrunning1;
+		B_iteration_deep = B_iteration_deep1;
+		who_ran_me = who_ran_me1;
+		if(semaMax1 != null) semaMax = semaMax1;
+		pre_depth_memory = pre_depth_memory1;
+		priority_threading = priority_threading1;
+		//if(best_star1 != null)best_star = best_star1;
+		if(thread_count1 != null) thread_count = thread_count1;
+		if(mid_reach_back1 != null) mid_reach_back = mid_reach_back1;
+		mid_previous_nodes = mid_previous_nodes1;
+		min_new_bthread_size = min_new_bthread_size1;
+		min_new_midthread_size = min_new_midthread_size1;
+
+		//			if(mid_semasema1 != null){
+		mid_thread_count = mid_thread_count1;
+		mid_thread_pool = mid_thread_pool1;
+		mid_max_thread_pool = mid_max_thread_pool1; 
+		mid_status = mid_status1;
+		mid_semasema = mid_semasema1;
+		//			}
+
+
+		ZTOP_nodes_to_consider = TOP_nodes_to_consider;
+		Znodes_to_consider = nodes_to_consider;
+		Zall_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used;  
+		Zdisplay_internal = display_internal ;
+		//			Zdepth_charge = depth_charge ;
+		Zdeepness = deepness ;
+		Zchecked_set = checked_set ; 
+		Zall_nodes_in_set_whole = all_nodes_in_set_whole ; 
+		Zalpha3 = alpha3 ;
+		ZDCC = DCC ;
+		Zmemory_element =  memory_element ;
+		ZTOP_checked_set = TOP_checked_set ;
+		Zcheck_set = check_set ;
+		Zwhere_from = where_from1;
+		exit_loop = exit_loop1;
+
+	}
 
 
 	@Override
 	public void run() {
 
 		//Thread.currentThread().setPriority(whoami);
-		
+
 		if(!mid_entry)
 			reach_back[whoami].zero();
 		else
@@ -408,16 +416,16 @@ public class bthread implements Runnable  {
 			semasematext.release();
 		}
 
-		
+
 		node3 result = null; 
-		
+
 		if(!mid_entry)
 			result = Newer_Bochert(find,previously_known_max,nodes,level_0_display,who_ran_me,pre_depth_memory);
 		else
 			result = mid_section(ZTOP_nodes_to_consider, Znodes_to_consider, Zall_nodes_in_set_deleted_used, Zdisplay_internal, pre_depth_memory, Zdeepness, Zchecked_set, Zall_nodes_in_set_whole, Zalpha3, ZDCC, Zmemory_element, ZTOP_checked_set, Zcheck_set, Zwhere_from, System.currentTimeMillis(),new ArrayList<Thread>(), new ArrayList<semaphore>(), new ArrayList<Thread>(), new ArrayList<semaphore>(),mid_entry);
 
 
-/*		if((I_declared_max_size != 0) ){
+		/*		if((I_declared_max_size != 0) ){
 			if((result.get_length()+pre_depth_memory) == I_declared_max_size){
 				this.insert_spaces_for_iteration("B");
 				System.out.println("Returning with declared max of "+I_declared_max_size+" and depth charge of: "+pre_depth_memory+" best_star[0]: "+best_star[0]);
@@ -428,11 +436,11 @@ public class bthread implements Runnable  {
 //				System.exit(0);
 			}
 		}
-		*/
-			
+		 */
 
-			
-			try{semaMax.take();} catch(InterruptedException e){}
+
+
+		try{semaMax.take();} catch(InterruptedException e){}
 
 		if(!mid_entry){
 			reach_back[whoami] = result;
@@ -541,22 +549,22 @@ public class bthread implements Runnable  {
 	}
 
 
-	public int update_max(int max_size, int depth_charge, node3 maxi) throws InterruptedException{
+	public int update_max(int max_size, int called_from, int wherefrom,int depth_charge,node3 max_star,int DCC_check_set_meta_data) throws InterruptedException{
 
-		
+
 		semaMax.take();
 
 		if(best_star[0] < max_size)
 			best_star[0] = max_size;
-		I_declared_max_size = max_size;
-		
-if(show_me_intermitent_maxes){
-	try {semasematext.take();} catch(InterruptedException e) {} 
-		this.insert_spaces_for_iteration("B");
-		System.out.println("In Update Max - new global max: "+max_size+" name: "+Thread.currentThread().getName()+" id: "+Thread.currentThread().getId()+" depth_charge: "+depth_charge+" actual max size: "+maxi.get_length()+" actual max: "+(maxi.get_length()<300?maxi.print_list():"Over size 300, not bothering to print, too big"));
-		semasematext.release();
-}
-		
+
+
+		if(size_announced_max < max_size && disp_found_max){
+			try {semasematext.take();} catch(InterruptedException e) {} 
+			System.out.println("** Found a new max clique of size: "+max_size+" called from: "+called_from+" where from: "+wherefrom+" depth_charge: "+depth_charge+" max_star: "+max_star.print_list()+" DCC[check_set].meta_data: "+DCC_check_set_meta_data);
+			size_announced_max = max_size;
+			semasematext.release();
+		}
+
 		semaMax.release();
 
 		return best_star[0];
@@ -855,12 +863,12 @@ if(show_me_intermitent_maxes){
 
 
 
-		Runnable task = null;
-		Thread worker = null;
+		//Runnable task = null;
+		//Thread worker = null;
 		Thread thread_index = null; 
 		int temp;
 		node3 Pointer_ONLY;
-		boolean added_new_thread = false;
+		//boolean added_new_thread = false;
 
 
 		for (int i = 0; i< thread_ownership.size(); i++) {
@@ -875,7 +883,7 @@ if(show_me_intermitent_maxes){
 			}
 
 			if(stop && thread_index.isAlive()){
-				
+
 				try{stillrunninglist.get(i).take();} catch(InterruptedException e) {}
 			}
 
@@ -892,9 +900,6 @@ if(show_me_intermitent_maxes){
 
 				temp = Integer.parseInt(thread_index.getName());		
 
-				thread_ownership.remove(thread_index);
-				stillrunninglist.remove(stillrunninglist.get(i));
-				i--;//because there is one less now
 
 
 				Pointer_ONLY = reach_back[temp];
@@ -924,13 +929,13 @@ if(show_me_intermitent_maxes){
 						semasematext.release();
 					}
 
-					
+
 					max_star.copy_array(Pointer_ONLY);
 
 					max_star.use_me_or(max_star, previous_nodes[temp]);
 
 					//max_star.meta_data = max_star.get_length();
-					try{update_max(max_star.get_length()+depth_charge,depth_charge,max_star);} catch(InterruptedException e){}
+					try{update_max(max_star.get_length()+depth_charge,1,-1,depth_charge,max_star,-1);} catch(InterruptedException e){}
 
 					if(!this.is_star(max_star.to_int(), true)){	try {semasematext.take();} catch(InterruptedException e) {}	System.out.println("B:"+whoami+" failing thread was mid? "+midthread+" thread: "+temp+" reachback: "+reach_back[temp].print_list()+" prev_nodes: "+previous_nodes[temp].print_list()+" not star anymore :(");reach_back[-1]=null;}
 				}
@@ -945,27 +950,27 @@ if(show_me_intermitent_maxes){
 				}
 
 
-				//status[temp] = 0;
-				//thread_count--;
-
+				thread_ownership.remove(thread_index);
+				stillrunninglist.remove(stillrunninglist.get(i));
+				i--;//because there is one less now
 
 			}
 		}
 
-		
+
 	}
 
 
 	private node3 Newer_Bochert(node3 all_nodes, int current_max_not_used, int sought_max, boolean show, int where_from, int depth_charge){
 
-		
+
 		long start = System.currentTimeMillis();
-	
+
 		B_iteration_deep++;
 		B_calls++;
 
-//		if(depth_charge)
-		
+		//		if(depth_charge)
+
 		if(B_iteration_deep == 0)
 			show = level_0_display;
 
@@ -976,7 +981,7 @@ if(show_me_intermitent_maxes){
 		boolean display = (((where_from < 4)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
 		//boolean display = ((((where_from <= 4)||!degressive_display)&&(level_0_display == true)&&(B_iteration_deep < (display_level+1)))?true:false);
 
-		
+
 		if(display){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
@@ -1085,7 +1090,7 @@ if(show_me_intermitent_maxes){
 		time_analysis[0] = time_analysis[0] + (System.currentTimeMillis() - start);
 		start = System.currentTimeMillis();
 
-		
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		//  NO WHILE
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1203,15 +1208,15 @@ if(show_me_intermitent_maxes){
 					max_star.copy_array(temp_element);
 					max_star.add(toptop);
 
-					if(display){
+					if(display || false){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
 						System.out.println("TOP While found new max star!! te.gl: "+temp_element.get_length()+" deepness: "+deepness+" max_star.md: "+(best_star[0]-depth_charge));
 						semasematext.release();
 					}
-					
+
 					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");DCC[-1]=null;}
-					try{update_max(max_star.get_length()+depth_charge,depth_charge,max_star);} catch(InterruptedException e){}
+					try{update_max(max_star.get_length()+depth_charge,2,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 					//max_star.meta_data = max_star.get_length();
 
 
@@ -1228,12 +1233,14 @@ if(show_me_intermitent_maxes){
 				stillrunning1 = new semaphore();
 				try{stillrunning1.take();} catch(InterruptedException e){}
 
-				task = new bthread(semasematext, reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),null,depth_charge+1,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,show_me_intermitent_maxes);
+				task = new bthread(semasematext, reach_back, -1, graph3, graph, DCC[0].copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),null,depth_charge+1,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);
 				worker = new Thread(task);
 				worker.setName(String.valueOf(temp));
 
 				previous_nodes[temp].zero();
 				previous_nodes[temp].add(toptop);
+//				if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
+//					mid_previous_nodes[temp].add(DCC[check_set].meta_data);
 
 				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
@@ -1259,7 +1266,7 @@ if(show_me_intermitent_maxes){
 				//delete, for testing purposes only asdf
 				//check_if_threads_are_done(true, thread_ownership, stillrunninglist, display, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
 
-				
+
 			}
 			if(display_next)
 				try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
@@ -1435,7 +1442,7 @@ if(show_me_intermitent_maxes){
 				alpha3.memory_next.meta_data = alpha3.meta_data;
 				alpha3.memory_next.memory_previous = alpha3;
 				alpha3 = alpha3.memory_next;
-				
+
 
 				if(display){
 					try {semasematext.take();} catch(InterruptedException e) {} 
@@ -1460,22 +1467,22 @@ if(show_me_intermitent_maxes){
 
 
 
-					deepness = 1;// should always be 1 going in from here to account for check_set
-					Pointer_ONLY = mid_section(TOP_nodes_to_consider, nodes_to_consider, all_nodes_in_set_deleted_used, display, depth_charge, deepness, checked_set, all_nodes_in_set_whole, alpha3, DCC, memory_element, TOP_checked_set, check_set, where_from, System.currentTimeMillis(), mid_thread_ownership, mid_stillrunninglist, thread_ownership, stillrunninglist, false);
+				deepness = 1;// should always be 1 going in from here to account for check_set
+				Pointer_ONLY = mid_section(TOP_nodes_to_consider, nodes_to_consider, all_nodes_in_set_deleted_used, display, depth_charge, deepness, checked_set, all_nodes_in_set_whole, alpha3, DCC, memory_element, TOP_checked_set, check_set, where_from, System.currentTimeMillis(), mid_thread_ownership, mid_stillrunninglist, thread_ownership, stillrunninglist, false);
 
 
-					if((Pointer_ONLY.get_length()+1)>(best_star[0]-depth_charge)){
-						if(display){
-							try {semasematext.take();} catch(InterruptedException e) {} 
-							this.insert_spaces_for_iteration("B");
-							System.out.println("After return from mid_section, found new max star!! just_a_pointer ("+Pointer_ONLY.get_length()+"): "+Pointer_ONLY.print_list()+" previous max_star.md: "+(best_star[0]-depth_charge));
-							semasematext.release();
-						}
-						max_star.copy_array(Pointer_ONLY);
-						//max_star.meta_data = max_star.get_length();
-						try{update_max(max_star.get_length()+depth_charge,depth_charge,max_star);} catch(InterruptedException e){}
+				if((Pointer_ONLY.get_length())>=(best_star[0]-depth_charge)){
+					if(display){
+						try {semasematext.take();} catch(InterruptedException e) {} 
+						this.insert_spaces_for_iteration("B");
+						System.out.println("After return from mid_section, found new max star!! just_a_pointer ("+Pointer_ONLY.get_length()+"): "+Pointer_ONLY.print_list()+" previous max_star.md: "+(best_star[0]-depth_charge));
+						semasematext.release();
+					}
+					max_star.copy_array(Pointer_ONLY);
+					//max_star.meta_data = max_star.get_length();
+					try{update_max(max_star.get_length()+depth_charge,3,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 
-						if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");reach_back[-1]=null;}
+					if(!this.is_star(max_star.to_int(), true)){System.out.println("not star anymore :(");reach_back[-1]=null;}
 
 
 
@@ -1511,19 +1518,19 @@ if(show_me_intermitent_maxes){
 			check_set++;
 
 			start = System.currentTimeMillis();
-			
-//			try {semasematext.take();} catch(InterruptedException e) {} 
-//			this.insert_spaces_for_iteration("B");
-//			System.out.println("before bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
-//			semasematext.release();
+
+			//			try {semasematext.take();} catch(InterruptedException e) {} 
+			//			this.insert_spaces_for_iteration("B");
+			//			System.out.println("before bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
+			//			semasematext.release();
 
 			check_if_threads_are_done(false, thread_ownership, stillrunninglist, display, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
-			
-//			try {semasematext.take();} catch(InterruptedException e) {} 
-//			this.insert_spaces_for_iteration("B");
-//			System.out.println("after bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
-//			semasematext.release();
-			
+
+			//			try {semasematext.take();} catch(InterruptedException e) {} 
+			//			this.insert_spaces_for_iteration("B");
+			//			System.out.println("after bcheck_if_threads done FALSE with max_star: "+max_star.print_list());
+			//			semasematext.release();
+
 			time_analysis[5] = time_analysis[5] + (System.currentTimeMillis() - start);
 
 
@@ -1552,18 +1559,21 @@ if(show_me_intermitent_maxes){
 
 		start = System.currentTimeMillis();
 
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("before bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
-//		semasematext.release();
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("before bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
+		//		semasematext.release();
 
+		
+		
+		
 		check_if_threads_are_done(true, thread_ownership, stillrunninglist, display, depth_charge, max_star,previous_nodes, reach_back,false,null,null);
 		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,null,null);
 
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("after bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
-//		semasematext.release();
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("after bcheck_if_threads done TRUE with max_star: "+max_star.print_list());
+		//		semasematext.release();
 
 		time_analysis[6] = time_analysis[6] + (System.currentTimeMillis() - start);
 
@@ -1593,18 +1603,18 @@ if(show_me_intermitent_maxes){
 
 	}
 
-	
+
 
 	private node3 mid_section(node3 TOP_nodes_to_consider, node3 nodes_to_consider, node3 all_nodes_in_set_deleted_used, boolean display_internal, int depth_charge, int deepness, node3 checked_set, node3 all_nodes_in_set_whole, node3 alpha3, node3[] DCC, node3 memory_element, node3 TOP_checked_set,	int check_set, int where_from, long start, List<Thread> mid_thread_ownership, List<semaphore> mid_stillrunninglist, List<Thread> thread_ownership, List<semaphore> stillrunninglist, boolean local_mid_entry){
 
-		
+
 		if(display_internal){
 			try {semasematext.take();} catch(InterruptedException e) {} 
 			this.insert_spaces_for_iteration("B");
 			System.out.println("STARTING new Mid_section ntc: "+nodes_to_consider.print_list()+" all_nodes_in_set_whole: "+all_nodes_in_set_whole.print_list()+" depth_charge: "+depth_charge+" deepness: "+deepness+" checked_set: "+checked_set.print_list()+" Tntc=ntc? "+(TOP_nodes_to_consider==nodes_to_consider)+" local_mid_entry: "+local_mid_entry);
 			semasematext.release();
 		}
-				
+
 		node3 max_star = new node3(nodes);
 
 		node3 delete_this_all_nodes_in_set_whole= all_nodes_in_set_whole.copy_by_erasing();
@@ -1627,18 +1637,18 @@ if(show_me_intermitent_maxes){
 		node3 Pointer_ONLY2;
 		node3 unique_alpha = new node3(nodes);
 		node3 nodes_in_common = new node3(nodes);
-		
+
 		node3 nodes_at_this_level_run_by_other_threads = new node3(nodes);
 		nodes_at_this_level_run_by_other_threads.memory_next = new node3(nodes);
 		nodes_at_this_level_run_by_other_threads.memory_next.memory_previous = nodes_at_this_level_run_by_other_threads;
 		nodes_at_this_level_run_by_other_threads = nodes_at_this_level_run_by_other_threads.memory_next;
 		int blagger = 0;//delete this
 
-//		List<Thread> mid_thread_ownership = new ArrayList<Thread>();
-//		List<semaphore> mid_stillrunninglist = new ArrayList<semaphore>();
+		//		List<Thread> mid_thread_ownership = new ArrayList<Thread>();
+		//		List<semaphore> mid_stillrunninglist = new ArrayList<semaphore>();
 
-//		List<Thread> thread_ownership = new ArrayList<Thread>();
-//		List<semaphore> stillrunninglist = new ArrayList<semaphore>();
+		//		List<Thread> thread_ownership = new ArrayList<Thread>();
+		//		List<semaphore> stillrunninglist = new ArrayList<semaphore>();
 
 		Thread thread_index;
 		Runnable task;
@@ -1646,23 +1656,23 @@ if(show_me_intermitent_maxes){
 		semaphore stillrunning1; 
 
 
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("Starting mid_section with ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
-//		semasematext.release();
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("Starting mid_section with ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
+		//		semasematext.release();
 
 		time_analysis[2] = time_analysis[2] + (System.currentTimeMillis() - start);
 
 		while(TOP_nodes_to_consider != nodes_to_consider){
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////			
-/*			Pointer_ONLY = nodes_to_consider;
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////			
+			/*			Pointer_ONLY = nodes_to_consider;
 			blagger = 0;
 			while(Pointer_ONLY != TOP_nodes_to_consider){
 				blagger++;
 				Pointer_ONLY = Pointer_ONLY.memory_previous;
 			}
-			
+
 
 		if((!local_mid_entry)&&((blagger) != (deepness))){
 			try {semasematext.take();} catch(InterruptedException e) {} 
@@ -1696,120 +1706,120 @@ if(show_me_intermitent_maxes){
 				semasematext.release();
 			}
 			}
-			*/
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			 */
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 			I_was_deleted = true;
 			run = true;
 			while(I_was_deleted && (nodes_to_consider.get_length() > 0)){
 
-				
+
 				nodes_to_consider.meta_data = nodes_to_consider.pop_first(); //set up, this is the node we're looking at
 				all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data); //remove from the set of nodes that're to considered against
 
-				
+
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				do{
-				
-				temp = 0;
-				//System.out.println("#2 outside lowest BT call");
-				if(nodes_to_consider.get_length() > 0){
 
-				if(lowest_backtrack <= B_iteration_deep){
+					temp = 0;
+					//System.out.println("#2 outside lowest BT call");
+					if(nodes_to_consider.get_length() > 0){
 
-					try {
-						//System.out.println(((nodes_to_consider.get_length() >= min_new_midthread_size)?"true":"false") + "ntc.gl: " + nodes_to_consider.get_length() + " mnms: "+min_new_midthread_size);
-						if((nodes_to_consider.get_length() /*+ memory_element.get_length()*/ >= min_new_midthread_size)  && (mid_thread_count[0] < mid_thread_pool))									
-							temp = available_mid_thread();
-						//System.out.println("#2 inside lowest BT call, temp: "+temp+" thread_count[0]: "+thread_count[0]+" thread_pool: "+thread_pool+" and min_new_thread_size: "+min_new_thread_size+" memory_element: "+memory_element.get_length());
+						if(lowest_backtrack <= B_iteration_deep){
 
-					} catch(InterruptedException e) {
-					} 
-				}		
+							try {
+								//System.out.println(((nodes_to_consider.get_length() >= min_new_midthread_size)?"true":"false") + "ntc.gl: " + nodes_to_consider.get_length() + " mnms: "+min_new_midthread_size);
+								if((nodes_to_consider.get_length() /*+ memory_element.get_length()*/ >= min_new_midthread_size)  && (mid_thread_count[0] < mid_thread_pool))									
+									temp = available_mid_thread();
+								//System.out.println("#2 inside lowest BT call, temp: "+temp+" thread_count[0]: "+thread_count[0]+" thread_pool: "+thread_pool+" and min_new_thread_size: "+min_new_thread_size+" memory_element: "+memory_element.get_length());
 
-
-				if(temp != 0){
-
-					stillrunning1 = new semaphore();
-					try{stillrunning1.take();} catch(InterruptedException e){}
+							} catch(InterruptedException e) {
+							} 
+						}		
 
 
-					mid_previous_nodes[temp].zero();//set up all the previous nodes being sent to the new mid
-					Pointer_ONLY = nodes_to_consider.memory_previous;
-					while(Pointer_ONLY != TOP_nodes_to_consider){
-						mid_previous_nodes[temp].add(Pointer_ONLY.meta_data);
-						Pointer_ONLY = Pointer_ONLY.memory_previous;
-					}
-					if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
-						mid_previous_nodes[temp].add(DCC[check_set].meta_data);
-//					else{
-//						mid_previous_nodes[temp].use_me_or(mid_previous_nodes[temp], mid_previous_nodes[whoami]);
-//					}
+						if(temp != 0){
 
-					
-					////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					node3 temp_all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.copy_by_erasing();
-					temp_all_nodes_in_set_deleted_used.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //all_nodes_in_set_deleted_used.memory_previous.copy_by_erasing();
-					temp_all_nodes_in_set_deleted_used.memory_previous.memory_next = temp_all_nodes_in_set_deleted_used;
-					temp_all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data);
-					temp_all_nodes_in_set_deleted_used.delete(nodes_at_this_level_run_by_other_threads);
+							stillrunning1 = new semaphore();
+							try{stillrunning1.take();} catch(InterruptedException e){}
 
-					node3 temp_all_nodes_in_set_whole = all_nodes_in_set_whole.copy_by_erasing();
-					temp_all_nodes_in_set_whole.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //all_nodes_in_set_whole.memory_previous.copy_by_erasing();
-					temp_all_nodes_in_set_whole.memory_previous.memory_next = temp_all_nodes_in_set_whole;
 
-					int node_being_run = nodes_to_consider.pop_first();
-					node3 temp_nodes_to_consider = new node3(nodes);//nodes_to_consider.copy_by_erasing();// only instead send it the next node to consider, not all the nodes
-					temp_nodes_to_consider.add(node_being_run);
-					temp_nodes_to_consider.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //nodes_to_consider.memory_previous.copy_by_erasing();
-					temp_nodes_to_consider.memory_previous.memory_next = temp_nodes_to_consider;
+							mid_previous_nodes[temp].zero();//set up all the previous nodes being sent to the new mid
+							Pointer_ONLY = nodes_to_consider.memory_previous;
+							while(Pointer_ONLY != TOP_nodes_to_consider){
+								mid_previous_nodes[temp].add(Pointer_ONLY.meta_data);
+								Pointer_ONLY = Pointer_ONLY.memory_previous;
+							}
+							if(!local_mid_entry)//don't use DCC unless you came from Newer_bochert
+								mid_previous_nodes[temp].add(DCC[check_set].meta_data);
+							//					else{
+							//						mid_previous_nodes[temp].use_me_or(mid_previous_nodes[temp], mid_previous_nodes[whoami]);
+							//					}
 
-					//nodes_to_consider.meta_data
-					
-					node3 temp_memory_element = memory_element.copy_by_erasing();
-					temp_memory_element.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //memory_element.memory_previous.copy_by_erasing();
-					temp_memory_element.memory_previous.memory_next = temp_memory_element;
-					//this.Bochert_neighbor(temp_element2, node_being_run, nodes_to_consider); //find nodes connected to the node being run, so they aren't lost
-					//temp_memory_element.use_me_or(temp_memory_element, temp_element2); // add them to the ME. They wouldn't normally be there, but we need to make sure they're not lost since we're only passing ntc of the node to consider
 
-					node3 temp_alpha3 = alpha3.copy_by_erasing();
-					temp_alpha3.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //alpha3.memory_previous.copy_by_erasing();
-					temp_alpha3.memory_previous.memory_next = temp_alpha3;
-					temp_alpha3.meta_data = alpha3.meta_data;
-					Pointer_ONLY = alpha3;
-					Pointer_ONLY2 = temp_alpha3;
-					while(Pointer_ONLY.alpha_next != null){
-						Pointer_ONLY2.alpha_next = Pointer_ONLY.alpha_next.copy_by_erasing();
-						Pointer_ONLY2.alpha_next.meta_data = Pointer_ONLY.alpha_next.meta_data;
-						Pointer_ONLY2.alpha_next.alpha_previous = Pointer_ONLY2;
-						Pointer_ONLY = Pointer_ONLY.alpha_next;
-						Pointer_ONLY2 = Pointer_ONLY2.alpha_next;
-					}
+							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							node3 temp_all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.copy_by_erasing();
+							temp_all_nodes_in_set_deleted_used.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //all_nodes_in_set_deleted_used.memory_previous.copy_by_erasing();
+							temp_all_nodes_in_set_deleted_used.memory_previous.memory_next = temp_all_nodes_in_set_deleted_used;
+							temp_all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data);
+							temp_all_nodes_in_set_deleted_used.delete(nodes_at_this_level_run_by_other_threads);
 
-					node3 temp_checked_set = checked_set.copy_by_erasing();
-					temp_checked_set.memory_previous = checked_set.memory_previous.copy_by_erasing();
-					temp_checked_set.memory_previous.memory_next = temp_checked_set;
+							node3 temp_all_nodes_in_set_whole = all_nodes_in_set_whole.copy_by_erasing();
+							temp_all_nodes_in_set_whole.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //all_nodes_in_set_whole.memory_previous.copy_by_erasing();
+							temp_all_nodes_in_set_whole.memory_previous.memory_next = temp_all_nodes_in_set_whole;
 
-					temp_checked_set.use_me_or(temp_checked_set, nodes_at_this_level_run_by_other_threads); //theoretically the previous nodes have been "run" in the future sense and should be reflected
-					temp_checked_set.add(nodes_to_consider.meta_data); //add the node that is about to be run by the parent thread
-					nodes_at_this_level_run_by_other_threads.add(node_being_run);//so this parent thread can remove this node after completing the current node that it's on
-					temp_all_nodes_in_set_deleted_used.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, temp_all_nodes_in_set_deleted_used);
-					
-					if(false&&(nodes_to_consider.meta_data == 34)&&(node_being_run == 35)){
-						try {semasematext.take();} catch(InterruptedException e) {} 
-						this.insert_spaces_for_iteration("B");
-						System.out.println("Making mid thread from bthread. NtC.md: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" all_nodes_in_set_deleted_used: "+all_nodes_in_set_deleted_used.print_list()+" all_nodes_in_set_whole: "+all_nodes_in_set_whole.print_list()+" memory_element: "+memory_element.print_list()+" alpha3: "+alpha3.print_list());
-						this.insert_spaces_for_iteration("B");
-						System.out.println("Being sent to midthread. temp_ntc: "+temp_nodes_to_consider.print_list()+" temp_all_nodes_in_set_deleted_used: "+temp_all_nodes_in_set_deleted_used.print_list()+" temp_all_nodes_in_set_whole: "+temp_all_nodes_in_set_whole.print_list()+" temp_memory_element: "+temp_memory_element.print_list()+" temp_alpha3: "+temp_alpha3.print_list()+" mid_previous_nodes[temp]: "+mid_previous_nodes[temp].print_list());
-						semasematext.release();
-						pause();
-					}
+							int node_being_run = nodes_to_consider.pop_first();
+							node3 temp_nodes_to_consider = new node3(nodes);//nodes_to_consider.copy_by_erasing();// only instead send it the next node to consider, not all the nodes
+							temp_nodes_to_consider.add(node_being_run);
+							temp_nodes_to_consider.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //nodes_to_consider.memory_previous.copy_by_erasing();
+							temp_nodes_to_consider.memory_previous.memory_next = temp_nodes_to_consider;
 
-					
-					////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							//nodes_to_consider.meta_data
 
-/*					int[] a = {1024};
+							node3 temp_memory_element = memory_element.copy_by_erasing();
+							temp_memory_element.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //memory_element.memory_previous.copy_by_erasing();
+							temp_memory_element.memory_previous.memory_next = temp_memory_element;
+							//this.Bochert_neighbor(temp_element2, node_being_run, nodes_to_consider); //find nodes connected to the node being run, so they aren't lost
+							//temp_memory_element.use_me_or(temp_memory_element, temp_element2); // add them to the ME. They wouldn't normally be there, but we need to make sure they're not lost since we're only passing ntc of the node to consider
+
+							node3 temp_alpha3 = alpha3.copy_by_erasing();
+							temp_alpha3.memory_previous = new node3(nodes);//this will effectively be the new TOP, and tell it when to stop //alpha3.memory_previous.copy_by_erasing();
+							temp_alpha3.memory_previous.memory_next = temp_alpha3;
+							temp_alpha3.meta_data = alpha3.meta_data;
+							Pointer_ONLY = alpha3;
+							Pointer_ONLY2 = temp_alpha3;
+							while(Pointer_ONLY.alpha_next != null){
+								Pointer_ONLY2.alpha_next = Pointer_ONLY.alpha_next.copy_by_erasing();
+								Pointer_ONLY2.alpha_next.meta_data = Pointer_ONLY.alpha_next.meta_data;
+								Pointer_ONLY2.alpha_next.alpha_previous = Pointer_ONLY2;
+								Pointer_ONLY = Pointer_ONLY.alpha_next;
+								Pointer_ONLY2 = Pointer_ONLY2.alpha_next;
+							}
+
+							node3 temp_checked_set = checked_set.copy_by_erasing();
+							temp_checked_set.memory_previous = checked_set.memory_previous.copy_by_erasing();
+							temp_checked_set.memory_previous.memory_next = temp_checked_set;
+
+							temp_checked_set.use_me_or(temp_checked_set, nodes_at_this_level_run_by_other_threads); //theoretically the previous nodes have been "run" in the future sense and should be reflected
+							temp_checked_set.add(nodes_to_consider.meta_data); //add the node that is about to be run by the parent thread
+							nodes_at_this_level_run_by_other_threads.add(node_being_run);//so this parent thread can remove this node after completing the current node that it's on
+							temp_all_nodes_in_set_deleted_used.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, temp_all_nodes_in_set_deleted_used);
+
+							if(false&&(nodes_to_consider.meta_data == 34)&&(node_being_run == 35)){
+								try {semasematext.take();} catch(InterruptedException e) {} 
+								this.insert_spaces_for_iteration("B");
+								System.out.println("Making mid thread from bthread. NtC.md: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" all_nodes_in_set_deleted_used: "+all_nodes_in_set_deleted_used.print_list()+" all_nodes_in_set_whole: "+all_nodes_in_set_whole.print_list()+" memory_element: "+memory_element.print_list()+" alpha3: "+alpha3.print_list());
+								this.insert_spaces_for_iteration("B");
+								System.out.println("Being sent to midthread. temp_ntc: "+temp_nodes_to_consider.print_list()+" temp_all_nodes_in_set_deleted_used: "+temp_all_nodes_in_set_deleted_used.print_list()+" temp_all_nodes_in_set_whole: "+temp_all_nodes_in_set_whole.print_list()+" temp_memory_element: "+temp_memory_element.print_list()+" temp_alpha3: "+temp_alpha3.print_list()+" mid_previous_nodes[temp]: "+mid_previous_nodes[temp].print_list());
+								semasematext.release();
+								pause();
+							}
+
+
+							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+							/*					int[] a = {1024};
 					node3 search_nodes_to_consider = new node3(a,nodes);
 					int[] b = {250,251,252,256,257,258,262,263,264,283,284,285,298,299,300,1017,1018,1025,1026,1027,1030,1031,1032,1034};
 					node3 search_all_nodes_in_set_whole = new node3(b,nodes);
@@ -1822,72 +1832,72 @@ if(show_me_intermitent_maxes){
 						System.out.println("CALLING THREAD: "+" delete_this_nodes_to_consider: "+delete_this_nodes_to_consider.print_list()+" delete_this_all_nodes_in_set_whole: "+delete_this_all_nodes_in_set_whole.print_list());
 						semasematext.release();						
 					}
-*/					
-					boolean display_next = (display_internal&&((nodes_to_consider.meta_data == 0)&&(node_being_run == 0)));
-					task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), display_next/*display_global*/, nodes, reach_back_B_calls ,  (display_next?display_level:-1)/*display_level*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,(depth_charge+deepness),priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,display_next /*display_internal*/, /*deepness*/0, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run, show_me_intermitent_maxes);
-					//task = new bthread(reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+1+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back)	
-					worker = new Thread(task);
-					worker.setName(String.valueOf(temp));
+							 */					
+							boolean display_next = (display_internal&&((nodes_to_consider.meta_data == 0)&&(node_being_run == 0)));
+							task = new bthread(semasematext, reach_back, thread_pool, graph3, graph, DCC[0].copy_by_erasing(), display_next/*display_global*/, nodes, reach_back_B_calls ,  (display_next?display_level:-1)/*display_level*/, empty_node, degressive_display,temp,status,previous_nodes,((best_star[0]-depth_charge)==0?0:(best_star[0]-depth_charge)-1),semasema,stillrunning1,B_iteration_deep,(where_from<=1?1:3),semaMax,(depth_charge+deepness),priority_threading,best_star, thread_count, mid_semasema, mid_thread_count, mid_thread_pool, mid_status,temp_nodes_to_consider.memory_previous, temp_nodes_to_consider, temp_all_nodes_in_set_deleted_used,display_next /*display_internal*/, /*deepness*/0, temp_checked_set, temp_all_nodes_in_set_whole, temp_alpha3, DCC, temp_memory_element, temp_checked_set, check_set,mid_reach_back,mid_previous_nodes, where_from,min_new_bthread_size,min_new_midthread_size,lowest_backtrack,reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run);
+							//task = new bthread(reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display, nodes, reach_back_B_calls, -1, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+1+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back)	
+							worker = new Thread(task);
+							worker.setName(String.valueOf(temp));
 
-					if(display_internal){
-						try {semasematext.take();} catch(InterruptedException e) {} 
-						this.insert_spaces_for_iteration("B");
-						System.out.println("!!!Make a new MIDTHREAD!!! Temp: "+temp+" node being run by thread: "+node_being_run+" Display_next: "+display_next+" temp_Memory_element: "+temp_memory_element.print_list()+" and ntc: "+temp_nodes_to_consider.print_list()+" and prev_nodes is: "+mid_previous_nodes[temp].print_list()+" checked_set: "+temp_checked_set.print_list());
-						semasematext.release();
+							if(display_internal){
+								try {semasematext.take();} catch(InterruptedException e) {} 
+								this.insert_spaces_for_iteration("B");
+								System.out.println("!!!Make a new MIDTHREAD!!! Temp: "+temp+" node being run by thread: "+node_being_run+" Display_next: "+display_next+" temp_Memory_element: "+temp_memory_element.print_list()+" and ntc: "+temp_nodes_to_consider.print_list()+" and prev_nodes is: "+mid_previous_nodes[temp].print_list()+" checked_set: "+temp_checked_set.print_list());
+								semasematext.release();
+							}
+
+							if(priority_threading){
+								priority = Thread.currentThread().getPriority();
+								if(priority>5)
+									worker.setPriority(priority-1);
+								else
+									worker.setPriority(5);
+							}
+							worker.start();
+
+							mid_thread_ownership.add(worker);
+							mid_stillrunninglist.add(stillrunning1);
+
+							//go back now
+							if(display_internal){
+								try {semasematext.take();} catch(InterruptedException e) {} 
+								this.insert_spaces_for_iteration("B");
+								System.out.println("GOING BACK after skipping midsection and making a mid thread instead");
+								semasematext.release();
+							}
+
+							//					checked_set.memory_next = null;//I think this is unnecessary 
+							//					 if(nodes_to_consider.meta_data > 0){
+							//						 checked_set.add(nodes_to_consider.meta_data);
+							//					 }
+							//					 deepness--;
+
+							if(display_next)
+								try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
+						}
 					}
-
-					if(priority_threading){
-						priority = Thread.currentThread().getPriority();
-						if(priority>5)
-							worker.setPriority(priority-1);
-						else
-							worker.setPriority(5);
-					}
-					worker.start();
-
-					mid_thread_ownership.add(worker);
-					mid_stillrunninglist.add(stillrunning1);
-					
-					//go back now
-					if(display_internal){
-						try {semasematext.take();} catch(InterruptedException e) {} 
-						this.insert_spaces_for_iteration("B");
-						System.out.println("GOING BACK after skipping midsection and making a mid thread instead");
-						semasematext.release();
-					}
-
-//					checked_set.memory_next = null;//I think this is unnecessary 
-//					 if(nodes_to_consider.meta_data > 0){
-//						 checked_set.add(nodes_to_consider.meta_data);
-//					 }
-//					 deepness--;
-
-						if(display_next)
-							try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
-				}
-				}
 				}while(temp != 0);
-				
+
 				///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				
+
 				middle_loop_run++;
-				
+
 				start = System.currentTimeMillis();
 
 				//nodes_to_consider.meta_data = nodes_to_consider.pop_first(); //set up, this is the node we're looking at
 				//all_nodes_in_set_deleted_used.delete(nodes_to_consider.meta_data); //remove from the set of nodes that're to considered against
 
-//				try {semasematext.take();} catch(InterruptedException e) {} 
-//				this.insert_spaces_for_iteration("B");
-//				System.out.println("Executing node: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
-//				semasematext.release();
+				//				try {semasematext.take();} catch(InterruptedException e) {} 
+				//				this.insert_spaces_for_iteration("B");
+				//				System.out.println("Executing node: "+nodes_to_consider.meta_data+" ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list());
+				//				semasematext.release();
 
-				
+
 				this.Bochert_neighbor(temp_element2, nodes_to_consider.meta_data, all_nodes_in_set_deleted_used); //find connected nodes
 				//this.Bochert_neighbor(all_nodes_extra_extra, nodes_to_consider.meta_data, all_nodes_extra_extra);
 
 				temp_element = reduction(temp_element2, empty_node, null); //remove obvious extraneous nodes
-				
+
 				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
 					this.insert_spaces_for_iteration("B");
@@ -1903,7 +1913,7 @@ if(show_me_intermitent_maxes){
 						checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
 						nodes_at_this_level_run_by_other_threads.zero();//then zero them out
 					}
-					
+
 					if(display_internal){
 						try {semasematext.take();} catch(InterruptedException e) {} 
 						this.insert_spaces_for_iteration("B");
@@ -2103,10 +2113,10 @@ if(show_me_intermitent_maxes){
 						if(exit_loop[0] <= 0)
 							System.exit(0);
 						semasematext.release();
-						*/
+						 */
 						///////////////////////////////////////////////////////////////////////////////
 
-						
+
 						if(I_was_deleted){
 							alpha3 = alpha3.memory_previous;
 							alpha3.memory_next = null;
@@ -2136,7 +2146,7 @@ if(show_me_intermitent_maxes){
 
 					if(I_was_deleted){
 						checked_set.add(nodes_to_consider.meta_data);
-					
+
 						if(nodes_at_this_level_run_by_other_threads.length != 0){
 							nodes_to_consider.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, nodes_to_consider);//take away the nodes that were looked at by other threads
 							checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
@@ -2163,7 +2173,7 @@ if(show_me_intermitent_maxes){
 				start = System.currentTimeMillis();
 
 				deepness++; //ntc.md, as of right now, is now part of the consideration, there is now one more node under the belt, hense the deepness++
-	
+
 
 				all_nodes_in_set_deleted_used.memory_next = new node3(nodes);
 				all_nodes_in_set_deleted_used.memory_next.memory_previous = all_nodes_in_set_deleted_used; 
@@ -2212,12 +2222,12 @@ if(show_me_intermitent_maxes){
 
 				}
 
-//				if(display_internal){
-//					try {semasematext.take();} catch(InterruptedException e) {} 
-//					this.insert_spaces_for_iteration("B");
-//					System.out.println(" considering node: "+nodes_to_consider.meta_data+" deepness: "+deepness+" with nodes still to consider: "+nodes_to_consider.print_list()+" has memory_elment("+memory_element.get_length()+"): "+memory_element.print_list()+" and it's own ntc: "+(nodes_to_consider.memory_next != null?nodes_to_consider.memory_next.print_list():"NULL")+" all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" checked_set: "+checked_set.print_list());
-//					semasematext.release();
-//				}
+				//				if(display_internal){
+				//					try {semasematext.take();} catch(InterruptedException e) {} 
+				//					this.insert_spaces_for_iteration("B");
+				//					System.out.println(" considering node: "+nodes_to_consider.meta_data+" deepness: "+deepness+" with nodes still to consider: "+nodes_to_consider.print_list()+" has memory_elment("+memory_element.get_length()+"): "+memory_element.print_list()+" and it's own ntc: "+(nodes_to_consider.memory_next != null?nodes_to_consider.memory_next.print_list():"NULL")+" all_nodes: "+all_nodes_in_set_deleted_used.print_list()+" checked_set: "+checked_set.print_list());
+				//					semasematext.release();
+				//				}
 
 				if(display_internal){
 					try {semasematext.take();} catch(InterruptedException e) {} 
@@ -2244,13 +2254,13 @@ if(show_me_intermitent_maxes){
 					}
 
 					checked_set.add(nodes_to_consider.meta_data);
-					
+
 					if(nodes_at_this_level_run_by_other_threads.length != 0){
 						nodes_to_consider.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, nodes_to_consider);//take away the nodes that were looked at by other threads
 						checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
 						nodes_at_this_level_run_by_other_threads.zero();//then zero them out
 					}
-					
+
 					memory_element = memory_element.memory_previous;								
 					all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
 					all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
@@ -2342,8 +2352,8 @@ if(show_me_intermitent_maxes){
 
 							boolean display_next = (display_internal&&(nodes_to_consider.meta_data == 0));
 							if(temp == 0){
-							
-								
+
+
 								Pointer_ONLY = Newer_Bochert(memory_element, ((best_star[0]-depth_charge)-deepness-1<1?0:(best_star[0]-depth_charge)-deepness-1), nodes, display_next /*display_internal*/,3,depth_charge+deepness);									
 
 								if(display_internal){
@@ -2353,9 +2363,9 @@ if(show_me_intermitent_maxes){
 									semasematext.release();
 								}
 
-								if((Pointer_ONLY.get_length()+deepness+depth_charge)>(best_star[0])){
-									
-									try{update_max(Pointer_ONLY.get_length()+deepness+depth_charge,depth_charge,max_star);} catch(InterruptedException e){}
+								if((Pointer_ONLY.get_length()+deepness+depth_charge)>=(best_star[0])){
+
+									try{update_max(Pointer_ONLY.get_length()+deepness+depth_charge,4,where_from,depth_charge,max_star,DCC[check_set].meta_data);} catch(InterruptedException e){}
 
 									if(display_internal){
 										try {semasematext.take();} catch(InterruptedException e) {} 
@@ -2402,7 +2412,7 @@ if(show_me_intermitent_maxes){
 								stillrunning1 = new semaphore();
 								try{stillrunning1.take();} catch(InterruptedException e){}
 
-								task = new bthread(semasematext, reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,show_me_intermitent_maxes);	
+								task = new bthread(semasematext, reach_back, -1, graph3, graph, memory_element.copy_by_erasing(), display_next /*display_global*/, nodes, reach_back_B_calls, (display_next?display_level:-1)/*-1*/, empty_node, degressive_display,temp,null,previous_nodes,((best_star[0]-depth_charge)-deepness-1<=1?0:(best_star[0]-depth_charge)-deepness-1),semasema,stillrunning1,B_iteration_deep,3, null,depth_charge+deepness,priority_threading,null,null,null, mid_thread_count, mid_thread_pool, mid_status, mid_reach_back,mid_previous_nodes,min_new_bthread_size,min_new_midthread_size,lowest_backtrack, reach_back_B_calls_TOP,max_thread_pool,mid_max_thread_pool,reach_back_time_analysis,exit_loop,reach_back_middle_loop_run,disp_found_max);	
 								worker = new Thread(task);
 								worker.setName(String.valueOf(temp));
 
@@ -2415,9 +2425,9 @@ if(show_me_intermitent_maxes){
 								if(!local_mid_entry){//don't use DCC unless you came from Newer_bochert
 									previous_nodes[temp].add(DCC[check_set].meta_data);
 								}
-//								else{
-//									previous_nodes[temp].use_me_or(previous_nodes[temp], mid_previous_nodes[whoami]);
-//								}
+								//								else{
+								//									previous_nodes[temp].use_me_or(previous_nodes[temp], mid_previous_nodes[whoami]);
+								//								}
 
 
 								if(priority_threading){
@@ -2436,11 +2446,11 @@ if(show_me_intermitent_maxes){
 									semasematext.release();
 								}
 
-								
+
 								thread_ownership.add(worker);
 								stillrunninglist.add(stillrunning1);
 
-								
+
 								if(display_internal){
 									try {semasematext.take();} catch(InterruptedException e) {} 
 									this.insert_spaces_for_iteration("B");
@@ -2448,7 +2458,7 @@ if(show_me_intermitent_maxes){
 									semasematext.release();
 								}
 
-								
+
 								//delete, for testing purposes only asdf
 								//check_if_threads_are_done(true, thread_ownership, stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
 
@@ -2456,7 +2466,7 @@ if(show_me_intermitent_maxes){
 
 							//if(display_next)
 							//	try {Thread.sleep(waittime);} catch(InterruptedException e) {} 
-							
+
 						}
 
 
@@ -2469,13 +2479,13 @@ if(show_me_intermitent_maxes){
 						}
 
 						checked_set.add(nodes_to_consider.meta_data);
-						
+
 						if(nodes_at_this_level_run_by_other_threads.length != 0){
 							nodes_to_consider.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, nodes_to_consider);//take away the nodes that were looked at by other threads
 							checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
 							nodes_at_this_level_run_by_other_threads.zero();//then zero them out
 						}
-						
+
 						memory_element = memory_element.memory_previous;
 						all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
 						all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
@@ -2504,13 +2514,13 @@ if(show_me_intermitent_maxes){
 							nodes_to_consider = nodes_to_consider.memory_next;					
 							nodes_at_this_level_run_by_other_threads = nodes_at_this_level_run_by_other_threads.memory_next;
 
-//							try {semasematext.take();} catch(InterruptedException e) {} 
-//							this.insert_spaces_for_iteration("B");
-//							System.out.println("Going deeper, ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list()+" ntc.mp.mp: "+nodes_to_consider.memory_previous.memory_previous.print_list());
-//							semasematext.release();
+							//							try {semasematext.take();} catch(InterruptedException e) {} 
+							//							this.insert_spaces_for_iteration("B");
+							//							System.out.println("Going deeper, ntc: "+nodes_to_consider.print_list()+" ntc.mp: "+nodes_to_consider.memory_previous.print_list()+" ntc.mp.mp: "+nodes_to_consider.memory_previous.memory_previous.print_list());
+							//							semasematext.release();
 
-							
-//							deepness++;
+
+							//							deepness++;
 
 						}
 						else{
@@ -2522,13 +2532,13 @@ if(show_me_intermitent_maxes){
 							}
 
 							checked_set.add(nodes_to_consider.meta_data);
-							
+
 							if(nodes_at_this_level_run_by_other_threads.length != 0){
 								nodes_to_consider.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, nodes_to_consider);//take away the nodes that were looked at by other threads
 								checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
 								nodes_at_this_level_run_by_other_threads.zero();//then zero them out
 							}
-							
+
 							memory_element = memory_element.memory_previous;								
 							all_nodes_in_set_deleted_used = all_nodes_in_set_deleted_used.memory_previous;
 							all_nodes_in_set_whole = all_nodes_in_set_whole.memory_previous;
@@ -2561,7 +2571,7 @@ if(show_me_intermitent_maxes){
 
 				checked_set = checked_set.memory_previous;
 				checked_set.memory_next = null;
-				
+
 				if(nodes_at_this_level_run_by_other_threads.length != 0){
 					nodes_to_consider.use_me_and_not_first(nodes_at_this_level_run_by_other_threads, nodes_to_consider);//take away the nodes that were looked at by other threads
 					checked_set.use_me_or(checked_set, nodes_at_this_level_run_by_other_threads);//add them to the looked at
@@ -2570,36 +2580,36 @@ if(show_me_intermitent_maxes){
 
 				if(nodes_to_consider.meta_data > 0){
 					checked_set.add(nodes_to_consider.meta_data);
-					}
-				
+				}
+
 				deepness--;
 			}
-//			try {semasematext.take();} catch(InterruptedException e) {} 
-//			this.insert_spaces_for_iteration("B");
-//			System.out.println("before check_if_threads done FALSE with max_star: "+max_star.print_list());
-//			semasematext.release();
+			//			try {semasematext.take();} catch(InterruptedException e) {} 
+			//			this.insert_spaces_for_iteration("B");
+			//			System.out.println("before check_if_threads done FALSE with max_star: "+max_star.print_list());
+			//			semasematext.release();
 
 			check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 
-//			try {semasematext.take();} catch(InterruptedException e) {} 
-//			this.insert_spaces_for_iteration("B");
-//			System.out.println("after check_if_threads done FALSE with max_star: "+max_star.print_list());
-//			semasematext.release();
+			//			try {semasematext.take();} catch(InterruptedException e) {} 
+			//			this.insert_spaces_for_iteration("B");
+			//			System.out.println("after check_if_threads done FALSE with max_star: "+max_star.print_list());
+			//			semasematext.release();
 
 		}	
 
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("before check_if_threads done TRUE with max_star: "+max_star.print_list());
-//		semasematext.release();
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("before check_if_threads done TRUE with max_star: "+max_star.print_list());
+		//		semasematext.release();
 
-//		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
+		//		check_if_threads_are_done(true, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true);
 		check_if_threads_are_done(false, mid_thread_ownership, mid_stillrunninglist, display_internal, depth_charge, max_star,mid_previous_nodes, mid_reach_back,true,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
 
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("after check_if_threads done TRUE with max_star: "+max_star.print_list());
-//		semasematext.release();
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("after check_if_threads done TRUE with max_star: "+max_star.print_list());
+		//		semasematext.release();
 
 		//		if(display_internal){
 		//			try {semasematext.take();} catch(InterruptedException e) {} 
@@ -2608,11 +2618,11 @@ if(show_me_intermitent_maxes){
 		//			semasematext.release();
 		//		}
 
-		
-//		try {semasematext.take();} catch(InterruptedException e) {} 
-//		this.insert_spaces_for_iteration("B");
-//		System.out.println("Ending mid_section with max_star: "+max_star.print_list());
-//		semasematext.release();
+
+		//		try {semasematext.take();} catch(InterruptedException e) {} 
+		//		this.insert_spaces_for_iteration("B");
+		//		System.out.println("Ending mid_section with max_star: "+max_star.print_list());
+		//		semasematext.release();
 
 		if(local_mid_entry){//finish threads
 			check_if_threads_are_done(true, thread_ownership, stillrunninglist, display_internal, depth_charge, max_star,previous_nodes, reach_back,false,delete_this_nodes_to_consider,delete_this_all_nodes_in_set_whole);
@@ -2916,38 +2926,38 @@ if(show_me_intermitent_maxes){
 
 			//			all_nodes_unique = reduction(all_nodes_deleting, null, all_nodes_unique);
 			//			if(display)System.out.println("all nodes unique reduced is: "+all_nodes_unique.print_list());
-				if(all_nodes_unique.get_length() == 0){
-					contains_check_set = true;
-					//				System.out.println("this is deletable, no need to run");
+			if(all_nodes_unique.get_length() == 0){
+				contains_check_set = true;
+				//				System.out.println("this is deletable, no need to run");
 
-					next.copy_array(temp_element);
-					next.meta_data = cycle[i];
+				next.copy_array(temp_element);
+				next.meta_data = cycle[i];
 
-					return contains_check_set;
-				}
-
-
-				//			temp_unique = reduction(temp_element, null, temp_unique);
-				//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
-
-
-				if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
-					if(display)System.out.println("min_unique is g.t. all_nodes_unique");
-					minimizing_unique_all_nodes = all_nodes_unique.get_length();
-					extra = temp_unique.get_length();
-					node = cycle[i];				
-				}
-				else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
-					if(temp_unique.get_length() > extra){//guarnteed better
-						if(display)System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
-						minimizing_unique_all_nodes = all_nodes_unique.get_length();
-						extra = temp_unique.get_length();
-						node = cycle[i];
-					}
-				}
+				return contains_check_set;
 			}
 
-		
+
+			//			temp_unique = reduction(temp_element, null, temp_unique);
+			//			if(display)System.out.println("comp_nodes unique reduced is: "+temp_unique.print_list());
+
+
+			if(minimizing_unique_all_nodes > all_nodes_unique.get_length()){
+				if(display)System.out.println("min_unique is g.t. all_nodes_unique");
+				minimizing_unique_all_nodes = all_nodes_unique.get_length();
+				extra = temp_unique.get_length();
+				node = cycle[i];				
+			}
+			else if(minimizing_unique_all_nodes == all_nodes_unique.get_length()){ 
+				if(temp_unique.get_length() > extra){//guarnteed better
+					if(display)System.out.println("min_unique is equal to all_nodes_unique, but temp_unique is greater than extra");
+					minimizing_unique_all_nodes = all_nodes_unique.get_length();
+					extra = temp_unique.get_length();
+					node = cycle[i];
+				}
+			}
+		}
+
+
 
 		Bochert_neighbor(temp_extra, node, comp_all_nodes);
 		temp_extra.meta_data = node;
@@ -2980,7 +2990,7 @@ if(show_me_intermitent_maxes){
 
 	public String disp_time_old(){
 
-/*		long t = System.currentTimeMillis();
+		/*		long t = System.currentTimeMillis();
 
 		t=t/1000;
 		long s = t%60;
@@ -2991,11 +3001,11 @@ if(show_me_intermitent_maxes){
 
 
 		return h+":"+m+":"+s;
-		*/
-		
+		 */
+
 		Date dNow = new Date( );
-	    SimpleDateFormat ft = new SimpleDateFormat ("MM-dd HH:mm:ss");
-	    return ft.format(dNow);
+		SimpleDateFormat ft = new SimpleDateFormat ("MM-dd HH:mm:ss");
+		return ft.format(dNow);
 
 	}
 
