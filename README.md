@@ -1,8 +1,12 @@
 # Bochert
 
-Bochert is a multi-threaded new method to solve nP complete problems in Java. It is set up to read .clq files and fine the exact solution of the max clique.
+Bochert is a multi-threaded new method to solve nP complete problems in Java. It is set up to read .clq files and find the exact solution of the max clique. It only finds one max clique, so if there are more cliques of equal size to the one found,  it won't tell you, but it will tell you that there exist no cliques larger than the one it found.
 
-Working directory (called NewMaxClique) is currently set up for use in eclipse
+Yay for happy homegrown projects! This was an idea I had after gradschool for a superfast (hopefully) method to solve nP complete solutions. After I got it working, I made it multithreaded. It's project I worked on in my free time, in hopes that some day it'd be useful to people, let me know if you do find it useful, I'd appreciate knowing I didn't waste 3 or 4 years of my life =)
+
+As far as the algorithm goes, it's not terible complicated at it's core, but I never bothered to publish anything. Suffice to say it uses magic, like a kitten... riding a unicorn... over a rainbow. If it turns out people actually care about the nuts and bolts, maybe some day I'll write a detailed analysis on the algorithm and how it's implimented. But if nobody cares about detials, then just know - kittens and rainbows.
+
+Btw, Working directory (called NewMaxClique) is currently set up for use in eclipse
 
 Installation
 ----
