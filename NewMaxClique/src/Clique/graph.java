@@ -3193,7 +3193,7 @@ public class graph {
 		options.addOption("g","graphs", true, ".clq graphs to run, default is all graphs in directory of graph binaries. Can be comma delimiated list, eg \"brock200_1.clq,brock200_2.clq,brock200_3.clq,brock200_4.clq\"");
 		options.addOption("e","exclude", true, "graphs to exclude. Default is \"MANN_a45.clq,MANN_a81.clq,keller5.clq,keller6.clq\"");
 		options.addOption("m","max",true,"display incrimental max as it's found, default is true");
-		options.addOption("t","threads",true,"threads to allow, default is 24");
+		options.addOption("t","threads",true,"threads to allow, default is 24. Use 0 to disable multithreding");
 		options.addOption("v","verbosity",true,"set verbosity, -2 minimal display, -1 display graph meta no algorithm out, 0 graph meta and algorithm display, 1 >= increasing algorithm verbosity level, default -1");
 		options.addOption("o","other",true,"use other algorithm to find max Clique. Options include:\n"
 				+ "     BK (BronKerbosch with pivot)\n"
@@ -3289,6 +3289,8 @@ public class graph {
 		if(cmd.hasOption("v")){
 			display_level = Integer.parseInt(cmd.getOptionValue("v"));
 			System.out.println("Set verbosity to: " + (display_level));
+			if (display_level > -1)
+				System.out.println("debugging has been removed from this compile of code, please grab the previous compilation on github");
 			if ((display_level < -1) && (disp_found_max))
 				System.out.println("verbosity set to "+display_level+" but displaying incrimental maxes. To prevent this, run again with option \"-m false\"");
 		}
