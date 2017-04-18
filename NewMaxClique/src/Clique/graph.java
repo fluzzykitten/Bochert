@@ -3289,8 +3289,6 @@ public class graph {
 		if(cmd.hasOption("v")){
 			display_level = Integer.parseInt(cmd.getOptionValue("v"));
 			System.out.println("Set verbosity to: " + (display_level));
-			if (display_level > -1)
-				System.out.println("debugging has been removed from this compile of code, please grab the previous compilation on github");
 			if ((display_level < -1) && (disp_found_max))
 				System.out.println("verbosity set to "+display_level+" but displaying incrimental maxes. To prevent this, run again with option \"-m false\"");
 		}
